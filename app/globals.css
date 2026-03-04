@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #13172E;
+  --navy-card: #1A1F3A;
+  --ivory: #FAF7F2;
+  --cream: #F0EAE0;
+  --cream-line: #E8DDD0;
+  --rose: #C9907A;
+  --rose-hover: #B87D6A;
+  --rose-light: #F0C9B0;
+  --muted: #7A7F99;
+  --green: #48BB78;
+  --red: #E53E3E;
+  --yellow: #ECC94B;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--ivory);
+  color: var(--navy);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
