@@ -1,8 +1,8 @@
-'use client';
-import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from 'react';
-import { camReducer, getInitialCam, ZOOM_DEFAULT, ZOOM_MIN, ZOOM_MAX } from '../utils/camera.js';
-import { loadStorageState } from '../utils/storage.js';
-import { PLAN_CX, PLAN_CY, getTableDims } from '../utils/geometry.js';
+"use client";
+import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
+import { camReducer, getInitialCam, ZOOM_DEFAULT, ZOOM_MIN, ZOOM_MAX } from "../utils/camera.js";
+import { loadStorageState } from "../utils/storage.js";
+import { PLAN_CX, PLAN_CY, getTableDims } from "../utils/geometry.js";
 
 export function useCamera() {
   const [cam, dispatchCam] = useReducer(camReducer, null, () => getInitialCam(1200, 700));
@@ -10,16 +10,29 @@ export function useCamera() {
   const [canvasH, setCanvasH] = useState(700);
   const [hydrated, setHydrated] = useState(false);
 
-  const canvasRef  = useRef(null);
-  const svgRef     = useRef(null);
-  const camRef     = useRef(cam);
+  const canvasRef = useRef(null);
+  const svgRef = useRef(null);
+  const camRef = useRef(cam);
   const canvasWRef = useRef(canvasW);
   const canvasHRef = useRef(canvasH);
-  const wheelAccRef = useRef({ sumZoomExp: 0, lastNx: 0.5, lastNy: 0.5, lastCW: 1200, lastCH: 700, rafId: null });
+  const wheelAccRef = useRef({
+    sumZoomExp: 0,
+    lastNx: 0.5,
+    lastNy: 0.5,
+    lastCW: 1200,
+    lastCH: 700,
+    rafId: null,
+  });
 
-  useEffect(() => { camRef.current = cam; }, [cam]);
-  useEffect(() => { canvasWRef.current = canvasW; }, [canvasW]);
-  useEffect(() => { canvasHRef.current = canvasH; }, [canvasH]);
+  useEffect(() => {
+    camRef.current = cam;
+  }, [cam]);
+  useEffect(() => {
+    canvasWRef.current = canvasW;
+  }, [canvasW]);
+  useEffect(() => {
+    canvasHRef.current = canvasH;
+  }, [canvasH]);
 
   // ResizeObserver
   useEffect(() => {
@@ -47,7 +60,14 @@ export function useCamera() {
     const ch = canvasHRef.current;
     const result = loadStorageState(cw, ch);
     if (result.data.cam) {
-      dispatchCam({ type: 'CAM_SET', vx: result.data.cam.vx, vy: result.data.cam.vy, z: result.data.cam.z, canvasW: cw, canvasH: ch });
+      dispatchCam({
+        type: "CAM_SET",
+        vx: result.data.cam.vx,
+        vy: result.data.cam.vy,
+        z: result.data.cam.z,
+        canvasW: cw,
+        canvasH: ch,
+      });
     }
     setHydrated(true);
   }, []);
@@ -69,7 +89,7 @@ export function useCamera() {
       if (e.ctrlKey) {
         // Ctrl+Scroll = zoom ancorat pe cursor
         acc.lastNx = (e.clientX - rect.left) / rect.width;
-        acc.lastNy = (e.clientY - rect.top)  / rect.height;
+        acc.lastNy = (e.clientY - rect.top) / rect.height;
         acc.lastCW = rect.width;
         acc.lastCH = rect.height;
         acc.sumZoomExp += -e.deltaY * base * 0.0018;
@@ -79,14 +99,17 @@ export function useCamera() {
           const factor = Math.exp(acc.sumZoomExp);
           acc.sumZoomExp = 0;
           acc.rafId = null;
-          if (Math.abs(acc.lastCW - canvasWRef.current) > 1 || Math.abs(acc.lastCH - canvasHRef.current) > 1) {
+          if (
+            Math.abs(acc.lastCW - canvasWRef.current) > 1 ||
+            Math.abs(acc.lastCH - canvasHRef.current) > 1
+          ) {
             setCanvasW(acc.lastCW);
             setCanvasH(acc.lastCH);
             canvasWRef.current = acc.lastCW;
             canvasHRef.current = acc.lastCH;
           }
           dispatchCam({
-            type: 'CAM_ZOOM_AT_NORM',
+            type: "CAM_ZOOM_AT_NORM",
             nx: acc.lastNx,
             ny: acc.lastNy,
             factor,
@@ -100,7 +123,7 @@ export function useCamera() {
         const ch = canvasHRef.current;
         const z = camRef.current.z;
         dispatchCam({
-          type: 'CAM_PAN_BY',
+          type: "CAM_PAN_BY",
           dxWorld: (e.deltaX * base) / z,
           dyWorld: (e.deltaY * base) / z,
           canvasW: cw,
@@ -109,10 +132,13 @@ export function useCamera() {
       }
     };
 
-    document.addEventListener('wheel', onWheel, { passive: false });
+    document.addEventListener("wheel", onWheel, { passive: false });
     return () => {
-      document.removeEventListener('wheel', onWheel);
-      if (acc.rafId !== null) { cancelAnimationFrame(acc.rafId); acc.rafId = null; }
+      document.removeEventListener("wheel", onWheel);
+      if (acc.rafId !== null) {
+        cancelAnimationFrame(acc.rafId);
+        acc.rafId = null;
+      }
     };
   }, []);
 
@@ -124,12 +150,12 @@ export function useCamera() {
   const screenToSVG = useCallback((clientX, clientY) => {
     if (!svgRef.current) return null;
     const rect = svgRef.current.getBoundingClientRect();
-    const nx = (clientX - rect.left)  / rect.width;
-    const ny = (clientY - rect.top)   / rect.height;
+    const nx = (clientX - rect.left) / rect.width;
+    const ny = (clientY - rect.top) / rect.height;
     const vw = canvasWRef.current / camRef.current.z;
     const vh = canvasHRef.current / camRef.current.z;
-    const x  = camRef.current.vx + nx * vw;
-    const y  = camRef.current.vy + ny * vh;
+    const x = camRef.current.vx + nx * vw;
+    const y = camRef.current.vy + ny * vh;
     return { x, y };
   }, []);
 
@@ -137,56 +163,101 @@ export function useCamera() {
     if (!tables || tables.length === 0) {
       const cw = canvasWRef.current;
       const ch = canvasHRef.current;
-      dispatchCam({ type: 'CAM_SET', vx: PLAN_CX - cw / ZOOM_DEFAULT / 2, vy: PLAN_CY - ch / ZOOM_DEFAULT / 2, z: ZOOM_DEFAULT, canvasW: cw, canvasH: ch });
+      dispatchCam({
+        type: "CAM_SET",
+        vx: PLAN_CX - cw / ZOOM_DEFAULT / 2,
+        vy: PLAN_CY - ch / ZOOM_DEFAULT / 2,
+        z: ZOOM_DEFAULT,
+        canvasW: cw,
+        canvasH: ch,
+      });
       return;
     }
-    const bounds = tables.map(t => {
+    const bounds = tables.map((t) => {
       const d = getTableDims(t);
       return { minX: t.x, minY: t.y, maxX: t.x + d.w, maxY: t.y + d.h };
     });
-    const minX = Math.min(...bounds.map(b => b.minX)) - 80;
-    const minY = Math.min(...bounds.map(b => b.minY)) - 80;
-    const maxX = Math.max(...bounds.map(b => b.maxX)) + 80;
-    const maxY = Math.max(...bounds.map(b => b.maxY)) + 80;
+    const minX = Math.min(...bounds.map((b) => b.minX)) - 80;
+    const minY = Math.min(...bounds.map((b) => b.minY)) - 80;
+    const maxX = Math.max(...bounds.map((b) => b.maxX)) + 80;
+    const maxY = Math.max(...bounds.map((b) => b.maxY)) + 80;
     const fw = maxX - minX;
     const fh = maxY - minY;
     const cw = canvasWRef.current;
     const ch = canvasHRef.current;
     const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.min(cw / fw, ch / fh) * 0.9));
-    dispatchCam({ type: 'CAM_SET', vx: minX - (cw / zoom - fw) / 2, vy: minY - (ch / zoom - fh) / 2, z: zoom, canvasW: cw, canvasH: ch });
+    dispatchCam({
+      type: "CAM_SET",
+      vx: minX - (cw / zoom - fw) / 2,
+      vy: minY - (ch / zoom - fh) / 2,
+      z: zoom,
+      canvasW: cw,
+      canvasH: ch,
+    });
   }, []);
 
   const resetCamera = useCallback(() => {
     const cw = canvasWRef.current;
     const ch = canvasHRef.current;
-    dispatchCam({ type: 'CAM_SET', vx: PLAN_CX - cw / ZOOM_DEFAULT / 2, vy: PLAN_CY - ch / ZOOM_DEFAULT / 2, z: ZOOM_DEFAULT, canvasW: cw, canvasH: ch });
+    dispatchCam({
+      type: "CAM_SET",
+      vx: PLAN_CX - cw / ZOOM_DEFAULT / 2,
+      vy: PLAN_CY - ch / ZOOM_DEFAULT / 2,
+      z: ZOOM_DEFAULT,
+      canvasW: cw,
+      canvasH: ch,
+    });
   }, []);
-  const focusPoint = useCallback((x, y, zoom = 1.5) => {
-  const cw = canvasWRef.current;
-  const ch = canvasHRef.current;
-  dispatchCam({
-    type: 'CAM_SET',
-    vx: x - cw / zoom / 2,
-    vy: y - ch / zoom / 2,
-    z: zoom,
-    canvasW: cw,
-    canvasH: ch,
-  });
-}, [dispatchCam]);
+  const focusPoint = useCallback(
+    (x, y, zoom = 1.5) => {
+      const cw = canvasWRef.current;
+      const ch = canvasHRef.current;
+      dispatchCam({
+        type: "CAM_SET",
+        vx: x - cw / zoom / 2,
+        vy: y - ch / zoom / 2,
+        z: zoom,
+        canvasW: cw,
+        canvasH: ch,
+      });
+    },
+    [dispatchCam]
+  );
 
-  const zoomBy = useCallback((d) => {
-    const cW = canvasWRef.current;
-    const cH = canvasHRef.current;
-    const prevZ = camRef.current.z;
-    const nextZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, prevZ + d));
-    dispatchCam({ type: 'CAM_ZOOM_AT_NORM', nx: 0.5, ny: 0.5, factor: nextZ / prevZ, canvasW: cW, canvasH: cH });
-  }, [dispatchCam]);
+  const zoomBy = useCallback(
+    (d) => {
+      const cW = canvasWRef.current;
+      const cH = canvasHRef.current;
+      const prevZ = camRef.current.z;
+      const nextZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, prevZ + d));
+      dispatchCam({
+        type: "CAM_ZOOM_AT_NORM",
+        nx: 0.5,
+        ny: 0.5,
+        factor: nextZ / prevZ,
+        canvasW: cW,
+        canvasH: cH,
+      });
+    },
+    [dispatchCam]
+  );
 
   return {
-    cam, dispatchCam, camRef,
-    canvasRef, svgRef,
-    canvasW, canvasH, canvasWRef, canvasHRef,
-    viewBox, screenToSVG, zoomBy, fitToScreen, resetCamera, focusPoint,
+    cam,
+    dispatchCam,
+    camRef,
+    canvasRef,
+    svgRef,
+    canvasW,
+    canvasH,
+    canvasWRef,
+    canvasHRef,
+    viewBox,
+    screenToSVG,
+    zoomBy,
+    fitToScreen,
+    resetCamera,
+    focusPoint,
     hydrated,
   };
 }

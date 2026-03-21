@@ -1,6 +1,6 @@
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import StatsPanel from './StatsPanel.jsx';
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import StatsPanel from "./StatsPanel.jsx";
 
 const defaultProps = {
   showStats: true,
@@ -11,39 +11,41 @@ const defaultProps = {
   menuStats: { Standard: 1, Vegetarian: 1 },
 };
 
-describe('StatsPanel', () => {
-  afterEach(() => { cleanup(); });
-
-  it('randează panelul când showStats=true', () => {
-    render(<StatsPanel {...defaultProps} />);
-    expect(screen.getByText('📊 Statistici')).toBeTruthy();
+describe("StatsPanel", () => {
+  afterEach(() => {
+    cleanup();
   });
 
-  it('afișează numărul total de invitați', () => {
+  it("randează panelul când showStats=true", () => {
     render(<StatsPanel {...defaultProps} />);
-    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.getByText("📊 Statistici")).toBeTruthy();
   });
 
-  it('afișează meniurile', () => {
+  it("afișează numărul total de invitați", () => {
     render(<StatsPanel {...defaultProps} />);
-    expect(screen.getByText('Standard')).toBeTruthy();
-    expect(screen.getByText('Vegetarian')).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
   });
 
-  it('click × → setShowStats(false)', () => {
+  it("afișează meniurile", () => {
     render(<StatsPanel {...defaultProps} />);
-    fireEvent.click(screen.getByText('×'));
+    expect(screen.getByText("Standard")).toBeTruthy();
+    expect(screen.getByText("Vegetarian")).toBeTruthy();
+  });
+
+  it("click × → setShowStats(false)", () => {
+    render(<StatsPanel {...defaultProps} />);
+    fireEvent.click(screen.getByText("×"));
     expect(defaultProps.setShowStats).toHaveBeenCalledWith(false);
   });
 
-  it('randează butonul 📊 când showStats=false', () => {
+  it("randează butonul 📊 când showStats=false", () => {
     render(<StatsPanel {...defaultProps} showStats={false} />);
-    expect(screen.getByText('📊')).toBeTruthy();
+    expect(screen.getByText("📊")).toBeTruthy();
   });
 
-  it('click 📊 → setShowStats(true)', () => {
+  it("click 📊 → setShowStats(true)", () => {
     render(<StatsPanel {...defaultProps} showStats={false} />);
-    fireEvent.click(screen.getByText('📊'));
+    fireEvent.click(screen.getByText("📊"));
     expect(defaultProps.setShowStats).toHaveBeenCalledWith(true);
   });
 });

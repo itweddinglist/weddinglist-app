@@ -1,77 +1,122 @@
-﻿'use client';
-import Link from 'next/link'
-import { useCallback, useEffect, useState, useRef } from 'react'
+﻿"use client";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import {
-  GRID, PLAN_W, PLAN_H, PLAN_CX, PLAN_CY,
-  LIMITS, TYPE_LABELS,
-  getGroupColor, getTableDims, getSeatFillColor,
-  buildTemplate, generateCateringText,
-} from './utils/geometry.js'
-import { ZOOM_DEFAULT } from './utils/camera.js'
-import { useCamera } from './hooks/useCamera.js'
-import { useGuests } from './hooks/useGuests.js'
-import { useGuestLocator } from './hooks/useGuestLocator.js'
-import { useTableInteractions } from './hooks/useTableInteractions.js'
-import { TableNode } from './components/TableNode.jsx'
-import GuestSidebar from './components/GuestSidebar.jsx'
-import CanvasToolbar from './components/CanvasToolbar.jsx'
-import StatsPanel from './components/StatsPanel.jsx'
-import CateringModal from './components/CateringModal.jsx'
-import EditPanel from './components/EditPanel.jsx'
-import ConfirmDialog from './components/ConfirmDialog.jsx'
-import ToastStack from './components/ToastStack.jsx'
-import { exportToPng } from './utils/exportPng.js'
+  GRID,
+  PLAN_W,
+  PLAN_H,
+  LIMITS,
+  TYPE_LABELS,
+  getGroupColor,
+  getTableDims,
+} from "./utils/geometry.js";
+import { useCamera } from "./hooks/useCamera.js";
+import { useGuests } from "./hooks/useGuests.js";
+import { useGuestLocator } from "./hooks/useGuestLocator.js";
+import { useTableInteractions } from "./hooks/useTableInteractions.js";
+import { TableNode } from "./components/TableNode.jsx";
+import GuestSidebar from "./components/GuestSidebar.jsx";
+import CanvasToolbar from "./components/CanvasToolbar.jsx";
+import StatsPanel from "./components/StatsPanel.jsx";
+import CateringModal from "./components/CateringModal.jsx";
+import EditPanel from "./components/EditPanel.jsx";
+import ConfirmDialog from "./components/ConfirmDialog.jsx";
+import ToastStack from "./components/ToastStack.jsx";
+import { exportToPng } from "./utils/exportPng.js";
 
 const toastColors = {
-  rose:'#C9907A', green:'#48BB78',
-  red:'#E53E3E', yellow:'#ECC94B'
-}
+  rose: "#C9907A",
+  green: "#48BB78",
+  red: "#E53E3E",
+  yellow: "#ECC94B",
+};
 
 export default function SeatingChart() {
-
   const {
-    cam, dispatchCam, camRef,
-    canvasRef, svgRef,
-    canvasW, canvasH, canvasWRef, canvasHRef,
-    viewBox, screenToSVG,
-    zoomBy, fitToScreen, hydrated, focusPoint,
+    cam,
+    dispatchCam,
+    camRef,
+    canvasRef,
+    svgRef,
+    canvasW,
+    canvasH,
+    canvasWRef,
+    canvasHRef,
+    viewBox,
+    screenToSVG,
+    zoomBy,
+    fitToScreen,
+    hydrated,
+    focusPoint,
   } = useCamera();
 
   const {
-    guests, tables, nextId, hydrated: guestsHydrated,
+    guests,
+    tables,
+    nextId,
+    hydrated: guestsHydrated,
     setTables,
-    guestsRef, tablesRef, spawnCounterRef,
-    guestsByTable, realTables, totalSeats,
-    assignedCount, unassigned, filteredUnassigned,
-    progress, menuStats,
+    guestsRef,
+    tablesRef,
+    spawnCounterRef,
+    guestsByTable,
+    realTables,
+    totalSeats,
+    assignedCount,
+    unassigned,
+    filteredUnassigned,
+    progress,
+    menuStats,
     toasts,
-    searchQuery, setSearchQuery,
-    lockMode, setLockMode,
-    showStats, setShowStats,
-    showCatering, setShowCatering,
-    showToast, saveAction, undo,
-    assignGuest, unassignGuest, magicFill,
-    createTable, deleteTable, rotateTable,
-    saveEdit, getNextTableName,
+    searchQuery,
+    setSearchQuery,
+    lockMode,
+    setLockMode,
+    showStats,
+    setShowStats,
+    showCatering,
+    setShowCatering,
+    showToast,
+    saveAction,
+    undo,
+    assignGuest,
+    unassignGuest,
+    magicFill,
+    createTable,
+    deleteTable,
+    rotateTable,
+    saveEdit,
+    getNextTableName,
     resetPlan,
-    modal, setModal,
-    editPanel, setEditPanel,
-    editName, setEditName,
-    editSeats, setEditSeats,
-    confirmDialog, setConfirmDialog,
-    selectedTableId, setSelectedTableId,
-    clickedSeat, setClickedSeat,
-    hoveredGuest, setHoveredGuest,
-    dragOver, setDragOver,
-    isDraggingGuest, setIsDraggingGuest,
-    guestMeta, groupColorMap,
+    modal,
+    setModal,
+    editPanel,
+    setEditPanel,
+    editName,
+    setEditName,
+    editSeats,
+    setEditSeats,
+    confirmDialog,
+    setConfirmDialog,
+    selectedTableId,
+    setSelectedTableId,
+    clickedSeat,
+    setClickedSeat,
+    hoveredGuest,
+    setHoveredGuest,
+    dragOver,
+    setDragOver,
+    isDraggingGuest,
+    setIsDraggingGuest,
+    guestMeta,
+    groupColorMap,
     getGuestTableId,
   } = useGuests(cam);
 
   const [savedAt, setSavedAt] = useState(null);
   const [highlightGroupId, setHighlightGroupId] = useState(null);
   const [exportDialog, setExportDialog] = useState(false);
-  const [exportMode, setExportMode] = useState('fit');
+  const [exportMode, setExportMode] = useState("fit");
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -79,35 +124,35 @@ export default function SeatingChart() {
     const timer = setTimeout(() => setSavedAt(null), 2000);
     return () => clearTimeout(timer);
   }, [savedAt]);
-const vzoom = cam.z;
-const saveActionWithIndicator = useCallback(() => {
-  saveAction();
-  setSavedAt(Date.now());
-}, [saveAction]);
-const handleExport = useCallback(async () => {
-  if (!svgRef.current) return;
-  setExporting(true);
-  try {
-    const blob = await exportToPng({
-      svgEl: svgRef.current,
-      tables,
-      getTableDims,
-      mode: exportMode,
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `plan-mese-${Date.now()}.png`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setExportDialog(false);
-    showToast('✓ Export reușit!', 'green');
-  } catch (err) {
-    showToast('Eroare la export. Încearcă din nou.', 'red');
-  } finally {
-    setExporting(false);
-  }
-}, [svgRef, tables, exportMode, showToast]);
+  const vzoom = cam.z;
+  const saveActionWithIndicator = useCallback(() => {
+    saveAction();
+    setSavedAt(Date.now());
+  }, [saveAction]);
+  const handleExport = useCallback(async () => {
+    if (!svgRef.current) return;
+    setExporting(true);
+    try {
+      const blob = await exportToPng({
+        svgEl: svgRef.current,
+        tables,
+        getTableDims,
+        mode: exportMode,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `plan-mese-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportDialog(false);
+      showToast("✓ Export reușit!", "green");
+    } catch (err) {
+      showToast("Eroare la export. Încearcă din nou.", "red");
+    } finally {
+      setExporting(false);
+    }
+  }, [svgRef, tables, exportMode, showToast]);
   const { highlightTableId, highlightGuestId, locateGuest } = useGuestLocator({
     tables,
     getGuestTableId,
@@ -117,66 +162,114 @@ const handleExport = useCallback(async () => {
     setClickedSeat(null);
   }, [cam.vx, cam.vy, cam.z, selectedTableId, isDraggingGuest, assignedCount]);
 
-  const {
-    draggingTableRef, panningRef,
-    spaceDownRef, handleSvgMouseDown,
-  } = useTableInteractions({
-    tables, setTables, selectedTableId, lockMode,
-    undo, saveAction: saveActionWithIndicator, setModal, setEditPanel, setConfirmDialog,
-    setClickedSeat, setShowCatering, setSelectedTableId,
-    setHoveredGuest, setIsDraggingGuest,
-    camRef, canvasWRef, canvasHRef,
-    screenToSVG, dispatchCam,
+  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown } = useTableInteractions({
+    tables,
+    setTables,
+    selectedTableId,
+    lockMode,
+    undo,
+    saveAction: saveActionWithIndicator,
+    setModal,
+    setEditPanel,
+    setConfirmDialog,
+    setClickedSeat,
+    setShowCatering,
+    setSelectedTableId,
+    setHoveredGuest,
+    setIsDraggingGuest,
+    camRef,
+    canvasWRef,
+    canvasHRef,
+    screenToSVG,
+    dispatchCam,
   });
 
-  if (!hydrated) return (
-    <div style={{ minHeight:'100vh', background:'#FAF7F2' }}/>
-  );
+  if (!hydrated) return <div style={{ minHeight: "100vh", background: "#FAF7F2" }} />;
 
   return (
     <>
       <style>{css}</style>
       <div className="sc-root">
         <nav className="sc-nav">
-          <Link href="/dashboard" className="sc-logo">wedding<em>list</em></Link>
-          <div className="nav-divider"/>
+          <Link href="/dashboard" className="sc-logo">
+            wedding<em>list</em>
+          </Link>
+          <div className="nav-divider" />
           <div className="nav-stats">
-            {[{v:realTables.length,l:'Mese'},{v:totalSeats,l:'Locuri'},{v:assignedCount,l:'Ocupate'},{v:unassigned.length,l:'Neatribuiți'}].map((s,i)=>(
-              <div key={i} className="nav-stat"><span className="nav-stat-num">{s.v}</span><span className="nav-stat-lbl">{s.l}</span></div>
+            {[
+              { v: realTables.length, l: "Mese" },
+              { v: totalSeats, l: "Locuri" },
+              { v: assignedCount, l: "Ocupate" },
+              { v: unassigned.length, l: "Neatribuiți" },
+            ].map((s, i) => (
+              <div key={i} className="nav-stat">
+                <span className="nav-stat-num">{s.v}</span>
+                <span className="nav-stat-lbl">{s.l}</span>
+              </div>
             ))}
           </div>
-          <Link href="/dashboard" className="nav-back">← Dashboard</Link>
+          <Link href="/dashboard" className="nav-back">
+            ← Dashboard
+          </Link>
         </nav>
 
         <div className="sc-progress">
-  <div className="progress-track"><div className="progress-fill" style={{width:`${progress}%`}}/></div>
-  <span className="progress-text">
-    {unassigned.length===0&&guests.length>0?'✨ Toți invitații au un loc!':<>Mai ai <strong style={{color:'#F0C9B0'}}>{unassigned.length}</strong> invitați de așezat</>}
-  </span>
-  <span style={{marginLeft:'auto', fontSize:'0.6rem', color:'#6E7490', fontStyle:'italic', display:'flex', alignItems:'center', gap:'0.8rem'}}>
-    {savedAt && (
-      <span style={{color:'#48BB78', fontStyle:'normal', fontWeight:500, animation:'fadeUp 0.2s ease'}}>✓ Salvat</span>
-    )}
-    Scroll=pan · Ctrl+Scroll=zoom · Space+drag=pan · Săgeți=mută masa
-  </span>
-</div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+          <span className="progress-text">
+            {unassigned.length === 0 && guests.length > 0 ? (
+              "✨ Toți invitații au un loc!"
+            ) : (
+              <>
+                Mai ai <strong style={{ color: "#F0C9B0" }}>{unassigned.length}</strong> invitați de
+                așezat
+              </>
+            )}
+          </span>
+          <span
+            style={{
+              marginLeft: "auto",
+              fontSize: "0.6rem",
+              color: "#6E7490",
+              fontStyle: "italic",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.8rem",
+            }}
+          >
+            {savedAt && (
+              <span
+                style={{
+                  color: "#48BB78",
+                  fontStyle: "normal",
+                  fontWeight: 500,
+                  animation: "fadeUp 0.2s ease",
+                }}
+              >
+                ✓ Salvat
+              </span>
+            )}
+            Scroll=pan · Ctrl+Scroll=zoom · Space+drag=pan · Săgeți=mută masa
+          </span>
+        </div>
 
         <div className="sc-body">
           <GuestSidebar
-  guests={guests}
-  filteredUnassigned={filteredUnassigned}
-  searchQuery={searchQuery}
-  setSearchQuery={setSearchQuery}
-  guestMeta={guestMeta}
-  groupColorMap={groupColorMap}
-  locateGuest={locateGuest}
-  isDraggingGuest={isDraggingGuest}
-  setHoveredGuest={setHoveredGuest}
-  setIsDraggingGuest={setIsDraggingGuest}
-  tables={tables}
-  highlightGroupId={highlightGroupId}
-  setHighlightGroupId={setHighlightGroupId}
-/>
+            guests={guests}
+            filteredUnassigned={filteredUnassigned}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            guestMeta={guestMeta}
+            groupColorMap={groupColorMap}
+            locateGuest={locateGuest}
+            isDraggingGuest={isDraggingGuest}
+            setHoveredGuest={setHoveredGuest}
+            setIsDraggingGuest={setIsDraggingGuest}
+            tables={tables}
+            highlightGroupId={highlightGroupId}
+            setHighlightGroupId={setHighlightGroupId}
+          />
           <div className="sc-canvas-col">
             <CanvasToolbar
               vzoom={vzoom}
@@ -196,54 +289,113 @@ const handleExport = useCallback(async () => {
               onExport={() => setExportDialog(true)}
             />
 
-            <div className="sc-canvas" ref={canvasRef} tabIndex={0} style={{outline:'none'}}>
-              <svg ref={svgRef} width="100%" height="100%" viewBox={viewBox}
+            <div className="sc-canvas" ref={canvasRef} tabIndex={0} style={{ outline: "none" }}>
+              <svg
+                ref={svgRef}
+                width="100%"
+                height="100%"
+                viewBox={viewBox}
                 onMouseDown={handleSvgMouseDown}
-                onClick={(e)=>{
-                  if(e.target===svgRef.current||e.target.getAttribute?.('data-bg')==='1'){
-                    setClickedSeat(null);setEditPanel(null);setSelectedTableId(null);setHoveredGuest(null);
+                onClick={(e) => {
+                  if (e.target === svgRef.current || e.target.getAttribute?.("data-bg") === "1") {
+                    setClickedSeat(null);
+                    setEditPanel(null);
+                    setSelectedTableId(null);
+                    setHoveredGuest(null);
                   }
                 }}
               >
                 <defs>
                   <pattern id="grid-pat" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
-                    <path d={`M ${GRID} 0 L 0 0 0 ${GRID} M ${GRID} 0 L ${GRID} ${GRID} M 0 ${GRID} L ${GRID} ${GRID}`} fill="none" stroke="#DDD5C8" strokeWidth="0.4"/>
+                    <path
+                      d={`M ${GRID} 0 L 0 0 0 ${GRID} M ${GRID} 0 L ${GRID} ${GRID} M 0 ${GRID} L ${GRID} ${GRID}`}
+                      fill="none"
+                      stroke="#DDD5C8"
+                      strokeWidth="0.4"
+                    />
                   </pattern>
-                  <filter id="shadow-sm" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="10" floodColor="rgba(196,168,130,0.5)"/></filter>
-                  <filter id="shadow-prez" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="8" floodColor="rgba(201,144,122,0.2)"/></filter>
-                  <filter id="glow-sel" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="#9F7AEA" floodOpacity="0.55"/></filter>
+                  <filter id="shadow-sm" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow
+                      dx="0"
+                      dy="4"
+                      stdDeviation="10"
+                      floodColor="rgba(196,168,130,0.5)"
+                    />
+                  </filter>
+                  <filter id="shadow-prez" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow
+                      dx="0"
+                      dy="3"
+                      stdDeviation="8"
+                      floodColor="rgba(201,144,122,0.2)"
+                    />
+                  </filter>
+                  <filter id="glow-sel" x="-40%" y="-40%" width="180%" height="180%">
+                    <feDropShadow
+                      dx="0"
+                      dy="0"
+                      stdDeviation="8"
+                      floodColor="#9F7AEA"
+                      floodOpacity="0.55"
+                    />
+                  </filter>
                 </defs>
 
-                <rect data-bg="1" x="0" y="0" width={PLAN_W} height={PLAN_H} fill="url(#grid-pat)"
-                  onClick={()=>{setClickedSeat(null);setEditPanel(null);setSelectedTableId(null);setHoveredGuest(null);}}
+                <rect
+                  data-bg="1"
+                  x="0"
+                  y="0"
+                  width={PLAN_W}
+                  height={PLAN_H}
+                  fill="url(#grid-pat)"
+                  onClick={() => {
+                    setClickedSeat(null);
+                    setEditPanel(null);
+                    setSelectedTableId(null);
+                    setHoveredGuest(null);
+                  }}
                 />
-                <rect x="0" y="0" width={PLAN_W} height={PLAN_H} fill="none" stroke="#C4A882" strokeWidth="3" strokeDasharray="none" opacity="0.6" style={{pointerEvents:'none'}}/>
+                <rect
+                  x="0"
+                  y="0"
+                  width={PLAN_W}
+                  height={PLAN_H}
+                  fill="none"
+                  stroke="#C4A882"
+                  strokeWidth="3"
+                  strokeDasharray="none"
+                  opacity="0.6"
+                  style={{ pointerEvents: "none" }}
+                />
 
-                <g>{[...tables].map(t=>(
-                  <TableNode
-                    key={t.id}
-                    t={t}
-                    guestsByTable={guestsByTable}
-                    dragOver={dragOver}
-                    selectedTableId={selectedTableId}
-                    lockMode={lockMode}
-                    screenToSVG={screenToSVG}
-                    assignGuest={assignGuest}
-                    setSelectedTableId={setSelectedTableId}
-                    setEditName={setEditName}
-                    setEditSeats={setEditSeats}
-                    setEditPanel={setEditPanel}
-                    setHoveredGuest={setHoveredGuest}
-                    setClickedSeat={setClickedSeat}
-                    setIsDraggingGuest={setIsDraggingGuest}
-                    setDragOver={setDragOver}
-                    draggingTableRef={draggingTableRef}
-                    isHighlighted={highlightTableId === t.id}
-                    vzoom={vzoom}
-                    isFocused={!selectedTableId || selectedTableId === t.id}
-                    highlightGuestId={highlightGuestId}highlightGroupId={highlightGroupId}
-                  />
-                ))}</g>
+                <g>
+                  {[...tables].map((t) => (
+                    <TableNode
+                      key={t.id}
+                      t={t}
+                      guestsByTable={guestsByTable}
+                      dragOver={dragOver}
+                      selectedTableId={selectedTableId}
+                      lockMode={lockMode}
+                      screenToSVG={screenToSVG}
+                      assignGuest={assignGuest}
+                      setSelectedTableId={setSelectedTableId}
+                      setEditName={setEditName}
+                      setEditSeats={setEditSeats}
+                      setEditPanel={setEditPanel}
+                      setHoveredGuest={setHoveredGuest}
+                      setClickedSeat={setClickedSeat}
+                      setIsDraggingGuest={setIsDraggingGuest}
+                      setDragOver={setDragOver}
+                      draggingTableRef={draggingTableRef}
+                      isHighlighted={highlightTableId === t.id}
+                      vzoom={vzoom}
+                      isFocused={!selectedTableId || selectedTableId === t.id}
+                      highlightGuestId={highlightGuestId}
+                      highlightGroupId={highlightGroupId}
+                    />
+                  ))}
+                </g>
               </svg>
             </div>
           </div>
@@ -269,24 +421,104 @@ const handleExport = useCallback(async () => {
         realTables={realTables}
       />
 
-      {hoveredGuest&&!draggingTableRef.current&&!panningRef.current&&(
-        <div style={{position:'fixed',zIndex:9999,background:'#1A1F3A',color:'#FAF7F2',padding:'0.55rem 0.85rem',borderRadius:'10px',fontSize:'0.7rem',pointerEvents:'none',boxShadow:'0 6px 28px rgba(0,0,0,0.4)',border:'1px solid rgba(201,144,122,0.25)',minWidth:'155px',left:Math.min(window.innerWidth-180,hoveredGuest.x+14),top:Math.max(10,hoveredGuest.y-14),animation:'fadeUp 0.12s ease'}}>
-          <div style={{fontWeight:600,fontSize:'0.76rem',marginBottom:'0.18rem'}}>{hoveredGuest.guest.prenume} {hoveredGuest.guest.nume}</div>
-          <div style={{fontSize:'0.65rem',color:getGroupColor(hoveredGuest.guest.grup),marginBottom:'0.1rem'}}>👥 {hoveredGuest.guest.grup}</div>
-          <div style={{fontSize:'0.65rem',color:'#9DA3BC',marginBottom:'0.1rem'}}>🍽️ {hoveredGuest.guest.meniu}</div>
-          <div style={{fontSize:'0.65rem',color:'#9DA3BC'}}>{hoveredGuest.guest.status==='confirmat'?'✅ Confirmat':'⏳ În așteptare'}</div>
+      {hoveredGuest && !draggingTableRef.current && !panningRef.current && (
+        <div
+          style={{
+            position: "fixed",
+            zIndex: 9999,
+            background: "#1A1F3A",
+            color: "#FAF7F2",
+            padding: "0.55rem 0.85rem",
+            borderRadius: "10px",
+            fontSize: "0.7rem",
+            pointerEvents: "none",
+            boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
+            border: "1px solid rgba(201,144,122,0.25)",
+            minWidth: "155px",
+            left: Math.min(window.innerWidth - 180, hoveredGuest.x + 14),
+            top: Math.max(10, hoveredGuest.y - 14),
+            animation: "fadeUp 0.12s ease",
+          }}
+        >
+          <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
+            {hoveredGuest.guest.prenume} {hoveredGuest.guest.nume}
+          </div>
+          <div
+            style={{
+              fontSize: "0.65rem",
+              color: getGroupColor(hoveredGuest.guest.grup),
+              marginBottom: "0.1rem",
+            }}
+          >
+            👥 {hoveredGuest.guest.grup}
+          </div>
+          <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
+            🍽️ {hoveredGuest.guest.meniu}
+          </div>
+          <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
+            {hoveredGuest.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
+          </div>
         </div>
       )}
 
-      {clickedSeat&&(
-        <div style={{position:'fixed',zIndex:9998,background:'white',borderRadius:'10px',padding:'0.7rem 0.85rem',boxShadow:'0 6px 28px rgba(26,31,58,0.18)',border:'1px solid #E8DDD0',minWidth:'165px',left:clickedSeat.x,top:clickedSeat.y,animation:'fadeUp 0.15s ease'}} onClick={e=>e.stopPropagation()}>
-          <div style={{fontWeight:600,fontSize:'0.78rem',color:'#13172E',marginBottom:'0.1rem'}}>{clickedSeat.guest.prenume} {clickedSeat.guest.nume}</div>
-          <div style={{fontSize:'0.65rem',color:getGroupColor(clickedSeat.guest.grup),marginBottom:'0.5rem'}}>{clickedSeat.guest.grup}</div>
-          <button style={{width:'100%',padding:'0.3rem 0.6rem',borderRadius:'6px',border:'1.5px solid #E53E3E',background:'#fff5f5',color:'#E53E3E',fontFamily:"'DM Sans',sans-serif",fontSize:'0.65rem',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em',cursor:'pointer'}}
-            onClick={()=>unassignGuest(clickedSeat.guest.id)}>× Elimină de la masă</button>
+      {clickedSeat && (
+        <div
+          style={{
+            position: "fixed",
+            zIndex: 9998,
+            background: "white",
+            borderRadius: "10px",
+            padding: "0.7rem 0.85rem",
+            boxShadow: "0 6px 28px rgba(26,31,58,0.18)",
+            border: "1px solid #E8DDD0",
+            minWidth: "165px",
+            left: clickedSeat.x,
+            top: clickedSeat.y,
+            animation: "fadeUp 0.15s ease",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: "0.78rem",
+              color: "#13172E",
+              marginBottom: "0.1rem",
+            }}
+          >
+            {clickedSeat.guest.prenume} {clickedSeat.guest.nume}
+          </div>
+          <div
+            style={{
+              fontSize: "0.65rem",
+              color: getGroupColor(clickedSeat.guest.grup),
+              marginBottom: "0.5rem",
+            }}
+          >
+            {clickedSeat.guest.grup}
+          </div>
+          <button
+            style={{
+              width: "100%",
+              padding: "0.3rem 0.6rem",
+              borderRadius: "6px",
+              border: "1.5px solid #E53E3E",
+              background: "#fff5f5",
+              color: "#E53E3E",
+              fontFamily: "'DM Sans',sans-serif",
+              fontSize: "0.65rem",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+            }}
+            onClick={() => unassignGuest(clickedSeat.guest.id)}
+          >
+            × Elimină de la masă
+          </button>
         </div>
       )}
-      
+
       <EditPanel
         editPanel={editPanel}
         setEditPanel={setEditPanel}
@@ -300,94 +532,253 @@ const handleExport = useCallback(async () => {
         rotateTable={rotateTable}
       />
 
-      <ConfirmDialog
-        confirmDialog={confirmDialog}
-        setConfirmDialog={setConfirmDialog}
-      />
+      <ConfirmDialog confirmDialog={confirmDialog} setConfirmDialog={setConfirmDialog} />
 
-      {modal&&<ModalCreate modal={modal} setModal={setModal} createTable={createTable}/>}
+      {modal && <ModalCreate modal={modal} setModal={setModal} createTable={createTable} />}
 
-      {selectedTableId&&(
-        <div style={{position:'fixed',bottom:'1.5rem',left:'50%',transform:'translateX(-50%)',background:'rgba(19,23,46,0.85)',color:'#FAF7F2',padding:'0.4rem 1.2rem',borderRadius:'20px',fontSize:'0.65rem',zIndex:200,pointerEvents:'none',backdropFilter:'blur(8px)'}}>
+      {selectedTableId && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "1.5rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(19,23,46,0.85)",
+            color: "#FAF7F2",
+            padding: "0.4rem 1.2rem",
+            borderRadius: "20px",
+            fontSize: "0.65rem",
+            zIndex: 200,
+            pointerEvents: "none",
+            backdropFilter: "blur(8px)",
+          }}
+        >
           ⌨️ Săgeți = mută · Shift+Săgeți = mută 20px · Dbl-click = editare · Esc = deselectează
         </div>
       )}
 
       <ToastStack toasts={toasts} />
       {exportDialog && (
-  <div style={{position:'fixed',inset:0,zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(19,23,46,0.15)'}}
-    onClick={() => setExportDialog(false)}
-  >
-    <div style={{width:300,background:'#1A1F3A',border:'1px solid rgba(201,144,122,0.25)',borderRadius:'16px',padding:'1.4rem',boxShadow:'0 20px 60px rgba(0,0,0,0.4)',animation:'fadeUp 0.18s ease'}}
-      onClick={e => e.stopPropagation()}
-    >
-      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:'1.1rem',color:'#FAF7F2',marginBottom:'1rem',fontWeight:600}}>
-        Export PNG
-      </div>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 400,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(19,23,46,0.15)",
+          }}
+          onClick={() => setExportDialog(false)}
+        >
+          <div
+            style={{
+              width: 300,
+              background: "#1A1F3A",
+              border: "1px solid rgba(201,144,122,0.25)",
+              borderRadius: "16px",
+              padding: "1.4rem",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+              animation: "fadeUp 0.18s ease",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                fontFamily: "Cormorant Garamond,serif",
+                fontSize: "1.1rem",
+                color: "#FAF7F2",
+                marginBottom: "1rem",
+                fontWeight: 600,
+              }}
+            >
+              Export PNG
+            </div>
 
-      <div style={{display:'flex',flexDirection:'column',gap:'0.6rem',marginBottom:'1.2rem'}}>
-        <label style={{display:'flex',alignItems:'center',gap:'0.6rem',cursor:'pointer',padding:'0.6rem',borderRadius:'8px',border:`1px solid ${exportMode==='fit'?'rgba(201,144,122,0.5)':'rgba(255,255,255,0.1)'}`,background:exportMode==='fit'?'rgba(201,144,122,0.08)':'transparent'}}>
-          <input type="radio" name="exportMode" value="fit" checked={exportMode==='fit'} onChange={()=>setExportMode('fit')} style={{accentColor:'#C9907A'}}/>
-          <div>
-            <div style={{fontSize:'0.78rem',color:'#FAF7F2',fontWeight:500}}>Fit to content</div>
-            <div style={{fontSize:'0.62rem',color:'#6E7490'}}>Dimensiune optimă — ideal pentru share</div>
-          </div>
-        </label>
-        <label style={{display:'flex',alignItems:'center',gap:'0.6rem',cursor:'pointer',padding:'0.6rem',borderRadius:'8px',border:`1px solid ${exportMode==='a4'?'rgba(201,144,122,0.5)':'rgba(255,255,255,0.1)'}`,background:exportMode==='a4'?'rgba(201,144,122,0.08)':'transparent'}}>
-          <input type="radio" name="exportMode" value="a4" checked={exportMode==='a4'} onChange={()=>setExportMode('a4')} style={{accentColor:'#C9907A'}}/>
-          <div>
-            <div style={{fontSize:'0.78rem',color:'#FAF7F2',fontWeight:500}}>A4 landscape</div>
-            <div style={{fontSize:'0.62rem',color:'#6E7490'}}>Print ready — ideal pentru restaurant</div>
-          </div>
-        </label>
-      </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
+                marginBottom: "1.2rem",
+              }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  cursor: "pointer",
+                  padding: "0.6rem",
+                  borderRadius: "8px",
+                  border: `1px solid ${exportMode === "fit" ? "rgba(201,144,122,0.5)" : "rgba(255,255,255,0.1)"}`,
+                  background: exportMode === "fit" ? "rgba(201,144,122,0.08)" : "transparent",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="exportMode"
+                  value="fit"
+                  checked={exportMode === "fit"}
+                  onChange={() => setExportMode("fit")}
+                  style={{ accentColor: "#C9907A" }}
+                />
+                <div>
+                  <div style={{ fontSize: "0.78rem", color: "#FAF7F2", fontWeight: 500 }}>
+                    Fit to content
+                  </div>
+                  <div style={{ fontSize: "0.62rem", color: "#6E7490" }}>
+                    Dimensiune optimă — ideal pentru share
+                  </div>
+                </div>
+              </label>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.6rem",
+                  cursor: "pointer",
+                  padding: "0.6rem",
+                  borderRadius: "8px",
+                  border: `1px solid ${exportMode === "a4" ? "rgba(201,144,122,0.5)" : "rgba(255,255,255,0.1)"}`,
+                  background: exportMode === "a4" ? "rgba(201,144,122,0.08)" : "transparent",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="exportMode"
+                  value="a4"
+                  checked={exportMode === "a4"}
+                  onChange={() => setExportMode("a4")}
+                  style={{ accentColor: "#C9907A" }}
+                />
+                <div>
+                  <div style={{ fontSize: "0.78rem", color: "#FAF7F2", fontWeight: 500 }}>
+                    A4 landscape
+                  </div>
+                  <div style={{ fontSize: "0.62rem", color: "#6E7490" }}>
+                    Print ready — ideal pentru restaurant
+                  </div>
+                </div>
+              </label>
+            </div>
 
-      <div style={{display:'flex',gap:'0.5rem'}}>
-        <button style={{flex:1,padding:'0.4rem',borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',background:'none',color:'#9DA3BC',fontFamily:'DM Sans,sans-serif',fontSize:'0.62rem',textTransform:'uppercase',letterSpacing:'0.05em',cursor:'pointer'}}
-          onClick={() => setExportDialog(false)}>Anulează</button>
-        <button style={{flex:1,padding:'0.4rem',borderRadius:6,border:'none',background:'#C9907A',color:'white',fontFamily:'DM Sans,sans-serif',fontSize:'0.62rem',textTransform:'uppercase',letterSpacing:'0.05em',cursor:'pointer',opacity:exporting?0.7:1}}
-          onClick={handleExport} disabled={exporting}>
-          {exporting ? 'Se exportă...' : 'Exportă →'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                style={{
+                  flex: 1,
+                  padding: "0.4rem",
+                  borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "none",
+                  color: "#9DA3BC",
+                  fontFamily: "DM Sans,sans-serif",
+                  fontSize: "0.62rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                }}
+                onClick={() => setExportDialog(false)}
+              >
+                Anulează
+              </button>
+              <button
+                style={{
+                  flex: 1,
+                  padding: "0.4rem",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#C9907A",
+                  color: "white",
+                  fontFamily: "DM Sans,sans-serif",
+                  fontSize: "0.62rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                  opacity: exporting ? 0.7 : 1,
+                }}
+                onClick={handleExport}
+                disabled={exporting}
+              >
+                {exporting ? "Se exportă..." : "Exportă →"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
-function ModalCreate({modal,setModal,createTable}) {
-  const isBar=modal.type==='bar';
+function ModalCreate({ modal, setModal, createTable }) {
+  const isBar = modal.type === "bar";
   return (
-    <div className="sc-overlay" onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+    <div className="sc-overlay" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
       <div className="sc-modal">
-        <div className="modal-title">{isBar?'Obiect Decor':'Masă nouă'}</div>
+        <div className="modal-title">{isBar ? "Obiect Decor" : "Masă nouă"}</div>
         <div className="modal-type-badge">{TYPE_LABELS[modal.type]}</div>
-        <label className="ep-label">{isBar?'Numele obiectului':'Numele mesei *'}</label>
-        <input autoFocus className="ep-input" value={modal.name} onChange={e=>setModal(m=>({...m,name:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&createTable()} placeholder={isBar?'ex: Candy Bar, Ring Dans':'ex: Masa 1'}/>
-        {!isBar&&(
+        <label className="ep-label">{isBar ? "Numele obiectului" : "Numele mesei *"}</label>
+        <input
+          autoFocus
+          className="ep-input"
+          value={modal.name}
+          onChange={(e) => setModal((m) => ({ ...m, name: e.target.value }))}
+          onKeyDown={(e) => e.key === "Enter" && createTable()}
+          placeholder={isBar ? "ex: Candy Bar, Ring Dans" : "ex: Masa 1"}
+        />
+        {!isBar && (
           <>
             <label className="ep-label">Număr locuri</label>
-            <div className="ep-counter" style={{marginBottom:'1.3rem'}}>
-              <button className="ep-cnt-btn" onClick={()=>setModal(m=>({...m,seats:Math.max(LIMITS[m.type].min,m.seats-1)}))}>−</button>
+            <div className="ep-counter" style={{ marginBottom: "1.3rem" }}>
+              <button
+                className="ep-cnt-btn"
+                onClick={() =>
+                  setModal((m) => ({ ...m, seats: Math.max(LIMITS[m.type].min, m.seats - 1) }))
+                }
+              >
+                −
+              </button>
               <span className="ep-cnt-val">{modal.seats}</span>
-              <button className="ep-cnt-btn" onClick={()=>setModal(m=>({...m,seats:Math.min(LIMITS[m.type].max,m.seats+1)}))}>+</button>
-              <span style={{marginLeft:'auto',fontSize:'0.62rem',color:'#7A7F99'}}>{LIMITS[modal.type].min}–{LIMITS[modal.type].max}</span>
+              <button
+                className="ep-cnt-btn"
+                onClick={() =>
+                  setModal((m) => ({ ...m, seats: Math.min(LIMITS[m.type].max, m.seats + 1) }))
+                }
+              >
+                +
+              </button>
+              <span style={{ marginLeft: "auto", fontSize: "0.62rem", color: "#7A7F99" }}>
+                {LIMITS[modal.type].min}–{LIMITS[modal.type].max}
+              </span>
             </div>
           </>
         )}
-        {isBar&&<p style={{fontSize:'0.72rem',color:'#7A7F99',marginBottom:'1.2rem',lineHeight:1.5}}>Obiect decorativ — nu are locuri, nu apare în statistici.</p>}
-        <div style={{display:'flex',gap:'0.5rem'}}>
-          <button className="conf-cancel" onClick={()=>setModal(null)}>Anulează</button>
-          <button className="conf-ok" onClick={createTable}>Creează →</button>
+        {isBar && (
+          <p
+            style={{
+              fontSize: "0.72rem",
+              color: "#7A7F99",
+              marginBottom: "1.2rem",
+              lineHeight: 1.5,
+            }}
+          >
+            Obiect decorativ — nu are locuri, nu apare în statistici.
+          </p>
+        )}
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button className="conf-cancel" onClick={() => setModal(null)}>
+            Anulează
+          </button>
+          <button className="conf-ok" onClick={createTable}>
+            Creează →
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-const css=`
+const css = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
   *{margin:0;padding:0;box-sizing:border-box;}
   body{overflow:hidden;}
