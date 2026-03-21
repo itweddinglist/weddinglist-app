@@ -30,6 +30,7 @@ body {
   color: var(--navy);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;  /* ← adaugă această linie */
 }
 
 @keyframes fadeUp {

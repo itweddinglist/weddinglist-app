@@ -28,7 +28,7 @@ function getDaysLeft(date) {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-const NO_SHELL = ['/'];
+const NO_SHELL = ['/', '/seating-chart'];
 
 export default function AppShell({ children }) {
   const pathname = usePathname();

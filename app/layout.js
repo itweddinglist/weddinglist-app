@@ -23,7 +23,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ro">
-      <body className={`${cormorant.variable} ${dmSans.variable}`}>
+      <body className={`${cormorant.variable} ${dmSans.variable}`} suppressHydrationWarning>
         <AppShell>{children}</AppShell>
       </body>
     </html>
