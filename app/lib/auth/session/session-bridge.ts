@@ -1,0 +1,90 @@
+import {
+  fetchWordPressBootstrap,
+  type BootstrapResponse,
+} from "../fetch-wordpress-bootstrap";
+import { withCircuitBreaker } from "./wp-circuit-breaker";
+import { isEnabled } from "../feature-flags";
+
+export type SessionState =
+  | { status: "loading" }
+  | { status: "authenticated"; wpUser: BootstrapResponse["user"]; appUserId: string | null }
+  | { status: "guest" }
+  | { status: "error"; message: string }
+  | { status: "wp_down" };
+
+const SESSION_CACHE_KEY = "wl_session_cache";
+const SESSION_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type CachedSession = {
+  data: BootstrapResponse;
+  cachedAt: number;
+};
+
+function getCachedSession(): BootstrapResponse | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (!raw) return null;
+    const cached: CachedSession = JSON.parse(raw);
+    const isExpired = Date.now() - cached.cachedAt > SESSION_CACHE_TTL_MS;
+    if (isExpired) {
+      sessionStorage.removeItem(SESSION_CACHE_KEY);
+      return null;
+    }
+    return cached.data;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedSession(data: BootstrapResponse): void {
+  try {
+    const cached: CachedSession = { data, cachedAt: Date.now() };
+    sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(cached));
+  } catch {
+    // sessionStorage poate fi indisponibil
+  }
+}
+
+export function clearSessionCache(): void {
+  try {
+    sessionStorage.removeItem(SESSION_CACHE_KEY);
+  } catch {
+    // ignorăm
+  }
+}
+
+export async function resolveSession(): Promise<SessionState> {
+  if (!isEnabled("wpBridgeEnabled")) {
+    return { status: "guest" };
+  }
+
+  const cached = getCachedSession();
+  if (cached) {
+    if (cached.authenticated && cached.user) {
+      return { status: "authenticated", wpUser: cached.user, appUserId: null };
+    }
+    return { status: "guest" };
+  }
+
+  const result = await withCircuitBreaker(fetchWordPressBootstrap);
+
+  if (result.ok === false) {
+    if (result.reason === "timeout") {
+      return { status: "wp_down" };
+    }
+    return { status: "error", message: result.message };
+  }
+
+  const bootstrap = result.data;
+  setCachedSession(bootstrap);
+
+  if (!bootstrap.authenticated || !bootstrap.user) {
+    return { status: "guest" };
+  }
+
+  return {
+    status: "authenticated",
+    wpUser: bootstrap.user,
+    appUserId: null,
+  };
+}
