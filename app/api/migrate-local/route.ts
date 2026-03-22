@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase/server";
+import { rateLimit, getClientIp } from "@/app/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+const RATE_LIMIT = { limit: 5, windowMs: 60_000 };
 
 type SeatingGuest = {
   id: number;
@@ -43,6 +46,16 @@ const MIGRATION_KEY = "localstorage_v1";
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<MigrateLocalResponse>> {
+  // Rate limiting
+  const ip = getClientIp(req);
+  const rl = rateLimit(`migrate:${ip}`, RATE_LIMIT);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests" },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = (await req.json()) as MigrateLocalRequest;
     const { app_user_id, wedding_id, data } = body;
@@ -87,7 +100,7 @@ export async function POST(
       attempt_count: 1,
     });
 
-    // 4. Migrăm guests — cu prenume/nume corect
+    // 4. Migrăm guests
     if (data.guests?.length > 0) {
       const guestsToInsert = data.guests.map((g) => ({
         id: String(g.id),

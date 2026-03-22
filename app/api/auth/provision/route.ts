@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase/server";
+import { rateLimit, getClientIp } from "@/app/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+const RATE_LIMIT = { limit: 10, windowMs: 60_000 };
 
 type ProvisionRequest = {
   wp_user_id: number;
@@ -13,11 +16,22 @@ type ProvisionResponse =
   | { ok: true; app_user_id: string; created: boolean }
   | { ok: false; error: string };
 
-export async function POST(req: NextRequest): Promise<NextResponse<ProvisionResponse>> {
+export async function POST(
+  req: NextRequest
+): Promise<NextResponse<ProvisionResponse>> {
+  // Rate limiting
+  const ip = getClientIp(req);
+  const rl = rateLimit(`provision:${ip}`, RATE_LIMIT);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Too many requests" },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = (await req.json()) as ProvisionRequest;
-
-    const { wp_user_id, email, display_name } = body;
+    const { wp_user_id, email, display_name: _display_name } = body;
 
     if (!wp_user_id || !email) {
       return NextResponse.json(
