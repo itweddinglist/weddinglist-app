@@ -3,35 +3,34 @@ import { supabaseServer } from "@/app/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-type Guest = {
-  id: string;
-  name: string;
-  group?: string;
+type SeatingGuest = {
+  id: number;
+  prenume: string;
+  nume: string;
+  grup: string;
+  status: string;
+  meniu: string;
+  tableId: number | null;
 };
 
-type Table = {
-  id: string;
+type SeatingTable = {
+  id: number;
   name: string;
+  type: string;
+  seats: number;
   x: number;
   y: number;
-  seats: number;
-  rotation?: number;
-  type?: string;
-};
-
-type SeatAssignment = {
-  guestId: string;
-  tableId: string;
-  seatIndex: number;
+  rotation: number;
 };
 
 type MigrateLocalRequest = {
   app_user_id: string;
   wedding_id: string;
   data: {
-    guests: Guest[];
-    tables: Table[];
-    seatAssignments: SeatAssignment[];
+    guests: SeatingGuest[];
+    tables: SeatingTable[];
+    nextId: number;
+    cam: { vx: number; vy: number; z: number };
   };
 };
 
@@ -63,11 +62,10 @@ export async function POST(
       .eq("migration_key", MIGRATION_KEY)
       .maybeSingle();
 
-    if (existingMigration?.status === "completed") {
-      return NextResponse.json({ ok: true, status: "already_done" });
-    }
-
-    if (existingMigration?.status === "in_progress") {
+    if (
+      existingMigration?.status === "completed" ||
+      existingMigration?.status === "in_progress"
+    ) {
       return NextResponse.json({ ok: true, status: "already_done" });
     }
 
@@ -86,17 +84,17 @@ export async function POST(
       wedding_id,
       migration_key: MIGRATION_KEY,
       status: "in_progress",
-      attempt_count: (existingMigration ? 1 : 0) + 1,
+      attempt_count: 1,
     });
 
-    // 4. Migrăm guests
+    // 4. Migrăm guests — cu prenume/nume corect
     if (data.guests?.length > 0) {
       const guestsToInsert = data.guests.map((g) => ({
-        id: g.id,
+        id: String(g.id),
         wedding_id,
-        first_name: g.name?.split(" ")[0] ?? g.name,
-        last_name: g.name?.split(" ").slice(1).join(" ") || null,
-        display_name: g.name,
+        first_name: g.prenume,
+        last_name: g.nume || null,
+        display_name: `${g.prenume} ${g.nume}`.trim(),
       }));
 
       await supabaseServer.from("guests").upsert(guestsToInsert, {
@@ -107,7 +105,7 @@ export async function POST(
     // 5. Migrăm tables
     if (data.tables?.length > 0) {
       const tablesToInsert = data.tables.map((t) => ({
-        id: t.id,
+        id: String(t.id),
         wedding_id,
         name: t.name,
         x: t.x,
