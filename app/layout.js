@@ -1,6 +1,7 @@
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import AppShell from "./components/AppShell";
+import CookieConsent from "./components/CookieConsent";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
@@ -23,8 +24,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ro">
-      <body className={`${cormorant.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <body
+        className={`${cormorant.variable} ${dmSans.variable}`}
+        suppressHydrationWarning
+      >
         <AppShell>{children}</AppShell>
+        <CookieConsent />
       </body>
     </html>
   );
