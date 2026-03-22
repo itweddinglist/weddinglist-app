@@ -1,0 +1,142 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/app/lib/supabase/server";
+
+export const runtime = "nodejs";
+
+type Guest = {
+  id: string;
+  name: string;
+  group?: string;
+};
+
+type Table = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  seats: number;
+  rotation?: number;
+  type?: string;
+};
+
+type SeatAssignment = {
+  guestId: string;
+  tableId: string;
+  seatIndex: number;
+};
+
+type MigrateLocalRequest = {
+  app_user_id: string;
+  wedding_id: string;
+  data: {
+    guests: Guest[];
+    tables: Table[];
+    seatAssignments: SeatAssignment[];
+  };
+};
+
+type MigrateLocalResponse =
+  | { ok: true; status: "completed" | "already_done" | "skipped_has_data" }
+  | { ok: false; error: string };
+
+const MIGRATION_KEY = "localstorage_v1";
+
+export async function POST(
+  req: NextRequest
+): Promise<NextResponse<MigrateLocalResponse>> {
+  try {
+    const body = (await req.json()) as MigrateLocalRequest;
+    const { app_user_id, wedding_id, data } = body;
+
+    if (!app_user_id || !wedding_id) {
+      return NextResponse.json(
+        { ok: false, error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // 1. Verifică dacă migrarea a fost deja făcută
+    const { data: existingMigration } = await supabaseServer
+      .from("data_migrations")
+      .select("status")
+      .eq("wedding_id", wedding_id)
+      .eq("migration_key", MIGRATION_KEY)
+      .maybeSingle();
+
+    if (existingMigration?.status === "completed") {
+      return NextResponse.json({ ok: true, status: "already_done" });
+    }
+
+    if (existingMigration?.status === "in_progress") {
+      return NextResponse.json({ ok: true, status: "already_done" });
+    }
+
+    // 2. DB wins — dacă există deja guests, nu migrăm
+    const { count } = await supabaseServer
+      .from("guests")
+      .select("id", { count: "exact", head: true })
+      .eq("wedding_id", wedding_id);
+
+    if (count && count > 0) {
+      return NextResponse.json({ ok: true, status: "skipped_has_data" });
+    }
+
+    // 3. Setăm status in_progress
+    await supabaseServer.from("data_migrations").upsert({
+      wedding_id,
+      migration_key: MIGRATION_KEY,
+      status: "in_progress",
+      attempt_count: (existingMigration ? 1 : 0) + 1,
+    });
+
+    // 4. Migrăm guests
+    if (data.guests?.length > 0) {
+      const guestsToInsert = data.guests.map((g) => ({
+        id: g.id,
+        wedding_id,
+        first_name: g.name?.split(" ")[0] ?? g.name,
+        last_name: g.name?.split(" ").slice(1).join(" ") || null,
+        display_name: g.name,
+      }));
+
+      await supabaseServer.from("guests").upsert(guestsToInsert, {
+        onConflict: "id",
+      });
+    }
+
+    // 5. Migrăm tables
+    if (data.tables?.length > 0) {
+      const tablesToInsert = data.tables.map((t) => ({
+        id: t.id,
+        wedding_id,
+        name: t.name,
+        x: t.x,
+        y: t.y,
+        seat_count: t.seats,
+        rotation: t.rotation ?? 0,
+        table_type: t.type ?? "round",
+      }));
+
+      await supabaseServer.from("tables").upsert(tablesToInsert, {
+        onConflict: "id",
+      });
+    }
+
+    // 6. Setăm status completed
+    await supabaseServer
+      .from("data_migrations")
+      .update({ status: "completed" })
+      .eq("wedding_id", wedding_id)
+      .eq("migration_key", MIGRATION_KEY);
+
+    return NextResponse.json({ ok: true, status: "completed" });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown error";
+
+    return NextResponse.json(
+      { ok: false, error: message },
+      { status: 500 }
+    );
+  }
+}
