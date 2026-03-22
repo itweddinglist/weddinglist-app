@@ -1,6 +1,6 @@
-'use client';
-import { useEffect, useRef, useCallback } from 'react';
-import { GRID, PLAN_W, PLAN_H, getTableDims } from '../utils/geometry.js';
+"use client";
+import { useEffect, useRef, useCallback } from "react";
+import { GRID, PLAN_W, PLAN_H, getTableDims } from "../utils/geometry.js";
 
 const PAN_PAD = 1000;
 
@@ -26,33 +26,69 @@ export function useTableInteractions({
   dispatchCam,
 }) {
   const draggingTableRef = useRef(null);
-  const panningRef       = useRef(null);
-  const spaceDownRef     = useRef(false);
+  const panningRef = useRef(null);
+  const spaceDownRef = useRef(false);
 
   useEffect(() => {
     const down = (e) => {
-      if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) && !e.target.isContentEditable) { spaceDownRef.current = true; e.preventDefault(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
-      if (e.key === 'Escape') { setModal(null); setEditPanel(null); setConfirmDialog(null); setClickedSeat(null); setShowCatering(false); setSelectedTableId(null); }
-      if (selectedTableId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (
+        e.code === "Space" &&
+        !["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName) &&
+        !e.target.isContentEditable
+      ) {
+        spaceDownRef.current = true;
+        e.preventDefault();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        undo();
+      }
+      if (e.key === "Escape") {
+        setModal(null);
+        setEditPanel(null);
+        setConfirmDialog(null);
+        setClickedSeat(null);
+        setShowCatering(false);
+        setSelectedTableId(null);
+      }
+      if (selectedTableId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();
         const step = e.shiftKey ? GRID : 4;
         saveAction();
-        setTables(prev => prev.map(t => {
-          if (t.id !== selectedTableId) return t;
-          const d = getTableDims(t);
-          return {
-            ...t,
-            x: Math.max(0, Math.min(PLAN_W - d.w, e.key === 'ArrowLeft' ? t.x - step : e.key === 'ArrowRight' ? t.x + step : t.x)),
-            y: Math.max(0, Math.min(PLAN_H - d.h, e.key === 'ArrowUp' ? t.y - step : e.key === 'ArrowDown' ? t.y + step : t.y)),
-          };
-        }));
+        setTables((prev) =>
+          prev.map((t) => {
+            if (t.id !== selectedTableId) return t;
+            const d = getTableDims(t);
+            return {
+              ...t,
+              x: Math.max(
+                0,
+                Math.min(
+                  PLAN_W - d.w,
+                  e.key === "ArrowLeft" ? t.x - step : e.key === "ArrowRight" ? t.x + step : t.x
+                )
+              ),
+              y: Math.max(
+                0,
+                Math.min(
+                  PLAN_H - d.h,
+                  e.key === "ArrowUp" ? t.y - step : e.key === "ArrowDown" ? t.y + step : t.y
+                )
+              ),
+            };
+          })
+        );
       }
     };
-    const up = (e) => { if (e.code === 'Space') spaceDownRef.current = false; };
-    window.addEventListener('keydown', down);
-    window.addEventListener('keyup', up);
-    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+    const up = (e) => {
+      if (e.code === "Space") spaceDownRef.current = false;
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
   }, [undo, selectedTableId]);
 
   useEffect(() => {
@@ -66,46 +102,54 @@ export function useTableInteractions({
         const cW = canvasWRef.current;
         const cH = canvasHRef.current;
         dispatchCam({
-          type: 'CAM_SET',
+          type: "CAM_SET",
           vx: Math.max(-PAN_PAD, Math.min(PLAN_W + PAN_PAD - cW / z, vx0 + dxWorld)),
           vy: Math.max(-PAN_PAD, Math.min(PLAN_H + PAN_PAD - cH / z, vy0 + dyWorld)),
-          z, canvasW: cW, canvasH: cH,
+          z,
+          canvasW: cW,
+          canvasH: cH,
         });
         return;
       }
       if (draggingTableRef.current && !lockMode) {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        const cx = e.clientX, cy = e.clientY;
+        const cx = e.clientX,
+          cy = e.clientY;
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
           if (!draggingTableRef.current) return;
           const { id, ox, oy } = draggingTableRef.current;
           const pt = screenToSVG(cx, cy);
           if (!pt) return;
-          setTables(prev => prev.map(t => {
-            if (t.id !== id) return t;
-            const d = getTableDims(t);
-            return {
-              ...t,
-              x: Math.max(0, Math.min(PLAN_W - d.w, pt.x - ox)),
-              y: Math.max(0, Math.min(PLAN_H - d.h, pt.y - oy)),
-            };
-          }));
+          setTables((prev) =>
+            prev.map((t) => {
+              if (t.id !== id) return t;
+              const d = getTableDims(t);
+              return {
+                ...t,
+                x: Math.max(0, Math.min(PLAN_W - d.w, pt.x - ox)),
+                y: Math.max(0, Math.min(PLAN_H - d.h, pt.y - oy)),
+              };
+            })
+          );
         });
       }
     };
     const up = () => {
       draggingTableRef.current = null;
       panningRef.current = null;
-      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       setIsDraggingGuest(false);
       setHoveredGuest(null);
     };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
     return () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -113,13 +157,21 @@ export function useTableInteractions({
     };
   }, [screenToSVG, lockMode, dispatchCam]);
 
-  const handleSvgMouseDown = useCallback((e) => {
-    setHoveredGuest(null);
-    if (e.button === 1 || spaceDownRef.current) {
-      e.preventDefault();
-      panningRef.current = { sx: e.clientX, sy: e.clientY, vx0: camRef.current.vx, vy0: camRef.current.vy };
-    }
-  }, [setHoveredGuest, camRef]);
+  const handleSvgMouseDown = useCallback(
+    (e) => {
+      setHoveredGuest(null);
+      if (e.button === 1 || spaceDownRef.current) {
+        e.preventDefault();
+        panningRef.current = {
+          sx: e.clientX,
+          sy: e.clientY,
+          vx0: camRef.current.vx,
+          vy0: camRef.current.vy,
+        };
+      }
+    },
+    [setHoveredGuest, camRef]
+  );
 
   return {
     draggingTableRef,

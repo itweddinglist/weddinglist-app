@@ -1,9 +1,9 @@
-import { PLAN_W, PLAN_H, PLAN_CX, PLAN_CY } from './geometry.js';
+import { PLAN_W, PLAN_H, PLAN_CX, PLAN_CY } from "./geometry.js";
 
-export const ZOOM_MIN     = 0.15;
-export const ZOOM_MAX     = 3;
+export const ZOOM_MIN = 0.15;
+export const ZOOM_MAX = 3;
 export const ZOOM_DEFAULT = 0.8;
-export const PAN_PAD      = 1000;
+export const PAN_PAD = 1000;
 
 export function clampCam(vx, vy, z, canvasW, canvasH) {
   const vw = canvasW / z;
@@ -18,17 +18,19 @@ export function clampCam(vx, vy, z, canvasW, canvasH) {
 export function camReducer(state, action) {
   const { canvasW = 1200, canvasH = 700 } = action;
   switch (action.type) {
-    case 'CAM_SET': {
+    case "CAM_SET": {
       return clampCam(action.vx, action.vy, action.z, canvasW, canvasH);
     }
-    case 'CAM_PAN_BY': {
+    case "CAM_PAN_BY": {
       return clampCam(
         state.vx + action.dxWorld,
         state.vy + action.dyWorld,
-        state.z, canvasW, canvasH
+        state.z,
+        canvasW,
+        canvasH
       );
     }
-    case 'CAM_ZOOM_AT_NORM': {
+    case "CAM_ZOOM_AT_NORM": {
       const nextZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, state.z * action.factor));
       const vwPrev = canvasW / state.z;
       const vhPrev = canvasH / state.z;
@@ -42,7 +44,8 @@ export function camReducer(state, action) {
       const vyNext = wy - ny * vhNext;
       return clampCam(vxNext, vyNext, nextZ, canvasW, canvasH);
     }
-    default: return state;
+    default:
+      return state;
   }
 }
 

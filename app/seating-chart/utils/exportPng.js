@@ -1,28 +1,35 @@
-import { Canvg } from 'canvg';
+import { Canvg } from "canvg";
 
 async function fetchFontsAsBase64() {
   try {
-    const cssRes = await fetch('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
+    const cssRes = await fetch(
+      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&display=swap"
+    );
     const css = await cssRes.text();
-    const urls = [...css.matchAll(/url\((https:\/\/[^)]+)\)/g)].map(m => m[1]);
-    const fontFaces = await Promise.all(urls.map(async (url) => {
-      const res = await fetch(url);
-      const buf = await res.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      const ext = url.includes('woff2') ? 'woff2' : 'woff';
-      return `url("data:font/${ext};base64,${b64}")`;
-    }));
+    const urls = [...css.matchAll(/url\((https:\/\/[^)]+)\)/g)].map((m) => m[1]);
+    const fontFaces = await Promise.all(
+      urls.map(async (url) => {
+        const res = await fetch(url);
+        const buf = await res.arrayBuffer();
+        const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        const ext = url.includes("woff2") ? "woff2" : "woff";
+        return `url("data:font/${ext};base64,${b64}")`;
+      })
+    );
     let i = 0;
-    return css.replace(/url\((https:\/\/[^)]+)\)/g, () => fontFaces[i++] || '');
+    return css.replace(/url\((https:\/\/[^)]+)\)/g, () => fontFaces[i++] || "");
   } catch {
-    return '';
+    return "";
   }
 }
 
 function getBoundingBox(tables, getTableDims) {
   if (!tables || tables.length === 0) return { x: 0, y: 0, w: 1200, h: 800 };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  tables.forEach(t => {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  tables.forEach((t) => {
     const d = getTableDims(t);
     minX = Math.min(minX, t.x);
     minY = Math.min(minY, t.y);
@@ -33,12 +40,12 @@ function getBoundingBox(tables, getTableDims) {
   return { x: minX - PAD, y: minY - PAD, w: maxX - minX + PAD * 2, h: maxY - minY + PAD * 2 };
 }
 
-export async function exportToPng({ svgEl, tables, getTableDims, mode = 'fit' }) {
+export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" }) {
   const bbox = getBoundingBox(tables, getTableDims);
 
   let canvasW, canvasH, viewBox;
 
-  if (mode === 'fit') {
+  if (mode === "fit") {
     const scale = 2;
     canvasW = Math.round(bbox.w * scale);
     canvasH = Math.round(bbox.h * scale);
@@ -59,43 +66,50 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = 'fit' })
   const fontCSS = await fetchFontsAsBase64();
 
   const svgClone = svgEl.cloneNode(true);
-  svgClone.setAttribute('width', canvasW);
-  svgClone.setAttribute('height', canvasH);
-  svgClone.setAttribute('viewBox', viewBox);
+  svgClone.setAttribute("width", canvasW);
+  svgClone.setAttribute("height", canvasH);
+  svgClone.setAttribute("viewBox", viewBox);
 
   // Scoatem grid-ul
   const gridRect = svgClone.querySelector('rect[data-bg="1"]');
-  if (gridRect) gridRect.setAttribute('fill', '#FAF7F2');
+  if (gridRect) gridRect.setAttribute("fill", "#FAF7F2");
 
   // Scoatem bordura planului
-  const borderRect = svgClone.querySelectorAll('rect')[1];
-  if (borderRect) borderRect.setAttribute('opacity', '0');
+  const borderRect = svgClone.querySelectorAll("rect")[1];
+  if (borderRect) borderRect.setAttribute("opacity", "0");
 
   // Injectăm fonturile
   if (fontCSS) {
-    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
     style.textContent = fontCSS;
     svgClone.insertBefore(style, svgClone.firstChild);
   }
 
   const svgStr = new XMLSerializer().serializeToString(svgClone);
 
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = canvasW;
   canvas.height = canvasH;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
 
   // Fundal alb explicit pe canvas
-  ctx.fillStyle = '#FAF7F2';
+  ctx.fillStyle = "#FAF7F2";
   ctx.fillRect(0, 0, canvasW, canvasH);
 
   try {
-    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     await new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => { ctx.drawImage(img, 0, 0); URL.revokeObjectURL(url); resolve(); };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject();
+      };
       img.src = url;
     });
   } catch {
@@ -104,6 +118,6 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = 'fit' })
   }
 
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), 'image/png');
+    canvas.toBlob((blob) => resolve(blob), "image/png");
   });
 }

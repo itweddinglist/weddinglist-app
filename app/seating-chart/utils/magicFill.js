@@ -1,59 +1,63 @@
 // utils/magicFill.js — Magic Fill V1.5
 const DEFAULT_MAX_ITERATIONS = 10000;
-const DEFAULT_MAX_TIME_MS    = 500;
+const DEFAULT_MAX_TIME_MS = 500;
 
 export function calculateMagicFill(guests, tables) {
   return calculateMagicFillWithLimits(guests, tables, {
     maxIterations: DEFAULT_MAX_ITERATIONS,
-    maxTimeMs:     DEFAULT_MAX_TIME_MS,
+    maxTimeMs: DEFAULT_MAX_TIME_MS,
   });
 }
 
 export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
   const maxIterations = opts.maxIterations ?? DEFAULT_MAX_ITERATIONS;
-  const maxTimeMs     = opts.maxTimeMs     ?? DEFAULT_MAX_TIME_MS;
+  const maxTimeMs = opts.maxTimeMs ?? DEFAULT_MAX_TIME_MS;
 
-  const eligibleTables = (tables || []).filter(t =>
-    t.type !== 'bar' && t.type !== 'prezidiu' && !t.isRing
+  const eligibleTables = (tables || []).filter(
+    (t) => t.type !== "bar" && t.type !== "prezidiu" && !t.isRing
   );
 
   const freeSeatsByTableId = new Map();
   for (const t of eligibleTables) {
-    const occupied = (guests || []).filter(g => g.tableId === t.id).length;
+    const occupied = (guests || []).filter((g) => g.tableId === t.id).length;
     freeSeatsByTableId.set(t.id, t.seats - occupied);
   }
 
-  const availableTables = eligibleTables.filter(t =>
-    (freeSeatsByTableId.get(t.id) || 0) > 0
-  );
+  const availableTables = eligibleTables.filter((t) => (freeSeatsByTableId.get(t.id) || 0) > 0);
 
   let prezidiuSkipped = 0;
   const eligibleGuests = [];
-  for (const g of (guests || [])) {
+  for (const g of guests || []) {
     if (g.tableId !== null && g.tableId !== undefined) continue;
-    if (g.status === 'declinat') continue;
-    if (g.grup && g.grup.toLowerCase() === 'prezidiu') { prezidiuSkipped++; continue; }
+    if (g.status === "declinat") continue;
+    if (g.grup && g.grup.toLowerCase() === "prezidiu") {
+      prezidiuSkipped++;
+      continue;
+    }
     eligibleGuests.push(g);
   }
 
   if (eligibleGuests.length === 0 || availableTables.length === 0) {
     return {
-      assignments: {}, assignmentsCount: 0,
+      assignments: {},
+      assignmentsCount: 0,
       locuriGoale: _calcLocuriGoaleFromMap(eligibleTables, freeSeatsByTableId),
       skippedGuests: eligibleGuests.slice(),
-      prezidiuSkipped, skippedGroups: [], limitReached: false,
+      prezidiuSkipped,
+      skippedGroups: [],
+      limitReached: false,
     };
   }
 
   const groupsMap = new Map();
   for (const g of eligibleGuests) {
-    const key = (g.grup && g.grup.trim() !== '') ? g.grup : 'fara_grup';
+    const key = g.grup && g.grup.trim() !== "" ? g.grup : "fara_grup";
     if (!groupsMap.has(key)) groupsMap.set(key, []);
     groupsMap.get(key).push(g);
   }
 
-  const faraGrupGuests = groupsMap.get('fara_grup') || [];
-  groupsMap.delete('fara_grup');
+  const faraGrupGuests = groupsMap.get("fara_grup") || [];
+  groupsMap.delete("fara_grup");
 
   const sortedGroups = [...groupsMap.entries()]
     .sort(([nameA, mA], [nameB, mB]) => {
@@ -62,13 +66,13 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
     })
     .map(([name, members]) => ({ name, members }));
 
-  const skippedGroups    = [];
+  const skippedGroups = [];
   const skippedGuestsSet = new Set();
-  const backtrackGroups  = [];
+  const backtrackGroups = [];
 
   for (const group of sortedGroups) {
-    const canFit = availableTables.some(t =>
-      (freeSeatsByTableId.get(t.id) || 0) >= group.members.length
+    const canFit = availableTables.some(
+      (t) => (freeSeatsByTableId.get(t.id) || 0) >= group.members.length
     );
     if (!canFit) {
       skippedGroups.push({
@@ -93,18 +97,18 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
   }
 
   let bestSolution = {
-    assignments:      { ...greedyAssignments },
+    assignments: { ...greedyAssignments },
     assignmentsCount: Object.keys(greedyAssignments).length,
-    locuriGoale:      _calcLocuriGoaleFromMap(eligibleTables, greedyFree),
+    locuriGoale: _calcLocuriGoaleFromMap(eligibleTables, greedyFree),
   };
 
   // Backtracking
-  let iterations   = 0;
+  let iterations = 0;
   let limitReached = false;
-  const startTime  = Date.now();
+  const startTime = Date.now();
   let perfectFound = false;
 
-  const btFree   = new Map(freeSeatsByTableId);
+  const btFree = new Map(freeSeatsByTableId);
   const btAssign = {};
 
   function recurse(groupIdx) {
@@ -115,7 +119,7 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
     }
 
     if (groupIdx === backtrackGroups.length) {
-      const locuriGoale      = _calcLocuriGoaleFromMap(eligibleTables, btFree);
+      const locuriGoale = _calcLocuriGoaleFromMap(eligibleTables, btFree);
       const assignmentsCount = Object.keys(btAssign).length;
       const isBetter =
         locuriGoale < bestSolution.locuriGoale ||
@@ -131,15 +135,17 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
     const group = backtrackGroups[groupIdx];
 
     // Bound check: dacă nu putem îmbunătăți bestSolution → prune
-    const totalFreeNow   = [...btFree.values()].reduce((s, v) => s + v, 0);
-    const totalRemaining = backtrackGroups.slice(groupIdx).reduce((s, g) => s + g.members.length, 0);
-    const bestPossible   = Math.max(0, totalFreeNow - totalRemaining);
+    const totalFreeNow = [...btFree.values()].reduce((s, v) => s + v, 0);
+    const totalRemaining = backtrackGroups
+      .slice(groupIdx)
+      .reduce((s, g) => s + g.members.length, 0);
+    const bestPossible = Math.max(0, totalFreeNow - totalRemaining);
     if (bestPossible > bestSolution.locuriGoale) {
       return;
     }
 
     const candidates = availableTables
-      .filter(t => (btFree.get(t.id) || 0) >= group.members.length)
+      .filter((t) => (btFree.get(t.id) || 0) >= group.members.length)
       .sort((a, b) => {
         const remA = (btFree.get(a.id) || 0) - group.members.length;
         const remB = (btFree.get(b.id) || 0) - group.members.length;
@@ -183,7 +189,7 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
   }
 
   const finalAssignments = { ...bestSolution.assignments };
-  const faraGrupSorted   = [...faraGrupGuests].sort((a, b) => a.id - b.id);
+  const faraGrupSorted = [...faraGrupGuests].sort((a, b) => a.id - b.id);
 
   for (const g of faraGrupSorted) {
     const candidateId = _bestFitTableForSingleton(availableTables, finalFree, eligibleTables);
@@ -196,17 +202,17 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
   }
 
   for (const group of backtrackGroups) {
-    const anyAssigned = group.members.some(g => finalAssignments[g.id] !== undefined);
+    const anyAssigned = group.members.some((g) => finalAssignments[g.id] !== undefined);
     if (!anyAssigned) {
       for (const g of group.members) skippedGuestsSet.add(g);
     }
   }
 
   return {
-    assignments:      finalAssignments,
+    assignments: finalAssignments,
     assignmentsCount: Object.keys(finalAssignments).length,
-    locuriGoale:      _calcLocuriGoaleFromMap(eligibleTables, finalFree),
-    skippedGuests:    [...skippedGuestsSet],
+    locuriGoale: _calcLocuriGoaleFromMap(eligibleTables, finalFree),
+    skippedGuests: [...skippedGuestsSet],
     prezidiuSkipped,
     skippedGroups,
     limitReached,
@@ -214,21 +220,23 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
 }
 
 function _bestFitTable(groupSize, tables, freeMap) {
-  let bestId = null, bestRem = Infinity;
+  let bestId = null,
+    bestRem = Infinity;
   for (const t of tables) {
     const free = freeMap.get(t.id) || 0;
     if (free < groupSize) continue;
     const rem = free - groupSize;
     if (rem < bestRem || (rem === bestRem && t.id < bestId)) {
-      bestRem = rem; bestId = t.id;
+      bestRem = rem;
+      bestId = t.id;
     }
   }
   return bestId;
 }
 
 function _bestFitTableForSingleton(availableTables, freeMap, eligibleTables) {
-  const occupied = availableTables.filter(t => {
-    const origSeats = eligibleTables.find(et => et.id === t.id)?.seats ?? 0;
+  const occupied = availableTables.filter((t) => {
+    const origSeats = eligibleTables.find((et) => et.id === t.id)?.seats ?? 0;
     const free = freeMap.get(t.id) || 0;
     return free > 0 && free < origSeats;
   });

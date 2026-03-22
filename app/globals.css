@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --navy: #13172E;
-  --navy-card: #1A1F3A;
-  --ivory: #FAF7F2;
-  --cream: #F0EAE0;
-  --cream-line: #E8DDD0;
-  --rose: #C9907A;
-  --rose-hover: #B87D6A;
-  --rose-light: #F0C9B0;
-  --muted: #7A7F99;
-  --green: #48BB78;
-  --red: #E53E3E;
-  --yellow: #ECC94B;
-  --font-display: 'Cormorant Garamond', serif;
-  --font-body: 'DM Sans', sans-serif;
+  --navy: #13172e;
+  --navy-card: #1a1f3a;
+  --ivory: #faf7f2;
+  --cream: #f0eae0;
+  --cream-line: #e8ddd0;
+  --rose: #c9907a;
+  --rose-hover: #b87d6a;
+  --rose-light: #f0c9b0;
+  --muted: #7a7f99;
+  --green: #48bb78;
+  --red: #e53e3e;
+  --yellow: #ecc94b;
+  --font-display: "Cormorant Garamond", serif;
+  --font-body: "DM Sans", sans-serif;
 }
 
 * {
@@ -30,15 +30,26 @@ body {
   color: var(--navy);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;  /* ← adaugă această linie */
+  overflow: hidden; /* ← adaugă această linie */
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
