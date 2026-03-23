@@ -1,0 +1,90 @@
+"use client";
+import { useState, useCallback } from "react";
+
+/**
+ * useSeatingUI
+ *
+ * Owner exclusiv al UI state pentru seating chart.
+ * NU face data mutations directe.
+ * NU știe de tabele, invitați sau logică de business.
+ *
+ * State owned:
+ * - selectedTableId, clickedSeat, hoveredGuest, dragOver, isDraggingGuest
+ * - modal, editPanel, editName, editSeats, confirmDialog
+ * - lockMode, showStats, showCatering
+ * - toasts (inclusiv showToast, removeToast)
+ */
+export function useSeatingUI() {
+  // ── Selection & interaction ──
+  const [selectedTableId, setSelectedTableId] = useState(null);
+  const [clickedSeat, setClickedSeat] = useState(null);
+  const [hoveredGuest, setHoveredGuest] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
+  const [isDraggingGuest, setIsDraggingGuest] = useState(false);
+
+  // ── Modals & panels ──
+  const [modal, setModal] = useState(null);
+  const [editPanel, setEditPanel] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editSeats, setEditSeats] = useState(8);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  // ── Canvas modes ──
+  const [lockMode, setLockMode] = useState(false);
+  const [showStats, setShowStats] = useState(true);
+  const [showCatering, setShowCatering] = useState(false);
+
+  // ── Toasts ──
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = useCallback((message, type = "rose") => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, msg: message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 2800);
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return {
+    // Selection & interaction
+    selectedTableId,
+    setSelectedTableId,
+    clickedSeat,
+    setClickedSeat,
+    hoveredGuest,
+    setHoveredGuest,
+    dragOver,
+    setDragOver,
+    isDraggingGuest,
+    setIsDraggingGuest,
+
+    // Modals & panels
+    modal,
+    setModal,
+    editPanel,
+    setEditPanel,
+    editName,
+    setEditName,
+    editSeats,
+    setEditSeats,
+    confirmDialog,
+    setConfirmDialog,
+
+    // Canvas modes
+    lockMode,
+    setLockMode,
+    showStats,
+    setShowStats,
+    showCatering,
+    setShowCatering,
+
+    // Toasts
+    toasts,
+    showToast,
+    removeToast,
+  };
+}
