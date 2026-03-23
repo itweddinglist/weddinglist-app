@@ -23,6 +23,11 @@ function makeMockStorage() {
 }
 
 const DEFAULT_CAM = { vx: 4500, vy: 4500, z: 0.8 };
+const DEFAULT_REFS = {
+  camRef: { current: { vx: 4500, vy: 4500, z: 0.8 } },
+  canvasWRef: { current: 1200 },
+  canvasHRef: { current: 700 },
+};
 
 beforeEach(() => {
   const mock = makeMockStorage();
@@ -48,7 +53,7 @@ afterEach(() => {
 
 describe("useGuests — return shape", () => {
   it("returnează toate cheile cerute", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const keys = [
       "guests",
       "tables",
@@ -114,17 +119,17 @@ describe("useGuests — return shape", () => {
 
 describe("useGuests — hydration", () => {
   it("hydrated === true după mount", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     expect(result.current.hydrated).toBe(true);
   });
 
   it("guests.length > 0 după mount", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     expect(result.current.guests.length).toBeGreaterThan(0);
   });
 
   it("tables.length > 0 după mount", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     expect(result.current.tables.length).toBeGreaterThan(0);
   });
 });
@@ -150,7 +155,7 @@ describe("useGuests — hydration din storage", () => {
       JSON.stringify({ guests, tables, nextId: 5, cam: DEFAULT_CAM })
     );
 
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     expect(result.current.guests).toHaveLength(1);
     expect(result.current.guests[0].prenume).toBe("Test");
     expect(result.current.tables).toHaveLength(tables.length);
@@ -164,7 +169,7 @@ describe("useGuests — save effect", () => {
     const storageModule = await import("../utils/storage.js");
     const saveSpy = vi.spyOn(storageModule, "saveStorageState");
 
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.setSearchQuery("test");
     });
@@ -185,7 +190,7 @@ describe("useGuests — save effect", () => {
 
 describe("useGuests — showToast", () => {
   it("showToast adaugă toast în toasts", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.showToast("Mesaj test", "green");
     });
@@ -194,7 +199,7 @@ describe("useGuests — showToast", () => {
   });
 
   it("toast dispare după 2800ms", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.showToast("Mesaj test", "green");
     });
@@ -210,7 +215,7 @@ describe("useGuests — showToast", () => {
 
 describe("useGuests — saveAction + undo", () => {
   it("saveAction salvează snapshot și undo îl restaurează", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const originalGuests = result.current.guests;
 
     act(() => {
@@ -230,7 +235,7 @@ describe("useGuests — saveAction + undo", () => {
   });
 
   it("undo pe history gol → toast Nimic de anulat", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.undo();
     });
@@ -242,7 +247,7 @@ describe("useGuests — saveAction + undo", () => {
 
 describe("useGuests — assignGuest", () => {
   it("guest neatribuit → atribuit la masă", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
     const guest = result.current.guests.find((g) => !g.tableId);
 
@@ -253,7 +258,7 @@ describe("useGuests — assignGuest", () => {
   });
 
   it("masă plină → toast Masa este plină!", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
 
     act(() => {
@@ -273,7 +278,7 @@ describe("useGuests — assignGuest", () => {
   });
 
   it("masă de tip bar → ignorat", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const bar = result.current.tables.find((t) => t.type === "bar");
     const guest = result.current.guests[0];
 
@@ -290,7 +295,7 @@ describe("useGuests — assignGuest", () => {
 
 describe("useGuests — unassignGuest", () => {
   it("guest atribuit → tableId devine null", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
     const guest = result.current.guests[0];
 
@@ -304,7 +309,7 @@ describe("useGuests — unassignGuest", () => {
   });
 
   it("guest neatribuit → nimic nu se întâmplă", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const guest = result.current.guests.find((g) => !g.tableId);
     const toastsBefore = result.current.toasts.length;
 
@@ -319,7 +324,7 @@ describe("useGuests — unassignGuest", () => {
 
 describe("useGuests — magicFill", () => {
   it("guests neatribuiți → atribuiți la mese", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.magicFill();
     });
@@ -329,7 +334,7 @@ describe("useGuests — magicFill", () => {
   });
 
   it("dacă nu există unassigned → toast", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.magicFill();
     });
@@ -347,7 +352,7 @@ describe("useGuests — magicFill", () => {
 
 describe("useGuests — createTable", () => {
   it("masă nouă adăugată în tables", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const countBefore = result.current.tables.length;
 
     act(() => {
@@ -362,7 +367,7 @@ describe("useGuests — createTable", () => {
   });
 
   it("nextId incrementat după createTable", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const idBefore = result.current.nextId;
 
     act(() => {
@@ -376,7 +381,7 @@ describe("useGuests — createTable", () => {
   });
 
   it("fără name → toast eroare", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.setModal({ type: "round", name: "", seats: 8 });
     });
@@ -391,7 +396,7 @@ describe("useGuests — createTable", () => {
 
 describe("useGuests — deleteTable", () => {
   it("setConfirmDialog apelat cu title corect", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
 
     act(() => {
@@ -402,7 +407,7 @@ describe("useGuests — deleteTable", () => {
   });
 
   it("după onOk: table ștearsă, guests unassigned", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
     const guest = result.current.guests[0];
 
@@ -425,7 +430,7 @@ describe("useGuests — deleteTable", () => {
 
 describe("useGuests — rotateTable", () => {
   it("rotation incrementat cu deg % 360", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
 
     act(() => {
@@ -444,7 +449,7 @@ describe("useGuests — rotateTable", () => {
 
 describe("useGuests — guestsByTable", () => {
   it("guests atribuiți apar în guestsByTable[tableId]", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
     const guest = result.current.guests[0];
 
@@ -460,13 +465,13 @@ describe("useGuests — guestsByTable", () => {
 
 describe("useGuests — stats", () => {
   it("totalSeats === suma seats din realTables", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const expected = result.current.realTables.reduce((s, t) => s + t.seats, 0);
     expect(result.current.totalSeats).toBe(expected);
   });
 
   it("progress === assignedCount/guests.length * 100", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
 
     act(() => {
@@ -481,7 +486,7 @@ describe("useGuests — stats", () => {
 
 describe("useGuests — filteredUnassigned", () => {
   it("searchQuery filtrează după prenume", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const firstName = result.current.guests[0].prenume;
 
     act(() => {
@@ -495,7 +500,7 @@ describe("useGuests — filteredUnassigned", () => {
   });
 
   it("searchQuery gol → toți unassigned", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     act(() => {
       result.current.setSearchQuery("");
     });
@@ -507,7 +512,7 @@ describe("useGuests — filteredUnassigned", () => {
 
 describe("useGuests — saveEdit", () => {
   it("table name și seats actualizate", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
 
     act(() => {
@@ -525,7 +530,7 @@ describe("useGuests — saveEdit", () => {
   });
 
   it("editPanel setat la null după saveEdit", () => {
-    const { result } = renderHook(() => useGuests(DEFAULT_CAM));
+    const { result } = renderHook(() => useGuests(DEFAULT_CAM, DEFAULT_REFS.camRef, DEFAULT_REFS.canvasWRef, DEFAULT_REFS.canvasHRef));
     const table = result.current.tables.find((t) => t.type !== "bar" && !t.isRing);
 
     act(() => {
