@@ -111,7 +111,9 @@ export default function SeatingChart() {
     guestMeta,
     groupColorMap,
     getGuestTableId,
-  } = useGuests(cam);
+    newTableIds,
+    clearNewTableHighlight,
+  } = useGuests(cam, camRef, canvasWRef, canvasHRef);
 
   const [savedAt, setSavedAt] = useState(null);
   const [highlightGroupId, setHighlightGroupId] = useState(null);
@@ -129,6 +131,7 @@ export default function SeatingChart() {
     saveAction();
     setSavedAt(Date.now());
   }, [saveAction]);
+  const handleReset = useCallback(() => resetPlan(dispatchCam), [resetPlan, dispatchCam]);
   const handleExport = useCallback(async () => {
     if (!svgRef.current) return;
     setExporting(true);
@@ -283,7 +286,7 @@ export default function SeatingChart() {
               undo={undo}
               setShowCatering={setShowCatering}
               setConfirmDialog={setConfirmDialog}
-              resetPlan={resetPlan}
+              resetPlan={handleReset}
               setModal={setModal}
               getNextTableName={getNextTableName}
               onExport={() => setExportDialog(true)}
@@ -393,6 +396,9 @@ export default function SeatingChart() {
                       isFocused={!selectedTableId || selectedTableId === t.id}
                       highlightGuestId={highlightGuestId}
                       highlightGroupId={highlightGroupId}
+                      newTableIds={newTableIds}
+                      clearNewTableHighlight={clearNewTableHighlight}
+                      spaceDownRef={spaceDownRef}
                     />
                   ))}
                 </g>
