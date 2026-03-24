@@ -342,6 +342,7 @@ export default function SeatingChart() {
                   }}
                 />
                 <rect
+                  data-border="1"
                   x="0" y="0"
                   width={PLAN_W} height={PLAN_H}
                   fill="none"
