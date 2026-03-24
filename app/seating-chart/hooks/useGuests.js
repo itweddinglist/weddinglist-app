@@ -237,7 +237,7 @@ export function useGuests(cam, camRef, canvasWRef, canvasHRef) {
     spawnCounterRef.current++;
 
     const proto = { type: modal.type, seats: modal.seats || 0, isRing: false, rotation: 0 };
-    const { x, y } = getSpawnPosition(proto, newTableIds.size, camRef, canvasWRef, canvasHRef);
+    const { x, y } = getSpawnPosition(proto, spawnCounterRef.current, camRef, canvasWRef, canvasHRef);
 
     setTables((prev) => [
       ...prev,
@@ -284,6 +284,7 @@ export function useGuests(cam, camRef, canvasWRef, canvasHRef) {
   }, []);
 
   const saveEdit = useCallback(() => {
+    if (!editPanel) return;
     if (!editName.trim()) return;
     setTables((prev) =>
       prev.map((t) => t.id === editPanel.tableId ? { ...t, name: editName.trim(), seats: editSeats } : t)
@@ -296,7 +297,7 @@ export function useGuests(cam, camRef, canvasWRef, canvasHRef) {
     saveAction();
     setTables(buildRingOnly());
     setGuests((prev) => prev.map((g) => ({ ...g, tableId: null })));
-    setNextId(10);
+    setNextId(Math.max(...buildRingOnly().map(t => t.id)) + 1);
     setNewTableIds(new Set());
     
     if (dispatchCam && canvasWRef.current && canvasHRef.current) {

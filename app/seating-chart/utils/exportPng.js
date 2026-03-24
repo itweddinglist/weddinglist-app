@@ -75,7 +75,7 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" })
   if (gridRect) gridRect.setAttribute("fill", "#FAF7F2");
 
   // Scoatem bordura planului
-  const borderRect = svgClone.querySelectorAll("rect")[1];
+  const borderRect = svgClone.querySelector('rect[data-border="1"]');
   if (borderRect) borderRect.setAttribute("opacity", "0");
 
   // Injectăm fonturile
