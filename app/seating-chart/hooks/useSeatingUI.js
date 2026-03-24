@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 /**
  * useSeatingUI
@@ -36,17 +36,25 @@ export function useSeatingUI() {
 
   // ── Toasts ──
   const [toasts, setToasts] = useState([]);
+  const toastTimersRef = useRef([]);
 
   const showToast = useCallback((message, type = "rose") => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, msg: message, type }]);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 2800);
+    toastTimersRef.current.push(timer);
   }, []);
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      toastTimersRef.current.forEach(clearTimeout);
+    };
   }, []);
 
   return {

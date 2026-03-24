@@ -136,15 +136,18 @@ export function useTableInteractions({
       }
     };
     const up = () => {
-      draggingTableRef.current = null;
-      panningRef.current = null;
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      setIsDraggingGuest(false);
-      setHoveredGuest(null);
-    };
+    if (draggingTableRef.current) {
+      saveAction();
+    }
+    draggingTableRef.current = null;
+    panningRef.current = null;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    setIsDraggingGuest(false);
+    setHoveredGuest(null);
+  };
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseup", up);
     return () => {
