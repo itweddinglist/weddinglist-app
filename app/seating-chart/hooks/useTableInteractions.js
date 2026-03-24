@@ -54,7 +54,7 @@ export function useTableInteractions({
       if (selectedTableId && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();
         const step = e.shiftKey ? GRID : 4;
-        saveAction();
+        if (!e.repeat) saveAction();
         setTables((prev) =>
           prev.map((t) => {
             if (t.id !== selectedTableId) return t;
@@ -89,7 +89,7 @@ export function useTableInteractions({
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [undo, selectedTableId]);
+  }, [undo, selectedTableId, saveAction, setTables, setModal, setEditPanel, setConfirmDialog, setClickedSeat, setShowCatering, setSelectedTableId]);
 
   useEffect(() => {
     const rafRef = { current: null };
