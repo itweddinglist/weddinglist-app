@@ -370,16 +370,18 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
   // ── ROTATE TABLE ──
   const rotateTable = useCallback((tableId, deg) => {
+    saveAction();
     setTables((prev) =>
-      prev.map((t) => (t.id === tableId ? { ...t, rotation: ((t.rotation || 0) + deg) % 360 } : t))
+      prev.map((t) => (t.id === tableId ? { ...t, rotation: (((t.rotation || 0) + deg) % 360 + 360) % 360 } : t))
     );
     return { ok: true, effects: [] };
-  }, []);
+  }, [saveAction]);
 
   // ── SAVE EDIT ──
   const saveEdit = useCallback((editName, editSeats, editPanelTableId) => {
     if (!editName.trim()) return { ok: false, effects: [] };
 
+    saveAction();
     setTables((prev) =>
       prev.map((t) =>
         t.id === editPanelTableId ? { ...t, name: editName.trim(), seats: editSeats } : t
