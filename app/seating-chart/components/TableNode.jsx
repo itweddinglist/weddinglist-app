@@ -319,7 +319,7 @@ export const TableNode = React.memo(function TableNode({
                 <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="10"
                   fontFamily="DM Sans,sans-serif" fontWeight="700"
                   style={{ pointerEvents: "none", userSelect: "none" }}>
-                  {guest.prenume[0] + guest.nume[0]}
+                  {(guest.prenume?.[0] ?? '') + (guest.nume?.[0] ?? '')}
                 </text>
                 <circle cx={pos.x + 10} cy={pos.y - 10} r="4"
                   fill={guest.status === "confirmat" ? "#48BB78" : "#ECC94B"}
@@ -334,7 +334,7 @@ export const TableNode = React.memo(function TableNode({
                   <text x={pos.x} y={pos.y + 28} textAnchor="middle" fill="#1E2340" fontSize="9"
                     fontFamily="DM Sans,sans-serif" fontWeight="500"
                     style={{ pointerEvents: "none", userSelect: "none" }} opacity="0.9">
-                    {guest.prenume} {guest.nume[0]}.
+                    {guest.prenume} {guest.nume?.[0] ?? ''}.
                   </text>
                 )}
               </g>

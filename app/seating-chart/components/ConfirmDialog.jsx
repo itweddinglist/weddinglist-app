@@ -16,7 +16,7 @@ export default function ConfirmDialog({ confirmDialog, setConfirmDialog }) {
           <button
             className="conf-ok"
             onClick={() => {
-              confirmDialog.onOk();
+              confirmDialog?.onOk?.();
               setConfirmDialog(null);
             }}
           >
