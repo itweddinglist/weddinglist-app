@@ -86,7 +86,9 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
   // ── HYDRATION ──
   useEffect(() => {
-    const result = loadStorageState(1200, 700);
+    const cw = canvasWRef.current || 1200;
+    const ch = canvasHRef.current || 700;
+    const result = loadStorageState(cw, ch);
     if (result.data.guests) setGuests(result.data.guests);
     if (result.data.tables) setTables(result.data.tables);
     if (result.data.nextId) setNextId(result.data.nextId);

@@ -61,7 +61,7 @@ export default function SeatingChart() {
   const [searchQuery, setSearchQuery] = useState("");
   const filteredUnassigned = useMemo(
     () => data.filteredUnassigned(searchQuery),
-    [data, searchQuery]
+    [data.filteredUnassigned, searchQuery]
   );
 
   // ── Export state (UI local) ──
