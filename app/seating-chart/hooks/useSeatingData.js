@@ -148,8 +148,8 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
   const realTables = useMemo(() => tables.filter((t) => t.type !== "bar" && !t.isRing), [tables]);
   const totalSeats = useMemo(() => realTables.reduce((s, t) => s + t.seats, 0), [realTables]);
-  const assignedCount = useMemo(() => guests.filter((g) => g.tableId).length, [guests]);
-  const unassigned = useMemo(() => guests.filter((g) => !g.tableId), [guests]);
+  const assignedCount = useMemo(() => guests.filter((g) => g.tableId != null).length, [guests]);
+  const unassigned = useMemo(() => guests.filter((g) => g.tableId == null), [guests]);
   const progress = guests.length > 0 ? (assignedCount / guests.length) * 100 : 0;
 
   const menuStats = useMemo(
@@ -477,8 +477,8 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
     // Search
     filteredUnassigned: (searchQuery) => searchQuery
-      ? guests.filter((g) => !g.tableId &&
+      ? guests.filter((g) => g.tableId == null &&
           `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().includes(searchQuery.toLowerCase()))
-      : guests.filter((g) => !g.tableId),
+      : guests.filter((g) => g.tableId == null),
   };
 }
