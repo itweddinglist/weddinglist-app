@@ -188,8 +188,10 @@ app/config/
   Dacă FPS e ok la 60 mese, nu e necesar.
 
 ## Teste
-- 218/218 teste verzi (după ștergerea useGuests.test.js)
-- Test nou adăugat: GuestSidebar — hover pe grup → setHighlightGroupId
+- 340/340 teste verzi
+- useSeatingData.test.js — 80 teste (hydration, undo, assignGuest, unassignGuest, magicFill, createTable, deleteTable, rotateTable, saveEdit, guestsByTable, stats, filteredUnassigned)
+- useSeatingUI.test.js — 42 teste (toasts, modal, editPanel, confirmDialog, lockMode, selection state)
+- Test adăugat: GuestSidebar — hover pe grup → setHighlightGroupId
 
 ## CI/CD
 - GitHub Actions — build pică pe SUPABASE_SERVICE_ROLE_KEY lipsă din secrets
