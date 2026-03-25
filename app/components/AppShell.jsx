@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { WEDDING, getDaysLeft } from "../config/wedding.js";
 
 const MODULES = [
   { id: "dashboard", icon: "📊", label: "Dashboard", path: "/dashboard" },
@@ -17,17 +18,6 @@ const MODULES = [
   { id: "settings", icon: "⚙️", label: "Setări", path: "/settings" },
 ];
 
-const WEDDING = {
-  mire: "Alexandru",
-  mireasa: "Andreea",
-  data: new Date("2026-09-15"),
-};
-
-function getDaysLeft(date) {
-  const diff = date - new Date();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-}
-
 const NO_SHELL = ["/", "/seating-chart"];
 
 export default function AppShell({ children }) {
@@ -37,7 +27,7 @@ export default function AppShell({ children }) {
     return <>{children}</>;
   }
 
-  const daysLeft = getDaysLeft(WEDDING.data);
+  const daysLeft = getDaysLeft();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -225,20 +215,6 @@ export default function AppShell({ children }) {
                   {m.icon}
                 </span>
                 {m.label}
-                {m.id === "guest-list" && (
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      background: "var(--rose)",
-                      color: "white",
-                      fontSize: "0.6rem",
-                      padding: "0.1rem 0.4rem",
-                      borderRadius: "10px",
-                    }}
-                  >
-                    12
-                  </span>
-                )}
               </Link>
             );
           })}
