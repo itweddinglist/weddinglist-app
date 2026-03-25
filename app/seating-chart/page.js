@@ -25,6 +25,7 @@ import EditPanel from "./components/EditPanel.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import ToastStack from "./components/ToastStack.jsx";
 import { exportToPng } from "./utils/exportPng.js";
+import FpsCounter from "./components/FpsCounter.jsx";
 
 export default function SeatingChart() {
   // ── Layer 1: Camera ──
@@ -613,6 +614,7 @@ export default function SeatingChart() {
           </div>
         </div>
       )}
+      <FpsCounter />
     </>
   );
 }
