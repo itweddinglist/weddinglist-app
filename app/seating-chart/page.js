@@ -27,6 +27,19 @@ import ToastStack from "./components/ToastStack.jsx";
 import { exportToPng } from "./utils/exportPng.js";
 import FpsCounter from "./components/FpsCounter.jsx";
 
+const EMPTY_ARRAY = [];
+
+function isTableVisible(t, cam, canvasW, canvasH) {
+  const CULL_PAD = 300;
+  const d = getTableDims(t);
+  return (
+    t.x + d.w + CULL_PAD > cam.vx &&
+    t.x - CULL_PAD < cam.vx + canvasW / cam.z &&
+    t.y + d.h + CULL_PAD > cam.vy &&
+    t.y - CULL_PAD < cam.vy + canvasH / cam.z
+  );
+}
+
 export default function SeatingChart() {
   // ── Layer 1: Camera ──
   const {
@@ -57,6 +70,9 @@ export default function SeatingChart() {
   const handleResult = useCallback((result) => {
     result?.effects?.forEach((effect) => applySeatingEffect(effect, ui));
   }, [ui]);
+
+  // ── Drag preview tick — forțează re-render vizual fără setTables per frame ──
+  const [, setDragTick] = useState(0);
 
   // ── Search state (UI local) ──
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,7 +147,7 @@ export default function SeatingChart() {
   }, [cam.vx, cam.vy, cam.z, ui.selectedTableId, ui.isDraggingGuest, data.assignedCount]);
 
   // ── Layer 3: Interactions ──
-  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown } = useTableInteractions({
+  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown, dragPreviewRef } = useTableInteractions({
     tables: data.tables,
     setTables: data.setTables,
     selectedTableId: ui.selectedTableId,
@@ -151,6 +167,7 @@ export default function SeatingChart() {
     canvasHRef,
     screenToSVG,
     dispatchCam,
+    notifyDrag: () => setDragTick((n) => n + 1),
   });
 
   // ── Wrapped actions ──
@@ -354,11 +371,15 @@ export default function SeatingChart() {
                 />
 
                 <g>
-                  {[...data.tables].map((t) => (
+                  {data.tables.map((t) => {
+                    const preview = dragPreviewRef.current?.tableId === t.id ? dragPreviewRef.current : null;
+                    const tVisual = preview ? { ...t, x: preview.x, y: preview.y } : t;
+                    if (!isTableVisible(tVisual, cam, canvasW, canvasH)) return null;
+                    return (
                     <TableNode
                       key={t.id}
-                      t={t}
-                      guestsByTable={data.guestsByTable}
+                      t={tVisual}
+                      assignedGuests={data.guestsByTable[t.id] || EMPTY_ARRAY}
                       dragOver={ui.dragOver}
                       selectedTableId={ui.selectedTableId}
                       lockMode={ui.lockMode}
@@ -382,7 +403,8 @@ export default function SeatingChart() {
                       clearNewTableHighlight={data.clearNewTableHighlight}
                       spaceDownRef={spaceDownRef}
                     />
-                  ))}
+                    );
+                  })}
                 </g>
               </svg>
             </div>
@@ -409,39 +431,43 @@ export default function SeatingChart() {
         realTables={data.realTables}
       />
 
-      {ui.hoveredGuest && !draggingTableRef.current && !panningRef.current && (
-        <div
-          style={{
-            position: "fixed",
-            zIndex: 9999,
-            background: "#1A1F3A",
-            color: "#FAF7F2",
-            padding: "0.55rem 0.85rem",
-            borderRadius: "10px",
-            fontSize: "0.7rem",
-            pointerEvents: "none",
-            boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
-            border: "1px solid rgba(201,144,122,0.25)",
-            minWidth: "155px",
-            left: Math.min(window.innerWidth - 180, ui.hoveredGuest.x + 14),
-            top: Math.max(10, ui.hoveredGuest.y - 14),
-            animation: "fadeUp 0.12s ease",
-          }}
-        >
-          <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
-            {ui.hoveredGuest.guest.prenume} {ui.hoveredGuest.guest.nume}
+      {ui.hoveredGuest && !draggingTableRef.current && !panningRef.current && (() => {
+        const hg = ui.hoveredGuestRef.current;
+        if (!hg) return null;
+        return (
+          <div
+            style={{
+              position: "fixed",
+              zIndex: 9999,
+              background: "#1A1F3A",
+              color: "#FAF7F2",
+              padding: "0.55rem 0.85rem",
+              borderRadius: "10px",
+              fontSize: "0.7rem",
+              pointerEvents: "none",
+              boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
+              border: "1px solid rgba(201,144,122,0.25)",
+              minWidth: "155px",
+              left: Math.min(window.innerWidth - 180, hg.x + 14),
+              top: Math.max(10, hg.y - 14),
+              animation: "fadeUp 0.12s ease",
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
+              {hg.guest.prenume} {hg.guest.nume}
+            </div>
+            <div style={{ fontSize: "0.65rem", color: getGroupColor(hg.guest.grup), marginBottom: "0.1rem" }}>
+              👥 {hg.guest.grup}
+            </div>
+            <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
+              🍽️ {hg.guest.meniu}
+            </div>
+            <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
+              {hg.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
+            </div>
           </div>
-          <div style={{ fontSize: "0.65rem", color: getGroupColor(ui.hoveredGuest.guest.grup), marginBottom: "0.1rem" }}>
-            👥 {ui.hoveredGuest.guest.grup}
-          </div>
-          <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
-            🍽️ {ui.hoveredGuest.guest.meniu}
-          </div>
-          <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
-            {ui.hoveredGuest.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {ui.clickedSeat && (
         <div

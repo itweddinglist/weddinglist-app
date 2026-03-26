@@ -1,7 +1,8 @@
 "use client";
+import React from "react";
 import { getGroupColor } from "../utils/geometry.js";
 
-export default function GuestSidebar({
+function GuestSidebar({
   guests,
   filteredUnassigned,
   searchQuery,
@@ -38,7 +39,7 @@ export default function GuestSidebar({
 
       <div className="sb-divider" />
       {guestMeta.groups.length > 0 && (
-        <div style={{ padding: "0 1rem 0.5rem" }}>
+        <div style={{ padding: "0 1rem 0.5rem", maxHeight: "40vh", overflowY: "auto" }}>
           <div className="sb-section-label" style={{ marginBottom: "0.4rem" }}>
             Grupuri
           </div>
@@ -75,7 +76,7 @@ export default function GuestSidebar({
       <div className="sb-section-label sb-label-pad">
         Neatribuiți <span className="sb-badge">{filteredUnassigned.length}</span>
       </div>
-      <div className="sb-guests">
+      <div className="sb-guests" style={{ overflowY: "auto", flex: 1 }}>
         {noGuests && (
           <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
             <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>👥</div>
@@ -230,3 +231,5 @@ export default function GuestSidebar({
     </aside>
   );
 }
+
+export default React.memo(GuestSidebar);
