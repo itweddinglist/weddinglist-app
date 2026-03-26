@@ -389,12 +389,12 @@ function TableNodeImpl({
                   e.dataTransfer.setData("fromTableId", String(t.id));
                 }}
                 onDragEnd={() => setIsDraggingGuest(false)}
-              >
-                <circle cx={pos.x} cy={pos.y} r="18" fill={gc} stroke="white" strokeWidth="2"
-                  style={{ pointerEvents: "all", cursor: "pointer" }}
-                  onMouseEnter={(e) => { e.stopPropagation(); clearTimeout(tooltipTimeoutRef.current); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
-                  onMouseLeave={(e) => { e.stopPropagation(); tooltipTimeoutRef.current = setTimeout(() => setHoveredGuest(null), 250); }}
-                />
+                onMouseEnter={(e) => { e.stopPropagation(); clearTimeout(tooltipTimeoutRef.current); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
+                onMouseLeave={(e) => { e.stopPropagation(); tooltipTimeoutRef.current = setTimeout(() => setHoveredGuest(null), 250); }}
+                >
+                  <circle cx={pos.x} cy={pos.y} r="18" fill={gc} stroke="white" strokeWidth="2"
+                    style={{ pointerEvents: "none", cursor: "pointer" }}
+                  />
                 {!isDraggingThisTable && (
                   <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="10"
                     fontFamily="DM Sans,sans-serif" fontWeight="700"

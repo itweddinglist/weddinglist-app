@@ -264,7 +264,7 @@ describe("TableNode — mouseEnter seat ocupat", () => {
     const props = propsWithGuest();
     const { container } = renderInSvg(props);
     // primul circle cu fill colorat (nu white, nu none) = seat ocupat
-    const seatCircle = container.querySelector("g > g > g circle");
+    const seatCircle = container.querySelector('circle[r="24"]');
     fireEvent.mouseEnter(seatCircle);
     expect(props.setHoveredGuest).toHaveBeenCalled();
     const arg = props.setHoveredGuest.mock.calls[0][0];
@@ -281,7 +281,7 @@ describe("TableNode — mouseLeave seat ocupat", () => {
     vi.useFakeTimers();
     const props = propsWithGuest();
     const { container } = renderInSvg(props);
-    const seatCircle = container.querySelector("g > g > g circle");
+    const seatCircle = container.querySelector('circle[r="24"]');
     fireEvent.mouseLeave(seatCircle);
     vi.runAllTimers();
     expect(props.setHoveredGuest).toHaveBeenCalledWith(null);
