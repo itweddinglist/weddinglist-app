@@ -138,24 +138,27 @@ export function useTableInteractions({
       }
     };
     const up = () => {
-    if (draggingTableRef.current) {
-      saveAction();
-      if (dragPreviewRef.current) {
-        const { tableId, x, y } = dragPreviewRef.current;
-        setTables((prev) => prev.map((t) => (t.id !== tableId ? t : { ...t, x, y })));
+      const wasDragging = !!draggingTableRef.current;
+      const wasPanning = !!panningRef.current;
+      if (draggingTableRef.current) {
+        saveAction();
+        if (dragPreviewRef.current) {
+          const { tableId, x, y } = dragPreviewRef.current;
+          setTables((prev) => prev.map((t) => (t.id !== tableId ? t : { ...t, x, y })));
+        }
       }
-    }
-    draggingTableRef.current = null;
-    dragPreviewRef.current = null;
-    panningRef.current = null;
-    hoveredGuestClearedRef.current = false;
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsDraggingGuest(false);
-    setHoveredGuest(null);
-  };
+      draggingTableRef.current = null;
+      dragPreviewRef.current = null;
+      panningRef.current = null;
+      hoveredGuestClearedRef.current = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      setIsDraggingGuest(false);
+      // Tooltip: clear doar după drag/pan activ — nu la click simplu
+      if (wasDragging || wasPanning) setHoveredGuest(null);
+    };
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseup", up);
     return () => {
@@ -170,7 +173,6 @@ export function useTableInteractions({
 
   const handleSvgMouseDown = useCallback(
     (e) => {
-      setHoveredGuest(null);
       if (e.button === 1 || spaceDownRef.current) {
         e.preventDefault();
         panningRef.current = {
@@ -181,7 +183,7 @@ export function useTableInteractions({
         };
       }
     },
-    [setHoveredGuest, camRef]
+    [camRef]
   );
 
   return {

@@ -213,6 +213,13 @@ function GuestSidebar({
                       <div
                         className="sb-avatar"
                         style={{ background: `${gc}22`, border: `1.5px solid ${gc}`, color: gc }}
+                        onMouseEnter={(e) => {
+                          if (!isDraggingGuest) {
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setHoveredGuest({ guest: g, x: r.right + 8, y: r.top - 4 });
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredGuest(null)}
                       >
                         {g.prenume[0] + g.nume[0]}
                       </div>
