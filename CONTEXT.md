@@ -49,6 +49,7 @@ data_migrations, seating_editor_states
 - TypeScript strict pe tot codul nou
 - ESLint strict + Prettier + Husky + commitlint
 - Supabase EU Frankfurt pentru ambele proiecte
+- Rămânem pe SVG pentru V1. Canvas pentru V2 dacă FPS < 45 după toate optimizările.
 
 ## Fișiere principale seating chart (LOCKED — nu modifici)
 - app/seating-chart/page.js
@@ -62,6 +63,9 @@ data_migrations, seating_editor_states
 - app/seating-chart/utils/geometry.js (GRID=20, PLAN_W/H=10500)
 - app/seating-chart/utils/exportPng.js
 - app/seating-chart/utils/storage.js (STORAGE_KEY = "wedding_seating_v14")
+
+## Config centralizat
+- app/config/wedding.js — WEDDING (mire, mireasa, data, locatie) + getDaysLeft()
 
 ## Structură lib actuală
 app/lib/
@@ -85,9 +89,6 @@ app/lib/
     client.ts
     server.ts
 
-app/config/
-  wedding.js ← date nuntă centralizate (WEDDING, getDaysLeft)
-
 ## API endpoints
 - GET /api/health
 - POST /api/auth/provision (rate limit: 10/min)
@@ -101,110 +102,92 @@ app/config/
 - useTableInteractions — keyboard + mouse interactions
 - useGuests.js — ȘTERS (era cod mort, arhitectură veche)
 
-## Warnings ESLint existente (non-blocante, de rezolvat la cleanup)
+## Warnings ESLint existente (non-blocante)
 - app/components/ErrorBoundary.jsx:17 — console.error
 - app/components/Skeleton.jsx:34 — height unused
 
-## Roadmap complet
-
-### ✅ Seating Chart Faza 1 — DONE (247 teste verzi)
-### ✅ 0A — Foundation — DONE
-### ✅ 0B — Auth & Data — DONE
-
-### ✅ 2A — Seating Performance + Refactorizare — DONE
-2A.1 Performance baseline — SKIP (vezi mai jos)
-2A.2 Selectors + interactionState refactor ✅
-2A.3 RAF pentru drag/pan ✅ (implementat în useTableInteractions)
-2A.4 React.memo pe componente noi — SKIP (vezi mai jos)
-2A.5 useMemo pe guestsByTable ✅ deja implementat
-2A.6 Constants file — SKIP (vezi mai jos)
-2A.7 JSDoc funcții principale — SKIP (vezi mai jos)
-2A.8 Split useGuests ✅ → useSeatingData + useSeatingUI
-2A.9 Split useTableInteractions ✅
-2A.10 Viewport culling — SKIP (vezi mai jos)
-
-### ✅ Bug fixes sprint (PR #5-#11) — DONE
-- saveEdit + rotateTable intră în undo history
-- Rotații negative normalizate
-- tableId verificat cu != null / == null
-- ConfirmDialog optional chaining
-- getGroupColor guard pe null/undefined
-- guest.prenume[0] optional chaining
-- Cookie consent try/catch localStorage
-- Spawn logic folosește spawnCounterRef
-- borderRect selector cu data-border="1"
-- saveEdit guard când editPanel null
-- resetPlan nextId derivat din template
-- Toast cleanup la unmount
-- ErrorBoundary bind în constructor
-- filteredUnassigned memo dependență corectă
-- loadStorageState cu dimensiuni reale
-- Drag masă intră în undo history
-- Arrow key repeat guard
-- useEffect deps complete în useTableInteractions
-- GuestSidebar test pentru setHighlightGroupId
-- useGuests.js șters (cod mort)
-- Wedding config centralizat în app/config/wedding.js
-- Dashboard zile rămase calculate dinamic
-- AppShell badge hardcodat eliminat
-- SaveIndicator câmp mort eliminat
-
-### Bug sărit — de făcut la Faza 10 (Polish)
-- Animații spin duplicate (skeleton-shimmer-spin vs spin) — risc vizual mic,
-  valoare mică, lăsat pentru cleanup CSS general din Faza 10
-
-### ⏳ 3 — Guests Core
-3.1 Listă invitați — CRUD complet
-3.2 Grupuri de invitați (guest_groups)
-3.3 Import CSV
-3.4 Filtrare + căutare
-3.5 Status per eveniment
-3.6 Preferințe meniu
-
-### ⏳ 2B — Seating Performance Validation
-2B.1 Profiling real cu 600 invitați
-2B.2 Stress test 60 mese
-2B.3 Virtualizare dacă e nevoie după profiling
-2B.4 Performance report final
-
-### ⏳ 5 — Budget Core
-### ⏳ 6 — Seating ↔ Guests Integration
-### ⏳ 4 — Vendors Mirror
-### ⏳ 7 — RSVP
-### ⏳ 8 — Account & GDPR Final
-### ⏳ 9 — Dashboard complet
-### ⏳ 10 — Polish + Lansare (include animații spin cleanup)
-
-## Task-uri sărite din 2A — motive
-- **2A.1 Performance baseline** — sărit pentru că nu aveam date reale de test.
-  Se face în 2B cu date reale după Guests Core.
-- **2A.4 React.memo** — sărit pentru că TableNode are deja React.memo.
-  Optimizări agresive se fac după profiling real (2B).
-- **2A.6 Constants file** — sărit. Constantele sunt deja în geometry.js,
-  camera.js, storage.js. Un fișier constants.js central e nice-to-have,
-  nu urgent. De făcut la cleanup general.
-- **2A.7 JSDoc** — sărit. De adăugat progresiv pe măsură ce se scrie cod nou.
-- **2A.10 Viewport culling** — sărit. Se evaluează după profiling real în 2B.
-  Dacă FPS e ok la 60 mese, nu e necesar.
-
 ## Teste
-- 340/340 teste verzi
-- useSeatingData.test.js — 80 teste (hydration, undo, assignGuest, unassignGuest, magicFill, createTable, deleteTable, rotateTable, saveEdit, guestsByTable, stats, filteredUnassigned)
-- useSeatingUI.test.js — 42 teste (toasts, modal, editPanel, confirmDialog, lockMode, selection state)
-- Test adăugat: GuestSidebar — hover pe grup → setHighlightGroupId
+- 341/341 teste verzi
+- useSeatingData.test.js — 80 teste
+- useSeatingUI.test.js — 42 teste
+- useTableInteractions.test.js — 20 teste (actualizat pentru drag preview)
+- TableNode.test.jsx — 21 teste (actualizat pentru assignedGuests)
+- useCamera.test.js, geometry.test.js, magicFill.test.js, storage.test.js, camera.test.js, GuestSidebar.test.jsx, StatsPanel.test.jsx, EditPanel.test.jsx, CanvasToolbar.test.jsx
 
-## CI/CD
-- GitHub Actions — build pică pe SUPABASE_SERVICE_ROLE_KEY lipsă din secrets
-  (bug pre-existent, nu legat de codul nostru)
-- Vercel deploy funcționează corect
+## Optimizări SVG — STATUS COMPLET (50-60 FPS la drag cu 60 mese + 600 invitați)
 
-## GDPR
-- Supabase EU Frankfurt ✅
-- Sentry EU + DPA semnat ✅
-- Cookie consent activ ✅
-- Privacy Policy în română ✅
-- RLS pe toate tabelele ✅
-- Data minimization în schema ✅
-- Data retention documentat ✅
+### Implementate (17 optimizări în 4 faze + extra):
+1. EMPTY_ARRAY constant + assignedGuests prop în loc de guestsByTable
+2. Comparator custom tableNodeComparator pe React.memo(TableNode)
+3. Progressive detail: vzoom<0.2 rect simplu, vzoom<0.4 fără scaune, vzoom>=0.4 complet
+4. isDraggingThisTable — fără text/badge/arc/shadow în drag
+5. Filtre SVG eliminate la vzoom<0.3 și isDraggingThisTable
+6. hoveredGuestClearedRef — hover disabled în drag/pan (o singură dată per sesiune)
+7. guestById + tableById Map memoizate în useSeatingData.js (O(1) lookup)
+8. Drag preview tranzitoriu — dragPreviewRef + notifyDrag + setDragTick; setTables 0× în RAF, 1× la mouseup
+9. Viewport culling — isTableVisible() cu padding 300px în page.js
+10. useMemo pentru d și seatPositions bazat pe [t.type, t.seats, t.isRing]
+11. pointerEvents: none pe RING ellipse și inner decorative circle
+12. willChange: transform pe outer <g>
+13. Scaune goale skip când assignedGuests.length === 0 && vzoom < 0.5
+14. isDimmed calculat local per masă, aplicat pe outer <g> opacity
+15. hoveredGuestRef în useSeatingUI — tooltip nu mai cauzează re-render global
+16. Hit zones mai mari — r="28" pe drop zone goale, cerc transparent r="24" pe scaune ocupate
+17. occupancyText precomputed
+18. React.memo pe GuestSidebar și StatsPanel
+19. Eliminat transition CSS și vectorEffect redundant pe elemente decorative
+20. Sidebar scroll funcțional (maxHeight: 40vh pe secțiunea grupuri)
 
-## Progres total: ~32% din produs complet
+### Baseline → Rezultat:
+- Baseline: 27-30 FPS la drag cu 60 mese + 600 invitați
+- După optimizări: 50-60 FPS
+
+### Tools de performanță:
+- FpsCounter.jsx — dev-only, colț dreapta sus, verde>50fps, galben 30-50fps, roșu<30fps
+- generateTestData.js — script browser console, 60 mese + 600 invitați
+
+## Task-uri în curs (de continuat în sesiunea următoare)
+
+### Etapa 1 — Ușoare, risc zero:
+- P4 — shortName la zoom 0.2-0.4: t.name.startsWith("Masa ") ? t.name.slice(5) : t.name (în TableNode.jsx)
+- P5 — Magic Fill toast sumar în loc de unul per grup skipped (în useSeatingData.js)
+- P8 — Tooltip fix (dispărut pe invitați așezați la mese) + delay 250ms
+
+### Etapa 2 — Medii, impact vizual:
+- P6 — Culori occupancy la zoom 0.2-0.4: caramiziu=gol, verde=disponibil(<80%), galben=aproape plin(80-99%), albastru=plin(100%)
+- P7 — Omogenizare detalii zoom 0.2-0.4 (mesele rotunde afișează mai puține detalii decât dreptunghiulare/pătrate)
+- P9 — Zoom < 0.2 rect redus la 60-70% din dimensiune (forma păstrată, continuitate vizuală cu 0.2-0.4)
+- P3 — isDimmed opacity 0.3 → 0.6 (de discutat cu utilizatorul înainte de implementare)
+- P2 — highlightGroupId reset bug: mesele rămân fade după hover pe mai multe grupuri succesiv
+
+### Etapa 3 — Complexe:
+- P10 — Virtualizare sidebar cu react-window (600 invitați neatribuiți)
+- P11 — Seat swap drag & drop (drag invitat din scaun → alt scaun/masă)
+
+## PR-uri merged în develop (total 16)
+- #1-4: Foundation, Auth, Data setup
+- #5: saveEdit/rotateTable undo, rotații negative
+- #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
+- #7: cookie consent, spawn counter, border rect, save edit guard, reset nextId
+- #8: toast cleanup, error boundary, memo deps, storage dims, drag undo
+- #9: arrow key repeat guard, useEffect deps, highlight group test
+- #10: useGuests removed
+- #11: wedding config centralizat, hardcoded data eliminat
+- #12: CONTEXT.md adăugat
+- #13: teste useSeatingData + useSeatingUI (122 teste noi)
+- #14: FpsCounter.jsx + generateTestData.js
+- #15: fix toast duplicate keys (string id)
+- #16: sidebar scroll + cleanup CSS
+- #17: SVG optimizări faze 1-4 (17 optimizări)
+
+## Roadmap
+✅ Seating Chart Faza 1, 0A, 0B, 2A, 2B
+⏳ Fix-uri vizuale și UX (Etapa 1-2 din task-uri în curs)
+⏳ 3 — Guests Core
+⏳ 5 — Budget
+⏳ 6 — Seating↔Guests Integration
+⏳ 4 — Vendors
+⏳ 7 — RSVP
+⏳ 8-10 — Polish + Lansare
+
+## Progres total: ~35%
