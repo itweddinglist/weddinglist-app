@@ -18,7 +18,12 @@ export function useSeatingUI() {
   // ── Selection & interaction ──
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [clickedSeat, setClickedSeat] = useState(null);
-  const [hoveredGuest, setHoveredGuest] = useState(null);
+  const [hoveredGuest, _setHoveredGuestState] = useState(null);
+  const hoveredGuestRef = useRef(null);
+  const setHoveredGuest = useCallback((data) => {
+    hoveredGuestRef.current = data;
+    _setHoveredGuestState(data);
+  }, []);
   const [dragOver, setDragOver] = useState(null);
   const [isDraggingGuest, setIsDraggingGuest] = useState(false);
 
@@ -64,6 +69,7 @@ export function useSeatingUI() {
     clickedSeat,
     setClickedSeat,
     hoveredGuest,
+    hoveredGuestRef,
     setHoveredGuest,
     dragOver,
     setDragOver,
