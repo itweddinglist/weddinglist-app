@@ -39,7 +39,7 @@ export function useSeatingUI() {
   const toastTimersRef = useRef([]);
 
   const showToast = useCallback((message, type = "rose") => {
-    const id = Date.now() + Math.random();
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     setToasts((prev) => [...prev, { id, msg: message, type }]);
     const timer = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
