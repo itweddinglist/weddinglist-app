@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import {
   getTableDims,
   getSeatPositions,
@@ -65,7 +65,13 @@ function TableNodeImpl({
   const seatPositions = useMemo(() => getSeatPositions(t), [t.type, t.seats, t.isRing]);
   const fillColor = getSeatFillColor(assignedGuests.length, t.seats);
   const occupancyText = assignedGuests.length + "/" + t.seats;
+    const shortName = vzoom < 0.5
+    ? (t.type === "bar"
+      ? t.name.split(" ")[0]
+      : t.name.startsWith("Masa ") ? t.name.slice(5) : t.name)
+    : t.name;
   const isDraggingThisTable = draggingTableRef?.current?.id === t.id;
+  const tooltipTimeoutRef = useRef(null);
   const isDimmed =
     (highlightGuestId != null && !assignedGuests.some((g) => g.id === highlightGuestId)) ||
     (highlightGroupId != null && !assignedGuests.some((g) => g.grup === highlightGroupId));
@@ -184,15 +190,26 @@ function TableNodeImpl({
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke"
             />
-            <text x={d.tw / 2 + 8} y={d.th * 0.62} textAnchor="middle" fill="#276749" fontSize="10"
-              fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
-              style={{ pointerEvents: "none" }}>
-              {t.name}
-            </text>
-            <text x={d.tw / 2 + 8} y={d.th * 0.82} textAnchor="middle" fill="#48BB78" fontSize="7.5"
-              fontFamily="DM Sans,sans-serif" style={{ pointerEvents: "none" }}>
-              🍹 decor
-            </text>
+            {vzoom >= 0.4 && (
+              <>
+                <text x={d.tw / 2 + 8} y={d.th * 0.62} textAnchor="middle" fill="#276749" fontSize="10"
+                  fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
+                  style={{ pointerEvents: "none" }}>
+                  {shortName}
+                </text>
+                <text x={d.tw / 2 + 8} y={d.th * 0.82} textAnchor="middle" fill="#48BB78" fontSize="7.5"
+                  fontFamily="DM Sans,sans-serif" style={{ pointerEvents: "none" }}>
+                  🍹 decor
+                </text>
+              </>
+            )}
+            {vzoom >= 0.2 && vzoom < 0.4 && (
+              <text x={d.tw / 2 + 8} y={d.th * 0.7} textAnchor="middle" fill="#276749" fontSize="32"
+                fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
+                style={{ pointerEvents: "none" }}>
+                {shortName}
+              </text>
+            )}
           </>
         )}
 
@@ -236,23 +253,37 @@ function TableNodeImpl({
                 style={{ pointerEvents: "none" }} />;
             })()}
             {vzoom >= 0.5 && (
-              <text x={d.cx} y={d.cy - 10} textAnchor="middle" fill="#1E2340" fontSize="15"
-                fontFamily="Cormorant Garamond,serif" fontWeight="700" style={{ pointerEvents: "none" }}>
-                {t.name}
-              </text>
+              <>
+                <text x={d.cx} y={d.cy - 10} textAnchor="middle" fill="#1E2340" fontSize="15"
+                  fontFamily="Cormorant Garamond,serif" fontWeight="700" style={{ pointerEvents: "none" }}>
+                  {shortName}
+                </text>
+                <text x={d.cx} y={d.cy + 8} textAnchor="middle" fill={fillColor} fontSize="12"
+                  fontFamily="DM Sans,sans-serif" fontWeight="700"
+                  style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
+                  {occupancyText}
+                </text>
+              </>
             )}
-            {vzoom >= 0.5 && (
-              <text x={d.cx} y={d.cy + 8} textAnchor="middle" fill={fillColor} fontSize="12"
-                fontFamily="DM Sans,sans-serif" fontWeight="700"
-                style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
-                {occupancyText}
-              </text>
+            {vzoom >= 0.4 && vzoom < 0.5 && (
+              <>
+                <text x={d.cx} y={d.cy - 8} textAnchor="middle" fill="#1E2340" fontSize="32"
+                  fontFamily="Cormorant Garamond,serif" fontWeight="700"
+                  style={{ pointerEvents: "none" }}>
+                  {shortName}
+                </text>
+                <text x={d.cx} y={d.cy + 10} textAnchor="middle" fill={fillColor} fontSize="12"
+                  fontFamily="DM Sans,sans-serif" fontWeight="700"
+                  style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
+                  {occupancyText}
+                </text>
+              </>
             )}
-            {vzoom < 0.5 && (
-              <text x={d.cx} y={d.cy + 4} textAnchor="middle" fill={fillColor} fontSize="13"
-                fontFamily="DM Sans,sans-serif" fontWeight="700"
-                style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
-                {occupancyText}
+            {vzoom >= 0.2 && vzoom < 0.4 && (
+              <text x={d.cx} y={d.cy + 6} textAnchor="middle" fill="#1E2340" fontSize="32"
+                fontFamily="Cormorant Garamond,serif" fontWeight="700"
+                style={{ pointerEvents: "none" }}>
+                {shortName}
               </text>
             )}
           </>
@@ -266,12 +297,21 @@ function TableNodeImpl({
               stroke={bs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke" />
-            <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 - 10} textAnchor="middle"
-              fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
-              style={{ pointerEvents: "none" }}>{t.name}</text>
-            <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 + 8} textAnchor="middle"
-              fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
-              style={{ pointerEvents: "none" }}>{occupancyText}</text>
+            {vzoom >= 0.4 && (
+              <>
+                <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 - 10} textAnchor="middle"
+                  fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
+                  style={{ pointerEvents: "none" }}>{shortName}</text>
+                <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 + 8} textAnchor="middle"
+                  fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
+                  style={{ pointerEvents: "none" }}>{occupancyText}</text>
+              </>
+            )}
+            {vzoom >= 0.2 && vzoom < 0.4 && (
+              <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 + 10} textAnchor="middle"
+                fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif" fontWeight="600"
+                style={{ pointerEvents: "none" }}>{shortName}</text>
+            )}
           </>
         )}
 
@@ -284,12 +324,21 @@ function TableNodeImpl({
               strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-prez)"}
               vectorEffect="non-scaling-stroke" />
-            <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
-              fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif"
-              fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{t.name}</text>
-            <text x={25 + d.tw / 2} y={22 + d.th / 2 + 10} textAnchor="middle"
-              fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
-              style={{ pointerEvents: "none" }}>{occupancyText}</text>
+            {vzoom >= 0.4 && (
+              <>
+                <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
+                  fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif"
+                  fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{shortName}</text>
+                <text x={25 + d.tw / 2} y={22 + d.th / 2 + 10} textAnchor="middle"
+                  fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
+                  style={{ pointerEvents: "none" }}>{occupancyText}</text>
+              </>
+            )}
+            {vzoom >= 0.2 && vzoom < 0.4 && (
+              <text x={25 + d.tw / 2} y={22 + d.th / 2 + 6} textAnchor="middle"
+                fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif"
+                fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{shortName}</text>
+            )}
           </>
         )}
 
@@ -301,12 +350,21 @@ function TableNodeImpl({
               stroke={bs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke" />
-            <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
-              fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
-              style={{ pointerEvents: "none" }}>{t.name}</text>
-            <text x={25 + d.tw / 2} y={22 + d.th / 2 + 10} textAnchor="middle"
-              fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
-              style={{ pointerEvents: "none" }}>{occupancyText}</text>
+            {vzoom >= 0.4 && (
+              <>
+                <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
+                  fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
+                  style={{ pointerEvents: "none" }}>{shortName}</text>
+                <text x={25 + d.tw / 2} y={22 + d.th / 2 + 10} textAnchor="middle"
+                  fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
+                  style={{ pointerEvents: "none" }}>{occupancyText}</text>
+              </>
+            )}
+            {vzoom >= 0.2 && vzoom < 0.4 && (
+              <text x={25 + d.tw / 2} y={22 + d.th / 2 + 6} textAnchor="middle"
+                fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif" fontWeight="600"
+                style={{ pointerEvents: "none" }}>{shortName}</text>
+            )}
           </>
         )}
 
@@ -334,8 +392,8 @@ function TableNodeImpl({
               >
                 <circle cx={pos.x} cy={pos.y} r="18" fill={gc} stroke="white" strokeWidth="2"
                   style={{ pointerEvents: "all", cursor: "pointer" }}
-                  onMouseEnter={(e) => { e.stopPropagation(); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
-                  onMouseLeave={(e) => { e.stopPropagation(); setHoveredGuest(null); }}
+                  onMouseEnter={(e) => { e.stopPropagation(); clearTimeout(tooltipTimeoutRef.current); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
+                  onMouseLeave={(e) => { e.stopPropagation(); tooltipTimeoutRef.current = setTimeout(() => setHoveredGuest(null), 250); }}
                 />
                 {!isDraggingThisTable && (
                   <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="10"
