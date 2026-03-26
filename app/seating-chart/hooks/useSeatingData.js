@@ -148,6 +148,9 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
     return map;
   }, [guests]);
 
+  const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
+  const tableById = useMemo(() => new Map(tables.map((t) => [t.id, t])), [tables]);
+
   const realTables = useMemo(() => tables.filter((t) => t.type !== "bar" && !t.isRing), [tables]);
   const totalSeats = useMemo(() => realTables.reduce((s, t) => s + t.seats, 0), [realTables]);
   const assignedCount = useMemo(() => guests.filter((g) => g.tableId != null).length, [guests]);
@@ -182,10 +185,10 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
   // ── ASSIGN GUEST ──
   const assignGuest = useCallback((gId, tableId) => {
-    const table = tablesRef.current.find((t) => t.id === tableId);
+    const table = tableById.get(tableId);
     if (!table || table.type === "bar" || table.isRing) return { ok: false, effects: [] };
 
-    const guest = guestsRef.current.find((g) => g.id === parseInt(gId));
+    const guest = guestById.get(parseInt(gId));
     if (!guest || guest.tableId === tableId) return { ok: false, effects: [] };
 
     const occupied = guestsRef.current.filter((g) => g.tableId === tableId).length;
@@ -214,7 +217,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
         { type: "CLEAR_CLICKED_SEAT" },
       ],
     };
-  }, [saveAction]);
+  }, [saveAction, guestById, tableById]);
 
   // ── UNASSIGN GUEST ──
   const unassignGuest = useCallback((guestId) => {
@@ -440,6 +443,8 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
     hydrated,
     newTableIds,
     guestsByTable,
+    guestById,
+    tableById,
     realTables,
     totalSeats,
     assignedCount,
@@ -473,7 +478,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
     // Helper
     getGuestTableId: (guestId) => {
-      const guest = guestsRef.current.find((g) => g.id === guestId);
+      const guest = guestById.get(guestId);
       return guest?.tableId ?? null;
     },
 

@@ -24,10 +24,13 @@ export function useTableInteractions({
   canvasHRef,
   screenToSVG,
   dispatchCam,
+  notifyDrag = null,
 }) {
   const draggingTableRef = useRef(null);
   const panningRef = useRef(null);
   const spaceDownRef = useRef(false);
+  const hoveredGuestClearedRef = useRef(false);
+  const dragPreviewRef = useRef(null);
 
   useEffect(() => {
     const down = (e) => {
@@ -94,6 +97,10 @@ export function useTableInteractions({
   useEffect(() => {
     const rafRef = { current: null };
     const move = (e) => {
+      if ((draggingTableRef.current || panningRef.current) && !hoveredGuestClearedRef.current) {
+        hoveredGuestClearedRef.current = true;
+        setHoveredGuest(null);
+      }
       if (panningRef.current) {
         const { sx, sy, vx0, vy0 } = panningRef.current;
         const z = camRef.current.z;
@@ -118,29 +125,30 @@ export function useTableInteractions({
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
           if (!draggingTableRef.current) return;
-          const { id, ox, oy } = draggingTableRef.current;
+          const { id, ox, oy, dw, dh } = draggingTableRef.current;
           const pt = screenToSVG(cx, cy);
           if (!pt) return;
-          setTables((prev) =>
-            prev.map((t) => {
-              if (t.id !== id) return t;
-              const d = getTableDims(t);
-              return {
-                ...t,
-                x: Math.max(0, Math.min(PLAN_W - d.w, pt.x - ox)),
-                y: Math.max(0, Math.min(PLAN_H - d.h, pt.y - oy)),
-              };
-            })
-          );
+          dragPreviewRef.current = {
+            tableId: id,
+            x: Math.max(0, Math.min(PLAN_W - dw, pt.x - ox)),
+            y: Math.max(0, Math.min(PLAN_H - dh, pt.y - oy)),
+          };
+          notifyDrag?.();
         });
       }
     };
     const up = () => {
     if (draggingTableRef.current) {
       saveAction();
+      if (dragPreviewRef.current) {
+        const { tableId, x, y } = dragPreviewRef.current;
+        setTables((prev) => prev.map((t) => (t.id !== tableId ? t : { ...t, x, y })));
+      }
     }
     draggingTableRef.current = null;
+    dragPreviewRef.current = null;
     panningRef.current = null;
+    hoveredGuestClearedRef.current = false;
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -181,5 +189,6 @@ export function useTableInteractions({
     panningRef,
     spaceDownRef,
     handleSvgMouseDown,
+    dragPreviewRef,
   };
 }

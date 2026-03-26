@@ -1,6 +1,7 @@
 "use client";
+import React from "react";
 
-export default function StatsPanel({
+function StatsPanel({
   showStats,
   setShowStats,
   guests,
@@ -50,3 +51,5 @@ export default function StatsPanel({
     </div>
   );
 }
+
+export default React.memo(StatsPanel);

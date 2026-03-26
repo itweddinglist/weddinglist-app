@@ -21,7 +21,7 @@ const makeTable = (overrides = {}) => ({
 
 const defaultProps = (tableOverrides = {}) => ({
   t: makeTable(tableOverrides),
-  guestsByTable: {},
+  assignedGuests: [],
   dragOver: null,
   selectedTableId: null,
   lockMode: false,
@@ -53,7 +53,7 @@ const makeGuest = (overrides = {}) => ({
 
 const propsWithGuest = (tableOverrides = {}) => {
   const props = defaultProps(tableOverrides);
-  props.guestsByTable = { 1: [makeGuest()] };
+  props.assignedGuests = [makeGuest()];
   return props;
 };
 
@@ -151,21 +151,19 @@ describe("TableNode — isSelected vizual", () => {
 // ── Test 9 — guestsByTable cu guest randat ────────────────────────────────────
 
 describe("TableNode — guest randat în scaun", () => {
-  it("guest în guestsByTable → inițiale afișate", () => {
+  it("guest în assignedGuests → inițiale afișate", () => {
     const props = defaultProps();
-    props.guestsByTable = {
-      1: [
-        {
-          id: 1,
-          prenume: "Ion",
-          nume: "Popescu",
-          grup: "Familie Mireasă",
-          status: "confirmat",
-          meniu: "Standard",
-          tableId: 1,
-        },
-      ],
-    };
+    props.assignedGuests = [
+      {
+        id: 1,
+        prenume: "Ion",
+        nume: "Popescu",
+        grup: "Familie Mireasă",
+        status: "confirmat",
+        meniu: "Standard",
+        tableId: 1,
+      },
+    ];
     renderInSvg(props);
     expect(screen.getByText("IP")).toBeTruthy();
   });
