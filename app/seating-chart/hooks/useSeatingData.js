@@ -278,8 +278,10 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
     if (skippedGuests.length > 0) {
       effects.push({ type: "SHOW_TOAST", payload: { message: `⚠ ${skippedGuests.length} invitati fara loc disponibil`, toastType: "yellow" } });
     }
-    for (const sg of skippedGroups) {
-      effects.push({ type: "SHOW_TOAST", payload: { message: `⚠ ${sg.reason}`, toastType: "yellow" } });
+    if (skippedGroups.length === 1) {
+      effects.push({ type: "SHOW_TOAST", payload: { message: `⚠ ${skippedGroups[0].reason}`, toastType: "yellow" } });
+    } else if (skippedGroups.length > 1) {
+      effects.push({ type: "SHOW_TOAST", payload: { message: `⚠ ${skippedGroups.length} grupuri nu au putut fi plasate impreuna`, toastType: "yellow" } });
     }
     if (limitReached) {
       effects.push({ type: "SHOW_TOAST", payload: { message: "⚠ Solutie partiala — limita atinsa, se foloseste cel mai bun rezultat gasit", toastType: "yellow" } });

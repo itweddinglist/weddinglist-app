@@ -278,11 +278,14 @@ describe("TableNode — mouseEnter seat ocupat", () => {
 
 describe("TableNode — mouseLeave seat ocupat", () => {
   it("mouseLeave pe circle seat → setHoveredGuest(null)", () => {
+    vi.useFakeTimers();
     const props = propsWithGuest();
     const { container } = renderInSvg(props);
     const seatCircle = container.querySelector("g > g > g circle");
     fireEvent.mouseLeave(seatCircle);
+    vi.runAllTimers();
     expect(props.setHoveredGuest).toHaveBeenCalledWith(null);
+    vi.useRealTimers();
   });
 });
 
