@@ -104,7 +104,7 @@ describe("TableNode — bar fără scaune", () => {
 describe("TableNode — isRing fără scaune", () => {
   it("isRing:true → 0 scaune randate", () => {
     const { container } = renderInSvg(defaultProps({ type: "bar", isRing: true }));
-    const emptySeat = container.querySelectorAll("circle[stroke-dasharray]");
+    const emptySeat = container.querySelectorAll('circle[stroke="#C4A882"][r="16"]');
     expect(emptySeat.length).toBe(0);
   });
 });

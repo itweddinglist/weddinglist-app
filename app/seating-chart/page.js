@@ -486,8 +486,16 @@ export default function SeatingChart() {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ fontWeight: 600, fontSize: "0.78rem", color: "#13172E", marginBottom: "0.1rem" }}>
-            {ui.clickedSeat.guest.prenume} {ui.clickedSeat.guest.nume}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.1rem" }}>
+            <div style={{ fontWeight: 600, fontSize: "0.78rem", color: "#13172E" }}>
+              {ui.clickedSeat.guest.prenume} {ui.clickedSeat.guest.nume}
+            </div>
+            <button
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#9DA3BC", fontSize: "0.85rem", lineHeight: 1, padding: "0 0 0 0.5rem", flexShrink: 0 }}
+              onClick={() => ui.setClickedSeat(null)}
+            >
+              ×
+            </button>
           </div>
           <div style={{ fontSize: "0.65rem", color: getGroupColor(ui.clickedSeat.guest.grup), marginBottom: "0.5rem" }}>
             {ui.clickedSeat.guest.grup}
