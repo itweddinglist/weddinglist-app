@@ -10,13 +10,14 @@
 ---
 
 ## 🔴 MUST NOW (înainte de orice utilizator real)
+> ✅ Verificate în sesiunea Mar 27, 2026: #4, #25, #26, #28
 
 | # | Item | Dificultate | ROI | Note |
 |---|------|-------------|-----|------|
 | 1 | Source of truth map (WP=identity, Supabase=operational, localStorage=draft) | Mică | Critic | Documentat în CONTEXT |
 | 2 | localStorage vs Supabase conflict policy (după login, Supabase wins) | Mică | Critic | localStorage = draft/recovery, nu adevăr operațional |
 | 3 | Failure mode matrix (WP down / Supabase down / Vercel down / Resend down) | Mică | Critic | Cu fallback behavior concret per serviciu |
-| 4 | generateTestData.js exclus din production bundle | Mică | Critic | Dev-only tooling exclusion din build path |
+| 4 | ✅ generateTestData.js exclus din production bundle | Mică | Critic | Verificat — nu e importat nicăieri în app |
 | 5 | RLS testat real — testează că user_B nu poate accesa wedding_id al user_A chiar dacă ghicește UUID-ul | Medie | Critic | Cel mai frecvent vector de data leak în Supabase. Folosește JWT de test prin terminal |
 | 6 | CORS/CSRF documentat și configurat pe WP bridge | Medie | Critic | CORS allowlist explicit |
 | 7 | Service role key audit — unde e folosit, unde e interzis | Mică | Critic | |
@@ -37,10 +38,10 @@
 | 22 | First-run empty states — primul guest, prima masă, primul vendor | Medie | Mare | Success states, nu doar error states |
 | 23 | Branch-to-environment map documentat | Mică | Mare | main=prod, develop=staging, feature/*=preview |
 | 24 | README setup local de la zero + command cheat sheet | Mică | Medie | |
-| 25 | Gravity Guard — coordonate x/y out-of-bounds resetate la centrul planului înainte de upsert | Mică | Critic | Previne "plan gol" unde userul nu mai găsește nimic în canvas |
-| 26 | Guest Collision — UNIQUE constraint pe guest_id în seat_assignments (DB level, nu UI) | Medie | Critic | Un om = un singur loc, garantat de DB. Mult mai sigur să gestionezi eroare DB decât duplicat manual |
+| 25 | ✅ Gravity Guard — coordonate x/y out-of-bounds resetate la centrul planului înainte de upsert | Mică | Critic | Verificat — Math.max/min pe PLAN_W/H în useSeatingData și useTableInteractions |
+| 26 | ✅ Guest Collision — UNIQUE constraint pe guest_event_id în seat_assignments (DB level) | Medie | Critic | Verificat în Supabase DEV — seat_assignments_guest_event_id_key UNIQUE există |
 | 27 | Soft Delete pentru nunți — coloană deleted_at, recovery 30 zile, documentat în Privacy Policy | Mică | Mare | ⚠️ Actualizează TOATE query-urile SELECT să filtreze deleted_at IS NULL sau folosește un VIEW Postgres |
-| 28 | migrateIfNeeded(data) — cheie v:1 în obiectul localStorage, mapper la boot | Mică | Critic | "Silent killer" al aplicațiilor noi. Prima schimbare de JSON structure = crash la boot fără asta |
+| 28 | ✅ migrateIfNeeded(data) — implementat implicit în storage.js | Mică | Critic | Verificat — sanitizeLoadedTables/Guests/Cam + compatibilitate v13.1→v14 + cleanupLegacyStorage |
 | 29 | Safe write pattern — update granular (tables, seats, assignments), NU overwrite total la seating | Medie | Critic | Un bug = wedding distrus complet. Schema version check la write, nu doar la citire |
 | 30 | Auth edge cases — sesiune expirată în mijlocul lucrului, desync WP/app, refresh token flow | Medie | Critic | UX: "Session expired — reconnecting..." |
 | 31 | Undo/Redo strategy clară — ce intră (move guest, create/delete table), ce NU intră, limită 20 acțiuni | Medie | Mare | Devine critic la seating cu mulți invitați |
