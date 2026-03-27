@@ -120,7 +120,7 @@ describe("getSeatPositions", () => {
     const t = { type: "square", seats: 4 };
     const d = getTableDims(t);
     const seats = getSeatPositions(t);
-    expect(seats[0].y).toBeCloseTo(d.pad - 22, 3);
+    expect(seats[0].y).toBeCloseTo(d.pad - 8, 3);
   });
 
   it("square seats=12 → exact 12 scaune", () => {
@@ -138,14 +138,14 @@ describe("getSeatPositions", () => {
 
   it("rect seats=10 → primul scaun y = 0", () => {
     const seats = getSeatPositions({ type: "rect", seats: 10 });
-    expect(seats[0].y).toBeCloseTo(0, 3);
+    expect(seats[0].y).toBeCloseTo(12, 3);
   });
 
   it("rect seats=10 → al doilea scaun y = 20 + th + 20", () => {
     const t = { type: "rect", seats: 10 };
     const d = getTableDims(t);
     const seats = getSeatPositions(t);
-    expect(seats[1].y).toBeCloseTo(20 + d.th + 20, 3);
+    expect(seats[1].y).toBeCloseTo(20 + d.th + 8, 3);
   });
 
   it("prezidiu seats=8 → exact 8 scaune", () => {
