@@ -148,23 +148,15 @@ app/lib/
 
 ## Task-uri în curs (de continuat în sesiunea următoare)
 
-### Etapa 1 — Ușoare, risc zero:
-- P4 — shortName la zoom 0.2-0.4: t.name.startsWith("Masa ") ? t.name.slice(5) : t.name (în TableNode.jsx)
-- P5 — Magic Fill toast sumar în loc de unul per grup skipped (în useSeatingData.js)
-- P8 — Tooltip fix (dispărut pe invitați așezați la mese) + delay 250ms
-
-### Etapa 2 — Medii, impact vizual:
-- P6 — Culori occupancy la zoom 0.2-0.4: caramiziu=gol, verde=disponibil(<80%), galben=aproape plin(80-99%), albastru=plin(100%)
-- P7 — Omogenizare detalii zoom 0.2-0.4 (mesele rotunde afișează mai puține detalii decât dreptunghiulare/pătrate)
+### Rămase:
 - P9 — Zoom < 0.2 rect redus la 60-70% din dimensiune (forma păstrată, continuitate vizuală cu 0.2-0.4)
 - P3 — isDimmed opacity 0.3 → 0.6 (de discutat cu utilizatorul înainte de implementare)
-- P2 — highlightGroupId reset bug: mesele rămân fade după hover pe mai multe grupuri succesiv
 
 ### Etapa 3 — Complexe:
 - P10 — Virtualizare sidebar cu react-window (600 invitați neatribuiți)
 - P11 — Seat swap drag & drop (drag invitat din scaun → alt scaun/masă)
 
-## PR-uri merged în develop (total 16)
+## PR-uri merged în develop (total 27)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -179,10 +171,62 @@ app/lib/
 - #15: fix toast duplicate keys (string id)
 - #16: sidebar scroll + cleanup CSS
 - #17: SVG optimizări faze 1-4 (17 optimizări)
+- #18: P4 shortName zoom 0.2-0.5, P5 Magic Fill toast sumar
+- #19: update context SVG optimizări
+- #20: P4+P5 shortname toate tipurile mese, magic fill toast
+- #21: fix(p8) tooltip fix complet — onMouseEnter/Leave pe circle r=24, GuestSidebar tooltip AȘEZAȚI
+- #22: feat(p8-ux) ring dans editabil, drag fix, card X, toolbar icons (SquircleDashed, GalleryThumbnails)
+- #23/24: feat(sidebar-search) diacritice normalize NFD, activeGroupId filtru grup exact, highlight vizual grup
+- #25: feat(p6) culori border occupancy la zoom 0.2-0.4 (verde/galben/roșu)
+- #27: fix(p2) highlightGroupId reset bug — tableNodeComparator + onMouseEnter SVG
+- #28: feat(ux) seat positions echilibrate square, progress border square/rect, nume invitat deasupra/dedesubt
+
+## Modificări arhitecturale sesiunea curentă
+
+### Tooltip (P8):
+- onMouseEnter/onMouseLeave mutate pe circle r=24 (hit zone real)
+- useTableInteractions: up() — setHoveredGuest(null) doar după drag/pan activ
+- handleSvgMouseDown: eliminat setHoveredGuest(null)
+- GuestSidebar: tooltip pe avatarul din secțiunea AȘEZAȚI
+
+### Ring Dans:
+- Nume editabil (t.name în loc de hardcodat)
+- Formă: cerc dashed consistent cu stilul meselor
+- Hit zone transparent pentru drag/click/doubleclick
+- Buton Ring în toolbar cu icon SquircleDashed
+- isRing propagat din modal la createTable
+
+### Toolbar icons:
+- Prezidiu: GalleryThumbnails rotit 180°
+- Drept: RectangleHorizontal
+- Ring: SquircleDashed
+
+### Sidebar search:
+- Căutare fără diacritice (normalize NFD) în useSeatingData și GuestSidebar
+- activeGroupId separat de searchQuery — click grup filtrează exact (fără false positives)
+- Highlight vizual grup activ (background caramiziu)
+- Buton × resetează atât searchQuery cât și activeGroupId
+- maxHeight grupuri 25vh
+
+### Culori border occupancy (P6):
+- La zoom 0.2-0.4: verde/galben/roșu în funcție de ocupare
+- occupancyBs pe round, square, rect (prezidiu neatins)
+
+### Fix highlightGroupId (P2):
+- tableNodeComparator: re-render toate mesele când grupul se schimbă
+- onMouseEnter pe SVG resetează highlightGroupId
+
+### UX seat positions:
+- Square: distribuție echilibrată pe 4 laturi (5→2+1+1+1, 6→2+2+1+1 etc.)
+- Square/rect: scaune la 8px de masă (consistent cu prezidiu)
+- Progress border strokeDasharray pe square și rect (ca arcul de la round)
+- Nume invitat deasupra scaunului la rect/prezidiu când e pe rândul de sus
+- Card clickedSeat: buton X pentru închidere manuală
 
 ## Roadmap
 ✅ Seating Chart Faza 1, 0A, 0B, 2A, 2B
-⏳ Fix-uri vizuale și UX (Etapa 1-2 din task-uri în curs)
+✅ Fix-uri vizuale și UX (P2, P4, P5, P6, P8 complete)
+⏳ P3, P9 — în așteptare
 ⏳ 3 — Guests Core
 ⏳ 5 — Budget
 ⏳ 6 — Seating↔Guests Integration
@@ -190,4 +234,4 @@ app/lib/
 ⏳ 7 — RSVP
 ⏳ 8-10 — Polish + Lansare
 
-## Progres total: ~35%
+## Progres total: ~40%
