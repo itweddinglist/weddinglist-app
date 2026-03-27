@@ -211,8 +211,17 @@ app/lib/
 - FpsCounter.jsx — dev-only, colț dreapta sus, verde>50fps, galben 30-50fps, roșu<30fps
 - generateTestData.js — script browser console, 60 mese + 600 invitați
 
-## Modificări arhitecturale sesiunea curentă (Mar 27, 2026)
+## Modificări arhitecturale sesiunea curentă (Mar 28, 2026)
 
+### Must Now #18 + #19 ✅:
+- ✅ SaveIndicator redesenat complet: saving/saved/error/offline/idle
+- ✅ useSeatingData: callback `onSaveStatusChange` pe autosave (saving→saved/error)
+- ✅ page.js: `saveStatus` + `isOffline` state, online/offline listeners cu cleanup
+- ✅ React.memo pe SaveIndicator — zero impact canvas performance
+- ✅ Stale closure safe prin `onSaveStatusChangeRef`
+- ✅ O singură sursă de adevăr pentru save (callback pattern, nu hook izolat)
+
+### Sesiunea anterioară (Mar 27, 2026):
 ### Fix-uri ESLint ✅:
 - ✅ CanvasToolbar.jsx — border shorthand mixing fix pe butonul lock
 - ✅ eslint.config.mjs — no-console permite console.error și console.warn
@@ -281,7 +290,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 29)
+## PR-uri merged în develop (total 33)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -309,6 +318,7 @@ app/lib/
 - #30: fix: border shorthand mixing in lock button canvastoolbar
 - #31: fix: resolve eslint warnings in errorboundary and skeleton
 - #32: docs: context final + priorities locked
+- #33: feat(ux): error recovery ux + user trust signals (#18 #19)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10

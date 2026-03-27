@@ -31,8 +31,8 @@
 | 15 | State Transitions definite (guest: new→confirmed→seated, table: new→edited→locked, RSVP: pending→accepted→declined) | Medie | Critic | Tranziții valide only, interdicții clare |
 | 16 | Business rules centralizate în domain/rules.ts — NU împrăștiate în hooks | Medie | Mare | Dacă logica RSVP e în 3 hooks = bug de securitate garantat |
 | 17 | Input sanitization — server = securitate, client = UX (nu invers) | Medie | Critic | |
-| 18 | Error Recovery UX — "Saving failed", "Work is safe locally", localStorage fallback | Medie | Critic | Critic pentru produs event-based. "Nu te îngrijora, am salvat totul în browser" |
-| 19 | User Trust Signals — Saved ✔ / Syncing... / Offline mode | Mică | Mare | Ridică produsul la "tool serios" |
+| 18 | ✅ Error Recovery UX — "Saving failed", "Work is safe locally", localStorage fallback | Medie | Critic | Critic pentru produs event-based. "Nu te îngrijora, am salvat totul în browser" |
+| 19 | ✅ User Trust Signals — Saved ✔ / Syncing... / Offline mode | Mică | Mare | Ridică produsul la "tool serios" |
 | 20 | System Boundaries — ce NU face fiecare layer + anti-pattern list | Mică | Mare | UI nu scrie DB direct, data layer nu știe de UI |
 | 21 | Product Principles documentate (guest-first, max 2-3 pași, feedback instant, fără dead ends) | Mică | Mare | |
 | 22 | First-run empty states — primul guest, prima masă, primul vendor | Medie | Mare | Success states, nu doar error states |
