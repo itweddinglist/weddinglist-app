@@ -317,7 +317,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
 
     setTables((prev) => [
       ...prev,
-      { id, name: modal.name.trim() || "Bar", type: modal.type, seats: modal.seats || 0, x, y, rotation: 0 },
+      { id, name: modal.name.trim() || "Bar", type: modal.type, seats: modal.seats || 0, isRing: modal.isRing || false, x, y, rotation: 0 },
     ]);
     setNewTableIds((prev) => new Set([...prev, id]));
 

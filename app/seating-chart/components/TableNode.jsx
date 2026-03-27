@@ -148,16 +148,14 @@ function TableNodeImpl({
         {/* RING DANS */}
         {t.isRing && (
           <>
-            <ellipse
+                        <circle
               cx={d.w / 2}
               cy={d.h / 2}
-              rx={d.tw / 2}
-              ry={d.th / 2}
+              r={Math.min(d.tw, d.th) / 2}
               fill="rgba(196,168,130,0.04)"
-              stroke={isSelected ? "#B794F4" : "rgba(196,168,130,0.3)"}
-              strokeWidth={isSelected ? 2 : 1}
+              stroke={isSelected ? "#B794F4" : "rgba(196,168,130,0.35)"}
+              strokeWidth={isSelected ? 2 : 1.5}
               strokeDasharray="6,4"
-              filter={vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "none"}
               vectorEffect="non-scaling-stroke"
               style={{ pointerEvents: "none" }}
             />
@@ -166,15 +164,18 @@ function TableNodeImpl({
               y={d.h / 2}
               textAnchor="middle"
               fill="#1E2340"
-              fontSize="12"
+              fontSize="20"
               fontFamily="Cormorant Garamond,serif"
               fontWeight="400"
               fontStyle="italic"
               style={{ pointerEvents: "none" }}
               opacity="0.9"
             >
-              Ring Dans
+              {t.name}
             </text>
+                        {/* Hit zone transparent pentru drag/click/doubleclick */}
+            <rect x={0} y={0} width={d.w} height={d.h} fill="transparent" stroke="none"
+              style={{ pointerEvents: "all", cursor: "move" }} />
           </>
         )}
 
@@ -381,6 +382,7 @@ function TableNodeImpl({
                   setClickedSeat({ guest, tableId: t.id, x: e.clientX + 14, y: e.clientY - 14 });
                 }}
                 draggable="true"
+                onMouseDown={(e) => { e.stopPropagation(); }}
                 onDragStart={(e) => {
                   e.stopPropagation();
                   setIsDraggingGuest(true);
