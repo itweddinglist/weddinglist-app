@@ -191,7 +191,7 @@ export default function CanvasToolbar({
             style={{
               ...iconBtn,
               ...(lockMode
-                ? { background: "#1E2340", color: "white", borderColor: "#1E2340" }
+                ? { background: "#1E2340", color: "white", border: "1px solid #1E2340" }
                 : {}),
             }}
             onClick={() => {
