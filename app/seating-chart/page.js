@@ -323,6 +323,7 @@ export default function SeatingChart() {
                 height="100%"
                 viewBox={viewBox}
                 onMouseDown={handleSvgMouseDown}
+                onMouseEnter={() => setHighlightGroupId(null)}
                 onClick={(e) => {
                   if (e.target === svgRef.current || e.target.getAttribute?.("data-bg") === "1") {
                     ui.setClickedSeat(null);

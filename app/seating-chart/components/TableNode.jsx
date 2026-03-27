@@ -483,13 +483,8 @@ function tableNodeComparator(prev, next) {
     if (prevIn || nextIn) return false;
   }
 
-  // highlightGroupId: re-render doar dacă grupul e prezent în masă
-  if (prev.highlightGroupId !== next.highlightGroupId) {
-    const guests = next.assignedGuests;
-    const prevIn = guests.some((g) => g.grup === prev.highlightGroupId);
-    const nextIn = guests.some((g) => g.grup === next.highlightGroupId);
-    if (prevIn || nextIn) return false;
-  }
+  // highlightGroupId: re-render toate mesele când grupul se schimbă
+  if (prev.highlightGroupId !== next.highlightGroupId) return false;
 
   // newTableIds: re-render doar dacă schimbarea afectează această masă
   if (prev.newTableIds !== next.newTableIds) {
