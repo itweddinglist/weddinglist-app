@@ -4,7 +4,6 @@ export default function SaveIndicator({ status }) {
   if (status === "idle") return null;
 
   const config = {
-    dirty: { text: "", show: false },
     saving: { text: "Se salvează...", color: "#7a7f99" },
     saved: { text: "✓ Salvat", color: "#48bb78" },
     error: { text: "Eroare la salvare", color: "#e53e3e" },

@@ -158,7 +158,7 @@ export default function Dashboard() {
           { label: "Invitați", value: "12", sub: "9 confirmați" },
           { label: "Mese", value: "5", sub: "42 locuri" },
           { label: "Buget", value: "0%", sub: "din total achitat" },
-          { label: "Zile rămase", value: "195", sub: "15 sep 2026" },
+          { label: "Zile rămase", value: String(Math.max(0, Math.ceil((new Date("2026-09-15") - new Date()) / (1000 * 60 * 60 * 24)))), sub: "15 sep 2026" },
         ].map((s, i) => (
           <div
             key={i}

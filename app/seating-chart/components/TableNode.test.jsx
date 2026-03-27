@@ -21,7 +21,7 @@ const makeTable = (overrides = {}) => ({
 
 const defaultProps = (tableOverrides = {}) => ({
   t: makeTable(tableOverrides),
-  guestsByTable: {},
+  assignedGuests: [],
   dragOver: null,
   selectedTableId: null,
   lockMode: false,
@@ -53,7 +53,7 @@ const makeGuest = (overrides = {}) => ({
 
 const propsWithGuest = (tableOverrides = {}) => {
   const props = defaultProps(tableOverrides);
-  props.guestsByTable = { 1: [makeGuest()] };
+  props.assignedGuests = [makeGuest()];
   return props;
 };
 
@@ -104,7 +104,7 @@ describe("TableNode — bar fără scaune", () => {
 describe("TableNode — isRing fără scaune", () => {
   it("isRing:true → 0 scaune randate", () => {
     const { container } = renderInSvg(defaultProps({ type: "bar", isRing: true }));
-    const emptySeat = container.querySelectorAll("circle[stroke-dasharray]");
+    const emptySeat = container.querySelectorAll('circle[stroke="#C4A882"][r="16"]');
     expect(emptySeat.length).toBe(0);
   });
 });
@@ -151,21 +151,19 @@ describe("TableNode — isSelected vizual", () => {
 // ── Test 9 — guestsByTable cu guest randat ────────────────────────────────────
 
 describe("TableNode — guest randat în scaun", () => {
-  it("guest în guestsByTable → inițiale afișate", () => {
+  it("guest în assignedGuests → inițiale afișate", () => {
     const props = defaultProps();
-    props.guestsByTable = {
-      1: [
-        {
-          id: 1,
-          prenume: "Ion",
-          nume: "Popescu",
-          grup: "Familie Mireasă",
-          status: "confirmat",
-          meniu: "Standard",
-          tableId: 1,
-        },
-      ],
-    };
+    props.assignedGuests = [
+      {
+        id: 1,
+        prenume: "Ion",
+        nume: "Popescu",
+        grup: "Familie Mireasă",
+        status: "confirmat",
+        meniu: "Standard",
+        tableId: 1,
+      },
+    ];
     renderInSvg(props);
     expect(screen.getByText("IP")).toBeTruthy();
   });
@@ -266,7 +264,7 @@ describe("TableNode — mouseEnter seat ocupat", () => {
     const props = propsWithGuest();
     const { container } = renderInSvg(props);
     // primul circle cu fill colorat (nu white, nu none) = seat ocupat
-    const seatCircle = container.querySelector("g > g > g circle");
+    const seatCircle = container.querySelector('circle[r="24"]');
     fireEvent.mouseEnter(seatCircle);
     expect(props.setHoveredGuest).toHaveBeenCalled();
     const arg = props.setHoveredGuest.mock.calls[0][0];
@@ -280,11 +278,14 @@ describe("TableNode — mouseEnter seat ocupat", () => {
 
 describe("TableNode — mouseLeave seat ocupat", () => {
   it("mouseLeave pe circle seat → setHoveredGuest(null)", () => {
+    vi.useFakeTimers();
     const props = propsWithGuest();
     const { container } = renderInSvg(props);
-    const seatCircle = container.querySelector("g > g > g circle");
+    const seatCircle = container.querySelector('circle[r="24"]');
     fireEvent.mouseLeave(seatCircle);
+    vi.runAllTimers();
     expect(props.setHoveredGuest).toHaveBeenCalledWith(null);
+    vi.useRealTimers();
   });
 });
 
