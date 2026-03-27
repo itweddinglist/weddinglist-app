@@ -485,9 +485,11 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
     },
 
     // Search
-    filteredUnassigned: (searchQuery) => searchQuery
-      ? guests.filter((g) => g.tableId == null &&
-          `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().includes(searchQuery.toLowerCase()))
-      : guests.filter((g) => g.tableId == null),
+    filteredUnassigned: (searchQuery) => {
+      if (!searchQuery) return guests.filter((g) => g.tableId == null);
+      const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return guests.filter((g) => g.tableId == null &&
+        `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q));
+    },
   };
 }

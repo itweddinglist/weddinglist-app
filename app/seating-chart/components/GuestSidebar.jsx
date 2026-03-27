@@ -16,8 +16,10 @@ function GuestSidebar({
   tables,
   highlightGroupId,
   setHighlightGroupId,
+  activeGroupId,
+  setActiveGroupId,
 }) {
-  const allSeated = guests.length > 0 && filteredUnassigned.length === 0 && !searchQuery;
+  const allSeated = guests.length > 0 && filteredUnassigned.length === 0 && !searchQuery && !activeGroupId;
   const noGuests = guests.length === 0;
   const noResults = searchQuery && filteredUnassigned.length === 0;
 
@@ -30,8 +32,8 @@ function GuestSidebar({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        {searchQuery && (
-          <button className="sb-search-clear" onClick={() => setSearchQuery("")}>
+        {(searchQuery || activeGroupId) && (
+          <button className="sb-search-clear" onClick={() => { setSearchQuery(""); setActiveGroupId(null); }}>
             ×
           </button>
         )}
@@ -39,7 +41,7 @@ function GuestSidebar({
 
       <div className="sb-divider" />
       {guestMeta.groups.length > 0 && (
-        <div style={{ padding: "0 1rem 0.5rem", maxHeight: "40vh", overflowY: "auto" }}>
+        <div style={{ padding: "0 1rem 0.5rem", maxHeight: "32vh", overflowY: "auto" }}>
           <div className="sb-section-label" style={{ marginBottom: "0.4rem" }}>
             Grupuri
           </div>
@@ -50,10 +52,12 @@ function GuestSidebar({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                padding: "0.2rem 0",
+                padding: "0.2rem 0.4rem",
                 cursor: "pointer",
+                borderRadius: "5px",
+                background: activeGroupId === g.name ? "rgba(201,144,122,0.12)" : "transparent",
               }}
-              onClick={() => setSearchQuery(searchQuery === g.name ? "" : g.name)}
+              onClick={() => setActiveGroupId(activeGroupId === g.name ? null : g.name)}
               onMouseEnter={() => setHighlightGroupId(g.name)}
               onMouseLeave={() => setHighlightGroupId(null)}
             >
@@ -174,7 +178,7 @@ function GuestSidebar({
         guests.filter(
           (g) =>
             g.tableId &&
-            `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().includes(searchQuery.toLowerCase())
+            `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
         ).length > 0 && (
           <>
             <div className="sb-section-label sb-label-pad" style={{ marginTop: "0.5rem" }}>
@@ -185,8 +189,8 @@ function GuestSidebar({
                     (g) =>
                       g.tableId &&
                       `${g.prenume} ${g.nume} ${g.grup}`
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase())
+                        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .includes(searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
                   ).length
                 }
               </span>
@@ -197,8 +201,8 @@ function GuestSidebar({
                   (g) =>
                     g.tableId &&
                     `${g.prenume} ${g.nume} ${g.grup}`
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase())
+                      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                      .includes(searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
                 )
                 .map((g) => {
                   const gc = getGroupColor(g.grup);
