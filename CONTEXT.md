@@ -167,8 +167,9 @@ app/lib/
 - useGuests.js — ȘTERS (era cod mort, arhitectură veche)
 
 ## Warnings ESLint existente (non-blocante)
-- app/components/ErrorBoundary.jsx:17 — console.error
-- app/components/Skeleton.jsx:34 — height unused
+- ✅ app/components/ErrorBoundary.jsx:17 — rezolvat: eslint.config.mjs permite console.error
+- ✅ app/components/Skeleton.jsx:34 — rezolvat: height aplicat ca minHeight pe container
+- ✅ app/seating-chart/components/CanvasToolbar.jsx — rezolvat: border shorthand fix pe lock button
 
 ## Teste
 - 341/341 teste verzi
@@ -211,6 +212,19 @@ app/lib/
 - generateTestData.js — script browser console, 60 mese + 600 invitați
 
 ## Modificări arhitecturale sesiunea curentă (Mar 27, 2026)
+
+### Fix-uri ESLint ✅:
+- ✅ CanvasToolbar.jsx — border shorthand mixing fix pe butonul lock
+- ✅ eslint.config.mjs — no-console permite console.error și console.warn
+- ✅ Skeleton.jsx — height prop aplicat ca minHeight pe SkeletonCard
+
+### Must Now verificate ✅:
+- ✅ #4 generateTestData.js — nu e importat în app, safe
+- ✅ #25 Gravity Guard — Math.max/min pe PLAN_W/H în useSeatingData și useTableInteractions
+- ✅ #26 Guest Collision — UNIQUE constraint seat_assignments_guest_event_id_key există în Supabase DEV
+- ✅ #28 migrateIfNeeded — implementat în storage.js prin sanitize + compatibilitate v13→v14
+- ⏳ #5 RLS policies — de scris înainte de Faza 3 (seating chart nu folosește Supabase acum)
+
 
 ### Tooltip (P8) ✅:
 - ✅ onMouseEnter/onMouseLeave mutate pe circle r=24 (hit zone real)
@@ -292,6 +306,9 @@ app/lib/
 - #27: fix(p2) highlightGroupId reset bug
 - #28: feat(ux) seat positions, progress border, nume invitat
 - #29: docs: update context
+- #30: fix: border shorthand mixing in lock button canvastoolbar
+- #31: fix: resolve eslint warnings in errorboundary and skeleton
+- #32: docs: context final + priorities locked
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -447,7 +464,7 @@ app/lib/
 - Exemple de când NU incrementezi: adaugi câmp opțional cu default, fix-uri de logică fără schimbări de schemă
 - La incrementare: șterge datele vechi din localStorage (utilizatorii pierd datele nesincronizate)
 
-## Cum lucrez cu Claude## Cum lucrez cu Claude
+## Cum lucrez cu Claude
 - Dau întotdeauna fișierul complet pentru verificare înainte de commit
 - Fac modificări local pas cu pas după instrucțiunile Claude
 - Commit după fiecare feature/fix, nu bulk commits
@@ -456,7 +473,7 @@ app/lib/
 - Limbă română în toate conversațiile și commit messages
 
 ## Bug-uri cunoscute (nedocumentate în issues)
-- ⚠️ CanvasToolbar.jsx — mixing `border` shorthand cu `borderColor` pe butonul de lock (warning React non-blocant)
+- ✅ CanvasToolbar.jsx — mixing `border` shorthand cu `borderColor` pe butonul de lock (warning React non-blocant)
 
 ## GDPR
 - ✅ Supabase EU Frankfurt
@@ -467,4 +484,4 @@ app/lib/
 - ✅ Data minimization în schema
 - ✅ Data retention documentat
 
-## Progres total: ~40% din produs complet
+## Progres total: ~41% din produs complet
