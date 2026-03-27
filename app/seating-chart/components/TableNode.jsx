@@ -61,6 +61,12 @@ function TableNodeImpl({
             : "#C4A882";
   const bw = isDragTarget || isSelected ? 2.5 : isNew ? 2 : 1.5;
   const bDash = isNew ? "6,3" : "none";
+  // Border culoare occupancy — doar la zoom 0.2-0.4, doar dacă nu e drag/selected/new
+  const occupancyBs = (vzoom >= 0.2 && vzoom < 0.4 && !isDragTarget && !isSelected && !isNew && !isHighlighted && assignedGuests.length > 0)
+    ? (assignedGuests.length >= t.seats ? "#E53E3E"
+      : assignedGuests.length / t.seats >= 0.8 ? "#ECC94B"
+      : "#48BB78")
+    : bs;
 
   const seatPositions = useMemo(() => getSeatPositions(t), [t.type, t.seats, t.isRing]);
   const fillColor = getSeatFillColor(assignedGuests.length, t.seats);
@@ -222,7 +228,7 @@ function TableNodeImpl({
               cy={d.cy}
               r={d.r}
               fill={isNew ? NEW_TABLE_FILL : "#FAF7F2"}
-              stroke={bs}
+              stroke={occupancyBs}
               strokeWidth={bw}
               strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
@@ -295,7 +301,7 @@ function TableNodeImpl({
           <>
             <rect x={d.pad} y={d.pad} width={d.s} height={d.s} rx="10"
               fill={isNew ? NEW_TABLE_FILL : "white"}
-              stroke={bs} strokeWidth={bw} strokeDasharray={bDash}
+              stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke" />
             {vzoom >= 0.4 && (
@@ -348,7 +354,7 @@ function TableNodeImpl({
           <>
             <rect x="25" y="22" width={d.tw} height={d.th} rx="10"
               fill={isNew ? NEW_TABLE_FILL : "white"}
-              stroke={bs} strokeWidth={bw} strokeDasharray={bDash}
+              stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke" />
             {vzoom >= 0.4 && (
