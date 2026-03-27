@@ -304,6 +304,17 @@ function TableNodeImpl({
               stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke" />
+            {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
+              const pct = assignedGuests.length / t.seats;
+              const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
+              const perimeter = (d.s + d.s) * 2;
+              const dashLen = pct * perimeter;
+              return <rect x={d.pad} y={d.pad} width={d.s} height={d.s} rx="10"
+                fill="none" stroke={arcColor} strokeWidth="3"
+                strokeDasharray={`${dashLen} ${perimeter}`}
+                opacity={isSelected ? 0.7 : 0.5}
+                style={{ pointerEvents: "none" }}/>;
+            })()}
             {vzoom >= 0.4 && (
               <>
                 <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 - 10} textAnchor="middle"
@@ -357,6 +368,17 @@ function TableNodeImpl({
               stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
               vectorEffect="non-scaling-stroke" />
+            {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
+              const pct = assignedGuests.length / t.seats;
+              const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
+              const perimeter = (d.tw + d.th) * 2;
+              const dashLen = pct * perimeter;
+              return <rect x="25" y="22" width={d.tw} height={d.th} rx="10"
+                fill="none" stroke={arcColor} strokeWidth="3"
+                strokeDasharray={`${dashLen} ${perimeter}`}
+                opacity={isSelected ? 0.7 : 0.5}
+                style={{ pointerEvents: "none" }}/>;
+            })()}
             {vzoom >= 0.4 && (
               <>
                 <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
@@ -421,7 +443,7 @@ function TableNodeImpl({
                     style={{ pointerEvents: "none" }} />
                 )}
                 {vzoom >= 0.4 && !isDraggingThisTable && (
-                  <text x={pos.x} y={pos.y + 28} textAnchor="middle" fill="#1E2340" fontSize="9"
+                  <text x={pos.x} y={(t.type === "rect" || t.type === "prezidiu") ? (pos.y < cy - t.y ? pos.y - 20 : pos.y + 28) : pos.y + 28} textAnchor="middle" fill="#1E2340" fontSize="9"
                     fontFamily="DM Sans,sans-serif" fontWeight="500"
                     style={{ pointerEvents: "none", userSelect: "none" }} opacity="0.9">
                     {guest.prenume} {guest.nume?.[0] ?? ''}.
