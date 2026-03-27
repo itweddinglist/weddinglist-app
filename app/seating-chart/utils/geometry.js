@@ -150,6 +150,7 @@ export const INITIAL_GUESTS = [
 export const ALL_GROUPS = [...new Set(INITIAL_GUESTS.map((g) => g.grup))];
 
 export function getGroupColor(grup) {
+  if (!grup || typeof grup !== 'string') return GROUP_COLORS[0];
   const idx = ALL_GROUPS.indexOf(grup);
   if (idx !== -1) return GROUP_COLORS[idx % GROUP_COLORS.length];
   let hash = 0;

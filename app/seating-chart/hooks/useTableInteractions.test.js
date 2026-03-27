@@ -73,6 +73,7 @@ describe("useTableInteractions — return shape", () => {
     expect(result.current).toHaveProperty("panningRef");
     expect(result.current).toHaveProperty("spaceDownRef");
     expect(result.current).toHaveProperty("handleSvgMouseDown");
+    expect(result.current).toHaveProperty("dragPreviewRef");
   });
 });
 
@@ -197,16 +198,42 @@ describe("useTableInteractions — mousemove fără drag", () => {
 // ── Test 9 — mousemove cu drag ────────────────────────────────────────────────
 
 describe("useTableInteractions — mousemove cu drag", () => {
-  it("draggingTableRef setat → setTables apelat după rAF", () => {
+  it("draggingTableRef setat → dragPreviewRef actualizat, setTables NU apelat în mousemove", () => {
     const args = defaultArgs();
     const { result } = renderHook(() => useTableInteractions(args));
     act(() => {
-      result.current.draggingTableRef.current = { id: 1, ox: 10, oy: 10 };
+      result.current.draggingTableRef.current = { id: 1, ox: 10, oy: 10, dw: 140, dh: 140 };
       window.dispatchEvent(
         new MouseEvent("mousemove", { clientX: 200, clientY: 200, bubbles: true })
       );
     });
-    expect(args.setTables).toHaveBeenCalled();
+    // setTables NU mai e apelat în mousemove — doar la mouseup
+    expect(args.setTables).not.toHaveBeenCalled();
+    // dragPreviewRef ținere minte poziția vizuală
+    expect(result.current.dragPreviewRef.current).not.toBeNull();
+    expect(result.current.dragPreviewRef.current).toHaveProperty("tableId", 1);
+    expect(result.current.dragPreviewRef.current).toHaveProperty("x");
+    expect(result.current.dragPreviewRef.current).toHaveProperty("y");
+  });
+
+  it("la mouseup după drag → setTables apelat o singură dată cu poziția finală", () => {
+    const args = defaultArgs();
+    const { result } = renderHook(() => useTableInteractions(args));
+    act(() => {
+      result.current.draggingTableRef.current = { id: 1, ox: 10, oy: 10, dw: 140, dh: 140 };
+      window.dispatchEvent(
+        new MouseEvent("mousemove", { clientX: 200, clientY: 200, bubbles: true })
+      );
+    });
+    act(() => {
+      window.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    });
+    expect(args.setTables).toHaveBeenCalledTimes(1);
+    const updater = args.setTables.mock.calls[0][0];
+    const updated = updater(args.tables);
+    expect(updated[0]).toHaveProperty("id", 1);
+    expect(updated[0]).toHaveProperty("x");
+    expect(updated[0]).toHaveProperty("y");
   });
 });
 

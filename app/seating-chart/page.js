@@ -1,6 +1,6 @@
 ﻿"use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   GRID,
   PLAN_W,
@@ -11,7 +11,9 @@ import {
   getTableDims,
 } from "./utils/geometry.js";
 import { useCamera } from "./hooks/useCamera.js";
-import { useGuests } from "./hooks/useGuests.js";
+import { useSeatingData } from "./hooks/useSeatingData.js";
+import { useSeatingUI } from "./hooks/useSeatingUI.js";
+import { applySeatingEffect } from "./utils/applySeatingEffect.js";
 import { useGuestLocator } from "./hooks/useGuestLocator.js";
 import { useTableInteractions } from "./hooks/useTableInteractions.js";
 import { TableNode } from "./components/TableNode.jsx";
@@ -23,15 +25,23 @@ import EditPanel from "./components/EditPanel.jsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import ToastStack from "./components/ToastStack.jsx";
 import { exportToPng } from "./utils/exportPng.js";
+import FpsCounter from "./components/FpsCounter.jsx";
 
-const toastColors = {
-  rose: "#C9907A",
-  green: "#48BB78",
-  red: "#E53E3E",
-  yellow: "#ECC94B",
-};
+const EMPTY_ARRAY = [];
+
+function isTableVisible(t, cam, canvasW, canvasH) {
+  const CULL_PAD = 300;
+  const d = getTableDims(t);
+  return (
+    t.x + d.w + CULL_PAD > cam.vx &&
+    t.x - CULL_PAD < cam.vx + canvasW / cam.z &&
+    t.y + d.h + CULL_PAD > cam.vy &&
+    t.y - CULL_PAD < cam.vy + canvasH / cam.z
+  );
+}
 
 export default function SeatingChart() {
+  // ── Layer 1: Camera ──
   const {
     cam,
     dispatchCam,
@@ -50,71 +60,33 @@ export default function SeatingChart() {
     focusPoint,
   } = useCamera();
 
-  const {
-    guests,
-    tables,
-    nextId,
-    hydrated: guestsHydrated,
-    setTables,
-    guestsRef,
-    tablesRef,
-    spawnCounterRef,
-    guestsByTable,
-    realTables,
-    totalSeats,
-    assignedCount,
-    unassigned,
-    filteredUnassigned,
-    progress,
-    menuStats,
-    toasts,
-    searchQuery,
-    setSearchQuery,
-    lockMode,
-    setLockMode,
-    showStats,
-    setShowStats,
-    showCatering,
-    setShowCatering,
-    showToast,
-    saveAction,
-    undo,
-    assignGuest,
-    unassignGuest,
-    magicFill,
-    createTable,
-    deleteTable,
-    rotateTable,
-    saveEdit,
-    getNextTableName,
-    resetPlan,
-    modal,
-    setModal,
-    editPanel,
-    setEditPanel,
-    editName,
-    setEditName,
-    editSeats,
-    setEditSeats,
-    confirmDialog,
-    setConfirmDialog,
-    selectedTableId,
-    setSelectedTableId,
-    clickedSeat,
-    setClickedSeat,
-    hoveredGuest,
-    setHoveredGuest,
-    dragOver,
-    setDragOver,
-    isDraggingGuest,
-    setIsDraggingGuest,
-    guestMeta,
-    groupColorMap,
-    getGuestTableId,
-  } = useGuests(cam);
+  // ── Layer 2: Data ──
+  const data = useSeatingData(cam, camRef, canvasWRef, canvasHRef);
 
-  const [savedAt, setSavedAt] = useState(null);
+  // ── Layer 3: UI ──
+  const ui = useSeatingUI();
+
+  // ── Effect handler ──
+  const handleResult = useCallback((result) => {
+    result?.effects?.forEach((effect) => applySeatingEffect(effect, ui));
+  }, [ui]);
+
+  // ── Drag preview tick — forțează re-render vizual fără setTables per frame ──
+  const [, setDragTick] = useState(0);
+
+  // ── Search state (UI local) ──
+  const [searchQuery, setSearchQuery] = useState("");
   const [highlightGroupId, setHighlightGroupId] = useState(null);
+  const [activeGroupId, setActiveGroupId] = useState(null);
+  const [savedAt, setSavedAt] = useState(null);
+  const filteredUnassigned = useMemo(
+    () => {
+      let result = data.filteredUnassigned(searchQuery);
+      if (activeGroupId) result = result.filter((g) => g.grup === activeGroupId);
+      return result;
+    },
+    [data.filteredUnassigned, searchQuery, activeGroupId]
+  );
   const [exportDialog, setExportDialog] = useState(false);
   const [exportMode, setExportMode] = useState("fit");
   const [exporting, setExporting] = useState(false);
@@ -124,18 +96,29 @@ export default function SeatingChart() {
     const timer = setTimeout(() => setSavedAt(null), 2000);
     return () => clearTimeout(timer);
   }, [savedAt]);
+
   const vzoom = cam.z;
+
+  // ── saveAction cu indicator ──
   const saveActionWithIndicator = useCallback(() => {
-    saveAction();
+    data.saveAction();
     setSavedAt(Date.now());
-  }, [saveAction]);
+  }, [data]);
+
+  // ── Reset ──
+  const handleReset = useCallback(() => {
+    const result = data.resetPlan(dispatchCam);
+    handleResult(result);
+  }, [data, dispatchCam, handleResult]);
+
+  // ── Export ──
   const handleExport = useCallback(async () => {
     if (!svgRef.current) return;
     setExporting(true);
     try {
       const blob = await exportToPng({
         svgEl: svgRef.current,
-        tables,
+        tables: data.tables,
         getTableDims,
         mode: exportMode,
       });
@@ -146,43 +129,92 @@ export default function SeatingChart() {
       a.click();
       URL.revokeObjectURL(url);
       setExportDialog(false);
-      showToast("✓ Export reușit!", "green");
+      ui.showToast("✓ Export reușit!", "green");
     } catch (err) {
-      showToast("Eroare la export. Încearcă din nou.", "red");
+      ui.showToast("Eroare la export. Încearcă din nou.", "red");
     } finally {
       setExporting(false);
     }
-  }, [svgRef, tables, exportMode, showToast]);
+  }, [svgRef, data.tables, exportMode, ui]);
+
+  // ── Guest locator ──
   const { highlightTableId, highlightGuestId, locateGuest } = useGuestLocator({
-    tables,
-    getGuestTableId,
+    tables: data.tables,
+    getGuestTableId: data.getGuestTableId,
     focusPoint,
   });
-  useEffect(() => {
-    setClickedSeat(null);
-  }, [cam.vx, cam.vy, cam.z, selectedTableId, isDraggingGuest, assignedCount]);
 
-  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown } = useTableInteractions({
-    tables,
-    setTables,
-    selectedTableId,
-    lockMode,
-    undo,
+  // ── Clear clicked seat on nav ──
+  useEffect(() => {
+    ui.setClickedSeat(null);
+  }, [cam.vx, cam.vy, cam.z, ui.selectedTableId, ui.isDraggingGuest, data.assignedCount]);
+
+  // ── Layer 3: Interactions ──
+  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown, dragPreviewRef } = useTableInteractions({
+    tables: data.tables,
+    setTables: data.setTables,
+    selectedTableId: ui.selectedTableId,
+    lockMode: ui.lockMode,
+    undo: () => handleResult(data.undo()),
     saveAction: saveActionWithIndicator,
-    setModal,
-    setEditPanel,
-    setConfirmDialog,
-    setClickedSeat,
-    setShowCatering,
-    setSelectedTableId,
-    setHoveredGuest,
-    setIsDraggingGuest,
+    setModal: ui.setModal,
+    setEditPanel: ui.setEditPanel,
+    setConfirmDialog: ui.setConfirmDialog,
+    setClickedSeat: ui.setClickedSeat,
+    setShowCatering: ui.setShowCatering,
+    setSelectedTableId: ui.setSelectedTableId,
+    setHoveredGuest: ui.setHoveredGuest,
+    setIsDraggingGuest: ui.setIsDraggingGuest,
     camRef,
     canvasWRef,
     canvasHRef,
     screenToSVG,
     dispatchCam,
+    notifyDrag: () => setDragTick((n) => n + 1),
   });
+
+  // ── Wrapped actions ──
+  const handleAssignGuest = useCallback((gId, tableId) => {
+    handleResult(data.assignGuest(gId, tableId));
+  }, [data, handleResult]);
+
+  const handleUnassignGuest = useCallback((guestId) => {
+    handleResult(data.unassignGuest(guestId));
+  }, [data, handleResult]);
+
+  const handleMagicFill = useCallback(() => {
+    handleResult(data.magicFill());
+  }, [data, handleResult]);
+
+  const handleCreateTable = useCallback(() => {
+    if (!ui.modal) return;
+    const result = data.createTable(ui.modal);
+    handleResult(result);
+  }, [data, ui.modal, handleResult]);
+
+  const handleSaveEdit = useCallback(() => {
+    if (!ui.editPanel) return;
+    const result = data.saveEdit(ui.editName, ui.editSeats, ui.editPanel.tableId);
+    handleResult(result);
+  }, [data, ui.editPanel, ui.editName, ui.editSeats, handleResult]);
+
+  const handleDeleteTable = useCallback((tableId) => {
+    const result = data.deleteTable(tableId);
+    if (result.confirmRequired) {
+      ui.setConfirmDialog({
+        title: result.confirmRequired.title,
+        sub: result.confirmRequired.sub,
+        onOk: () => {
+          const confirmResult = result.confirmRequired.onConfirm();
+          handleResult(confirmResult);
+        },
+      });
+    }
+  }, [data, ui, handleResult]);
+
+  const handleUndo = useCallback(() => {
+    handleResult(data.undo());
+  }, [data, handleResult]);
 
   if (!hydrated) return <div style={{ minHeight: "100vh", background: "#FAF7F2" }} />;
 
@@ -197,10 +229,10 @@ export default function SeatingChart() {
           <div className="nav-divider" />
           <div className="nav-stats">
             {[
-              { v: realTables.length, l: "Mese" },
-              { v: totalSeats, l: "Locuri" },
-              { v: assignedCount, l: "Ocupate" },
-              { v: unassigned.length, l: "Neatribuiți" },
+              { v: data.realTables.length, l: "Mese" },
+              { v: data.totalSeats, l: "Locuri" },
+              { v: data.assignedCount, l: "Ocupate" },
+              { v: data.unassigned.length, l: "Neatribuiți" },
             ].map((s, i) => (
               <div key={i} className="nav-stat">
                 <span className="nav-stat-num">{s.v}</span>
@@ -215,14 +247,14 @@ export default function SeatingChart() {
 
         <div className="sc-progress">
           <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
+            <div className="progress-fill" style={{ width: `${data.progress}%` }} />
           </div>
           <span className="progress-text">
-            {unassigned.length === 0 && guests.length > 0 ? (
+            {data.unassigned.length === 0 && data.guests.length > 0 ? (
               "✨ Toți invitații au un loc!"
             ) : (
               <>
-                Mai ai <strong style={{ color: "#F0C9B0" }}>{unassigned.length}</strong> invitați de
+                Mai ai <strong style={{ color: "#F0C9B0" }}>{data.unassigned.length}</strong> invitați de
                 așezat
               </>
             )}
@@ -239,14 +271,7 @@ export default function SeatingChart() {
             }}
           >
             {savedAt && (
-              <span
-                style={{
-                  color: "#48BB78",
-                  fontStyle: "normal",
-                  fontWeight: 500,
-                  animation: "fadeUp 0.2s ease",
-                }}
-              >
+              <span style={{ color: "#48BB78", fontStyle: "normal", fontWeight: 500, animation: "fadeUp 0.2s ease" }}>
                 ✓ Salvat
               </span>
             )}
@@ -256,36 +281,38 @@ export default function SeatingChart() {
 
         <div className="sc-body">
           <GuestSidebar
-            guests={guests}
+            guests={data.guests}
             filteredUnassigned={filteredUnassigned}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            guestMeta={guestMeta}
-            groupColorMap={groupColorMap}
+            guestMeta={data.guestMeta}
+            groupColorMap={data.groupColorMap}
             locateGuest={locateGuest}
-            isDraggingGuest={isDraggingGuest}
-            setHoveredGuest={setHoveredGuest}
-            setIsDraggingGuest={setIsDraggingGuest}
-            tables={tables}
+            isDraggingGuest={ui.isDraggingGuest}
+            setHoveredGuest={ui.setHoveredGuest}
+            setIsDraggingGuest={ui.setIsDraggingGuest}
+            tables={data.tables}
             highlightGroupId={highlightGroupId}
             setHighlightGroupId={setHighlightGroupId}
+            activeGroupId={activeGroupId}
+            setActiveGroupId={setActiveGroupId}
           />
           <div className="sc-canvas-col">
             <CanvasToolbar
               vzoom={vzoom}
               zoomBy={zoomBy}
               fitToScreen={fitToScreen}
-              tables={tables}
-              lockMode={lockMode}
-              setLockMode={setLockMode}
-              showToast={showToast}
-              magicFill={magicFill}
-              undo={undo}
-              setShowCatering={setShowCatering}
-              setConfirmDialog={setConfirmDialog}
-              resetPlan={resetPlan}
-              setModal={setModal}
-              getNextTableName={getNextTableName}
+              tables={data.tables}
+              lockMode={ui.lockMode}
+              setLockMode={ui.setLockMode}
+              showToast={ui.showToast}
+              magicFill={handleMagicFill}
+              undo={handleUndo}
+              setShowCatering={ui.setShowCatering}
+              setConfirmDialog={ui.setConfirmDialog}
+              resetPlan={handleReset}
+              setModal={ui.setModal}
+              getNextTableName={data.getNextTableName}
               onExport={() => setExportDialog(true)}
             />
 
@@ -298,10 +325,10 @@ export default function SeatingChart() {
                 onMouseDown={handleSvgMouseDown}
                 onClick={(e) => {
                   if (e.target === svgRef.current || e.target.getAttribute?.("data-bg") === "1") {
-                    setClickedSeat(null);
-                    setEditPanel(null);
-                    setSelectedTableId(null);
-                    setHoveredGuest(null);
+                    ui.setClickedSeat(null);
+                    ui.setEditPanel(null);
+                    ui.setSelectedTableId(null);
+                    ui.setHoveredGuest(null);
                   }
                 }}
               >
@@ -315,86 +342,74 @@ export default function SeatingChart() {
                     />
                   </pattern>
                   <filter id="shadow-sm" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow
-                      dx="0"
-                      dy="4"
-                      stdDeviation="10"
-                      floodColor="rgba(196,168,130,0.5)"
-                    />
+                    <feDropShadow dx="0" dy="4" stdDeviation="10" floodColor="rgba(196,168,130,0.5)" />
                   </filter>
                   <filter id="shadow-prez" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow
-                      dx="0"
-                      dy="3"
-                      stdDeviation="8"
-                      floodColor="rgba(201,144,122,0.2)"
-                    />
+                    <feDropShadow dx="0" dy="3" stdDeviation="8" floodColor="rgba(201,144,122,0.2)" />
                   </filter>
                   <filter id="glow-sel" x="-40%" y="-40%" width="180%" height="180%">
-                    <feDropShadow
-                      dx="0"
-                      dy="0"
-                      stdDeviation="8"
-                      floodColor="#9F7AEA"
-                      floodOpacity="0.55"
-                    />
+                    <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="#9F7AEA" floodOpacity="0.55" />
                   </filter>
                 </defs>
 
                 <rect
                   data-bg="1"
-                  x="0"
-                  y="0"
-                  width={PLAN_W}
-                  height={PLAN_H}
+                  x="0" y="0"
+                  width={PLAN_W} height={PLAN_H}
                   fill="url(#grid-pat)"
                   onClick={() => {
-                    setClickedSeat(null);
-                    setEditPanel(null);
-                    setSelectedTableId(null);
-                    setHoveredGuest(null);
+                    ui.setClickedSeat(null);
+                    ui.setEditPanel(null);
+                    ui.setSelectedTableId(null);
+                    ui.setHoveredGuest(null);
                   }}
                 />
                 <rect
-                  x="0"
-                  y="0"
-                  width={PLAN_W}
-                  height={PLAN_H}
+                  data-border="1"
+                  x="0" y="0"
+                  width={PLAN_W} height={PLAN_H}
                   fill="none"
                   stroke="#C4A882"
                   strokeWidth="3"
-                  strokeDasharray="none"
                   opacity="0.6"
                   style={{ pointerEvents: "none" }}
                 />
 
                 <g>
-                  {[...tables].map((t) => (
+                  {data.tables.map((t) => {
+                    const preview = dragPreviewRef.current?.tableId === t.id ? dragPreviewRef.current : null;
+                    const tVisual = preview ? { ...t, x: preview.x, y: preview.y } : t;
+                    if (!isTableVisible(tVisual, cam, canvasW, canvasH)) return null;
+                    return (
                     <TableNode
                       key={t.id}
-                      t={t}
-                      guestsByTable={guestsByTable}
-                      dragOver={dragOver}
-                      selectedTableId={selectedTableId}
-                      lockMode={lockMode}
+                      t={tVisual}
+                      assignedGuests={data.guestsByTable[t.id] || EMPTY_ARRAY}
+                      dragOver={ui.dragOver}
+                      selectedTableId={ui.selectedTableId}
+                      lockMode={ui.lockMode}
                       screenToSVG={screenToSVG}
-                      assignGuest={assignGuest}
-                      setSelectedTableId={setSelectedTableId}
-                      setEditName={setEditName}
-                      setEditSeats={setEditSeats}
-                      setEditPanel={setEditPanel}
-                      setHoveredGuest={setHoveredGuest}
-                      setClickedSeat={setClickedSeat}
-                      setIsDraggingGuest={setIsDraggingGuest}
-                      setDragOver={setDragOver}
+                      assignGuest={handleAssignGuest}
+                      setSelectedTableId={ui.setSelectedTableId}
+                      setEditName={ui.setEditName}
+                      setEditSeats={ui.setEditSeats}
+                      setEditPanel={ui.setEditPanel}
+                      setHoveredGuest={ui.setHoveredGuest}
+                      setClickedSeat={ui.setClickedSeat}
+                      setIsDraggingGuest={ui.setIsDraggingGuest}
+                      setDragOver={ui.setDragOver}
                       draggingTableRef={draggingTableRef}
                       isHighlighted={highlightTableId === t.id}
                       vzoom={vzoom}
-                      isFocused={!selectedTableId || selectedTableId === t.id}
+                      isFocused={!ui.selectedTableId || ui.selectedTableId === t.id}
                       highlightGuestId={highlightGuestId}
                       highlightGroupId={highlightGroupId}
+                      newTableIds={data.newTableIds}
+                      clearNewTableHighlight={data.clearNewTableHighlight}
+                      spaceDownRef={spaceDownRef}
                     />
-                  ))}
+                    );
+                  })}
                 </g>
               </svg>
             </div>
@@ -403,65 +418,63 @@ export default function SeatingChart() {
       </div>
 
       <StatsPanel
-        showStats={showStats}
-        setShowStats={setShowStats}
-        guests={guests}
-        assignedCount={assignedCount}
-        unassigned={unassigned}
-        menuStats={menuStats}
+        showStats={ui.showStats}
+        setShowStats={ui.setShowStats}
+        guests={data.guests}
+        assignedCount={data.assignedCount}
+        unassigned={data.unassigned}
+        menuStats={data.menuStats}
       />
 
       <CateringModal
-        showCatering={showCatering}
-        setShowCatering={setShowCatering}
-        tables={tables}
-        guests={guests}
-        menuStats={menuStats}
-        showToast={showToast}
-        realTables={realTables}
+        showCatering={ui.showCatering}
+        setShowCatering={ui.setShowCatering}
+        tables={data.tables}
+        guests={data.guests}
+        menuStats={data.menuStats}
+        showToast={ui.showToast}
+        realTables={data.realTables}
       />
 
-      {hoveredGuest && !draggingTableRef.current && !panningRef.current && (
-        <div
-          style={{
-            position: "fixed",
-            zIndex: 9999,
-            background: "#1A1F3A",
-            color: "#FAF7F2",
-            padding: "0.55rem 0.85rem",
-            borderRadius: "10px",
-            fontSize: "0.7rem",
-            pointerEvents: "none",
-            boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
-            border: "1px solid rgba(201,144,122,0.25)",
-            minWidth: "155px",
-            left: Math.min(window.innerWidth - 180, hoveredGuest.x + 14),
-            top: Math.max(10, hoveredGuest.y - 14),
-            animation: "fadeUp 0.12s ease",
-          }}
-        >
-          <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
-            {hoveredGuest.guest.prenume} {hoveredGuest.guest.nume}
-          </div>
+      {ui.hoveredGuest && !draggingTableRef.current && !panningRef.current && (() => {
+        const hg = ui.hoveredGuestRef.current;
+        if (!hg) return null;
+        return (
           <div
             style={{
-              fontSize: "0.65rem",
-              color: getGroupColor(hoveredGuest.guest.grup),
-              marginBottom: "0.1rem",
+              position: "fixed",
+              zIndex: 9999,
+              background: "#1A1F3A",
+              color: "#FAF7F2",
+              padding: "0.55rem 0.85rem",
+              borderRadius: "10px",
+              fontSize: "0.7rem",
+              pointerEvents: "none",
+              boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
+              border: "1px solid rgba(201,144,122,0.25)",
+              minWidth: "155px",
+              left: Math.min(window.innerWidth - 180, hg.x + 14),
+              top: Math.max(10, hg.y - 14),
+              animation: "fadeUp 0.12s ease",
             }}
           >
-            👥 {hoveredGuest.guest.grup}
+            <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
+              {hg.guest.prenume} {hg.guest.nume}
+            </div>
+            <div style={{ fontSize: "0.65rem", color: getGroupColor(hg.guest.grup), marginBottom: "0.1rem" }}>
+              👥 {hg.guest.grup}
+            </div>
+            <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
+              🍽️ {hg.guest.meniu}
+            </div>
+            <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
+              {hg.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
+            </div>
           </div>
-          <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
-            🍽️ {hoveredGuest.guest.meniu}
-          </div>
-          <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
-            {hoveredGuest.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {clickedSeat && (
+      {ui.clickedSeat && (
         <div
           style={{
             position: "fixed",
@@ -472,30 +485,25 @@ export default function SeatingChart() {
             boxShadow: "0 6px 28px rgba(26,31,58,0.18)",
             border: "1px solid #E8DDD0",
             minWidth: "165px",
-            left: clickedSeat.x,
-            top: clickedSeat.y,
+            left: ui.clickedSeat.x,
+            top: ui.clickedSeat.y,
             animation: "fadeUp 0.15s ease",
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div
-            style={{
-              fontWeight: 600,
-              fontSize: "0.78rem",
-              color: "#13172E",
-              marginBottom: "0.1rem",
-            }}
-          >
-            {clickedSeat.guest.prenume} {clickedSeat.guest.nume}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.1rem" }}>
+            <div style={{ fontWeight: 600, fontSize: "0.78rem", color: "#13172E" }}>
+              {ui.clickedSeat.guest.prenume} {ui.clickedSeat.guest.nume}
+            </div>
+            <button
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#9DA3BC", fontSize: "0.85rem", lineHeight: 1, padding: "0 0 0 0.5rem", flexShrink: 0 }}
+              onClick={() => ui.setClickedSeat(null)}
+            >
+              ×
+            </button>
           </div>
-          <div
-            style={{
-              fontSize: "0.65rem",
-              color: getGroupColor(clickedSeat.guest.grup),
-              marginBottom: "0.5rem",
-            }}
-          >
-            {clickedSeat.guest.grup}
+          <div style={{ fontSize: "0.65rem", color: getGroupColor(ui.clickedSeat.guest.grup), marginBottom: "0.5rem" }}>
+            {ui.clickedSeat.guest.grup}
           </div>
           <button
             style={{
@@ -512,7 +520,7 @@ export default function SeatingChart() {
               letterSpacing: "0.05em",
               cursor: "pointer",
             }}
-            onClick={() => unassignGuest(clickedSeat.guest.id)}
+            onClick={() => handleUnassignGuest(ui.clickedSeat.guest.id)}
           >
             × Elimină de la masă
           </button>
@@ -520,23 +528,29 @@ export default function SeatingChart() {
       )}
 
       <EditPanel
-        editPanel={editPanel}
-        setEditPanel={setEditPanel}
-        tables={tables}
-        editName={editName}
-        setEditName={setEditName}
-        editSeats={editSeats}
-        setEditSeats={setEditSeats}
-        saveEdit={saveEdit}
-        deleteTable={deleteTable}
-        rotateTable={rotateTable}
+        editPanel={ui.editPanel}
+        setEditPanel={ui.setEditPanel}
+        tables={data.tables}
+        editName={ui.editName}
+        setEditName={ui.setEditName}
+        editSeats={ui.editSeats}
+        setEditSeats={ui.setEditSeats}
+        saveEdit={handleSaveEdit}
+        deleteTable={handleDeleteTable}
+        rotateTable={data.rotateTable}
       />
 
-      <ConfirmDialog confirmDialog={confirmDialog} setConfirmDialog={setConfirmDialog} />
+      <ConfirmDialog confirmDialog={ui.confirmDialog} setConfirmDialog={ui.setConfirmDialog} />
 
-      {modal && <ModalCreate modal={modal} setModal={setModal} createTable={createTable} />}
+      {ui.modal && (
+        <ModalCreate
+          modal={ui.modal}
+          setModal={ui.setModal}
+          createTable={handleCreateTable}
+        />
+      )}
 
-      {selectedTableId && (
+      {ui.selectedTableId && (
         <div
           style={{
             position: "fixed",
@@ -557,7 +571,8 @@ export default function SeatingChart() {
         </div>
       )}
 
-      <ToastStack toasts={toasts} />
+      <ToastStack toasts={ui.toasts} />
+
       {exportDialog && (
         <div
           style={{
@@ -583,120 +598,52 @@ export default function SeatingChart() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                fontFamily: "Cormorant Garamond,serif",
-                fontSize: "1.1rem",
-                color: "#FAF7F2",
-                marginBottom: "1rem",
-                fontWeight: 600,
-              }}
-            >
+            <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.1rem", color: "#FAF7F2", marginBottom: "1rem", fontWeight: 600 }}>
               Export PNG
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.6rem",
-                marginBottom: "1.2rem",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  cursor: "pointer",
-                  padding: "0.6rem",
-                  borderRadius: "8px",
-                  border: `1px solid ${exportMode === "fit" ? "rgba(201,144,122,0.5)" : "rgba(255,255,255,0.1)"}`,
-                  background: exportMode === "fit" ? "rgba(201,144,122,0.08)" : "transparent",
-                }}
-              >
-                <input
-                  type="radio"
-                  name="exportMode"
-                  value="fit"
-                  checked={exportMode === "fit"}
-                  onChange={() => setExportMode("fit")}
-                  style={{ accentColor: "#C9907A" }}
-                />
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#FAF7F2", fontWeight: 500 }}>
-                    Fit to content
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.2rem" }}>
+              {["fit", "a4"].map((mode) => (
+                <label
+                  key={mode}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.6rem",
+                    cursor: "pointer",
+                    padding: "0.6rem",
+                    borderRadius: "8px",
+                    border: `1px solid ${exportMode === mode ? "rgba(201,144,122,0.5)" : "rgba(255,255,255,0.1)"}`,
+                    background: exportMode === mode ? "rgba(201,144,122,0.08)" : "transparent",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="exportMode"
+                    value={mode}
+                    checked={exportMode === mode}
+                    onChange={() => setExportMode(mode)}
+                    style={{ accentColor: "#C9907A" }}
+                  />
+                  <div>
+                    <div style={{ fontSize: "0.78rem", color: "#FAF7F2", fontWeight: 500 }}>
+                      {mode === "fit" ? "Fit to content" : "A4 landscape"}
+                    </div>
+                    <div style={{ fontSize: "0.62rem", color: "#6E7490" }}>
+                      {mode === "fit" ? "Dimensiune optimă — ideal pentru share" : "Print ready — ideal pentru restaurant"}
+                    </div>
                   </div>
-                  <div style={{ fontSize: "0.62rem", color: "#6E7490" }}>
-                    Dimensiune optimă — ideal pentru share
-                  </div>
-                </div>
-              </label>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  cursor: "pointer",
-                  padding: "0.6rem",
-                  borderRadius: "8px",
-                  border: `1px solid ${exportMode === "a4" ? "rgba(201,144,122,0.5)" : "rgba(255,255,255,0.1)"}`,
-                  background: exportMode === "a4" ? "rgba(201,144,122,0.08)" : "transparent",
-                }}
-              >
-                <input
-                  type="radio"
-                  name="exportMode"
-                  value="a4"
-                  checked={exportMode === "a4"}
-                  onChange={() => setExportMode("a4")}
-                  style={{ accentColor: "#C9907A" }}
-                />
-                <div>
-                  <div style={{ fontSize: "0.78rem", color: "#FAF7F2", fontWeight: 500 }}>
-                    A4 landscape
-                  </div>
-                  <div style={{ fontSize: "0.62rem", color: "#6E7490" }}>
-                    Print ready — ideal pentru restaurant
-                  </div>
-                </div>
-              </label>
+                </label>
+              ))}
             </div>
-
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
-                style={{
-                  flex: 1,
-                  padding: "0.4rem",
-                  borderRadius: 6,
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "none",
-                  color: "#9DA3BC",
-                  fontFamily: "DM Sans,sans-serif",
-                  fontSize: "0.62rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  cursor: "pointer",
-                }}
+                style={{ flex: 1, padding: "0.4rem", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "none", color: "#9DA3BC", fontFamily: "DM Sans,sans-serif", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer" }}
                 onClick={() => setExportDialog(false)}
               >
                 Anulează
               </button>
               <button
-                style={{
-                  flex: 1,
-                  padding: "0.4rem",
-                  borderRadius: 6,
-                  border: "none",
-                  background: "#C9907A",
-                  color: "white",
-                  fontFamily: "DM Sans,sans-serif",
-                  fontSize: "0.62rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  cursor: "pointer",
-                  opacity: exporting ? 0.7 : 1,
-                }}
+                style={{ flex: 1, padding: "0.4rem", borderRadius: 6, border: "none", background: "#C9907A", color: "white", fontFamily: "DM Sans,sans-serif", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", opacity: exporting ? 0.7 : 1 }}
                 onClick={handleExport}
                 disabled={exporting}
               >
@@ -706,6 +653,7 @@ export default function SeatingChart() {
           </div>
         </div>
       )}
+      <FpsCounter />
     </>
   );
 }
@@ -730,23 +678,9 @@ function ModalCreate({ modal, setModal, createTable }) {
           <>
             <label className="ep-label">Număr locuri</label>
             <div className="ep-counter" style={{ marginBottom: "1.3rem" }}>
-              <button
-                className="ep-cnt-btn"
-                onClick={() =>
-                  setModal((m) => ({ ...m, seats: Math.max(LIMITS[m.type].min, m.seats - 1) }))
-                }
-              >
-                −
-              </button>
+              <button className="ep-cnt-btn" onClick={() => setModal((m) => ({ ...m, seats: Math.max(LIMITS[m.type].min, m.seats - 1) }))}>−</button>
               <span className="ep-cnt-val">{modal.seats}</span>
-              <button
-                className="ep-cnt-btn"
-                onClick={() =>
-                  setModal((m) => ({ ...m, seats: Math.min(LIMITS[m.type].max, m.seats + 1) }))
-                }
-              >
-                +
-              </button>
+              <button className="ep-cnt-btn" onClick={() => setModal((m) => ({ ...m, seats: Math.min(LIMITS[m.type].max, m.seats + 1) }))}>+</button>
               <span style={{ marginLeft: "auto", fontSize: "0.62rem", color: "#7A7F99" }}>
                 {LIMITS[modal.type].min}–{LIMITS[modal.type].max}
               </span>
@@ -754,24 +688,13 @@ function ModalCreate({ modal, setModal, createTable }) {
           </>
         )}
         {isBar && (
-          <p
-            style={{
-              fontSize: "0.72rem",
-              color: "#7A7F99",
-              marginBottom: "1.2rem",
-              lineHeight: 1.5,
-            }}
-          >
+          <p style={{ fontSize: "0.72rem", color: "#7A7F99", marginBottom: "1.2rem", lineHeight: 1.5 }}>
             Obiect decorativ — nu are locuri, nu apare în statistici.
           </p>
         )}
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="conf-cancel" onClick={() => setModal(null)}>
-            Anulează
-          </button>
-          <button className="conf-ok" onClick={createTable}>
-            Creează →
-          </button>
+          <button className="conf-cancel" onClick={() => setModal(null)}>Anulează</button>
+          <button className="conf-ok" onClick={createTable}>Creează →</button>
         </div>
       </div>
     </div>

@@ -1,7 +1,8 @@
 "use client";
+import React from "react";
 import { getGroupColor } from "../utils/geometry.js";
 
-export default function GuestSidebar({
+function GuestSidebar({
   guests,
   filteredUnassigned,
   searchQuery,
@@ -15,8 +16,10 @@ export default function GuestSidebar({
   tables,
   highlightGroupId,
   setHighlightGroupId,
+  activeGroupId,
+  setActiveGroupId,
 }) {
-  const allSeated = guests.length > 0 && filteredUnassigned.length === 0 && !searchQuery;
+  const allSeated = guests.length > 0 && filteredUnassigned.length === 0 && !searchQuery && !activeGroupId;
   const noGuests = guests.length === 0;
   const noResults = searchQuery && filteredUnassigned.length === 0;
 
@@ -29,8 +32,8 @@ export default function GuestSidebar({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        {searchQuery && (
-          <button className="sb-search-clear" onClick={() => setSearchQuery("")}>
+        {(searchQuery || activeGroupId) && (
+          <button className="sb-search-clear" onClick={() => { setSearchQuery(""); setActiveGroupId(null); }}>
             ×
           </button>
         )}
@@ -38,7 +41,7 @@ export default function GuestSidebar({
 
       <div className="sb-divider" />
       {guestMeta.groups.length > 0 && (
-        <div style={{ padding: "0 1rem 0.5rem" }}>
+        <div style={{ padding: "0 1rem 0.5rem", maxHeight: "32vh", overflowY: "auto" }}>
           <div className="sb-section-label" style={{ marginBottom: "0.4rem" }}>
             Grupuri
           </div>
@@ -49,10 +52,12 @@ export default function GuestSidebar({
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                padding: "0.2rem 0",
+                padding: "0.2rem 0.4rem",
                 cursor: "pointer",
+                borderRadius: "5px",
+                background: activeGroupId === g.name ? "rgba(201,144,122,0.12)" : "transparent",
               }}
-              onClick={() => setSearchQuery(searchQuery === g.name ? "" : g.name)}
+              onClick={() => setActiveGroupId(activeGroupId === g.name ? null : g.name)}
               onMouseEnter={() => setHighlightGroupId(g.name)}
               onMouseLeave={() => setHighlightGroupId(null)}
             >
@@ -75,7 +80,7 @@ export default function GuestSidebar({
       <div className="sb-section-label sb-label-pad">
         Neatribuiți <span className="sb-badge">{filteredUnassigned.length}</span>
       </div>
-      <div className="sb-guests">
+      <div className="sb-guests" style={{ overflowY: "auto", flex: 1 }}>
         {noGuests && (
           <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
             <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>👥</div>
@@ -173,7 +178,7 @@ export default function GuestSidebar({
         guests.filter(
           (g) =>
             g.tableId &&
-            `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().includes(searchQuery.toLowerCase())
+            `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
         ).length > 0 && (
           <>
             <div className="sb-section-label sb-label-pad" style={{ marginTop: "0.5rem" }}>
@@ -184,8 +189,8 @@ export default function GuestSidebar({
                     (g) =>
                       g.tableId &&
                       `${g.prenume} ${g.nume} ${g.grup}`
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase())
+                        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .includes(searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
                   ).length
                 }
               </span>
@@ -196,8 +201,8 @@ export default function GuestSidebar({
                   (g) =>
                     g.tableId &&
                     `${g.prenume} ${g.nume} ${g.grup}`
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase())
+                      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                      .includes(searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
                 )
                 .map((g) => {
                   const gc = getGroupColor(g.grup);
@@ -212,6 +217,13 @@ export default function GuestSidebar({
                       <div
                         className="sb-avatar"
                         style={{ background: `${gc}22`, border: `1.5px solid ${gc}`, color: gc }}
+                        onMouseEnter={(e) => {
+                          if (!isDraggingGuest) {
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setHoveredGuest({ guest: g, x: r.right + 8, y: r.top - 4 });
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredGuest(null)}
                       >
                         {g.prenume[0] + g.nume[0]}
                       </div>
@@ -230,3 +242,5 @@ export default function GuestSidebar({
     </aside>
   );
 }
+
+export default React.memo(GuestSidebar);
