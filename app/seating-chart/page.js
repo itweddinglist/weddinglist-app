@@ -1,6 +1,6 @@
 ﻿"use client";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GRID,
   PLAN_W,
@@ -26,6 +26,7 @@ import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import ToastStack from "./components/ToastStack.jsx";
 import { exportToPng } from "./utils/exportPng.js";
 import FpsCounter from "./components/FpsCounter.jsx";
+import SaveIndicator from "../components/SaveIndicator.jsx";
 
 const EMPTY_ARRAY = [];
 
@@ -60,8 +61,40 @@ export default function SeatingChart() {
     focusPoint,
   } = useCamera();
 
+  // ── Save status (UI local — izolat de canvas) ──
+  const [saveStatus, setSaveStatus] = useState("idle");
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== "undefined" ? !navigator.onLine : false
+  );
+  const savedTimerRef = useRef(null);
+
+  const handleSaveStatusChange = useCallback((newStatus) => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    setSaveStatus(newStatus);
+    if (newStatus === "saved") {
+      savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onOnline  = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener("online",  onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online",  onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
+  }, []);
+
   // ── Layer 2: Data ──
-  const data = useSeatingData(cam, camRef, canvasWRef, canvasHRef);
+  const data = useSeatingData(cam, camRef, canvasWRef, canvasHRef, {
+    onSaveStatusChange: handleSaveStatusChange,
+  });
 
   // ── Layer 3: UI ──
   const ui = useSeatingUI();
@@ -78,7 +111,6 @@ export default function SeatingChart() {
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightGroupId, setHighlightGroupId] = useState(null);
   const [activeGroupId, setActiveGroupId] = useState(null);
-  const [savedAt, setSavedAt] = useState(null);
   const filteredUnassigned = useMemo(
     () => {
       let result = data.filteredUnassigned(searchQuery);
@@ -91,19 +123,7 @@ export default function SeatingChart() {
   const [exportMode, setExportMode] = useState("fit");
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    if (!savedAt) return;
-    const timer = setTimeout(() => setSavedAt(null), 2000);
-    return () => clearTimeout(timer);
-  }, [savedAt]);
-
   const vzoom = cam.z;
-
-  // ── saveAction cu indicator ──
-  const saveActionWithIndicator = useCallback(() => {
-    data.saveAction();
-    setSavedAt(Date.now());
-  }, [data]);
 
   // ── Reset ──
   const handleReset = useCallback(() => {
@@ -156,7 +176,7 @@ export default function SeatingChart() {
     selectedTableId: ui.selectedTableId,
     lockMode: ui.lockMode,
     undo: () => handleResult(data.undo()),
-    saveAction: saveActionWithIndicator,
+    saveAction: data.saveAction,
     setModal: ui.setModal,
     setEditPanel: ui.setEditPanel,
     setConfirmDialog: ui.setConfirmDialog,
@@ -270,11 +290,6 @@ export default function SeatingChart() {
               gap: "0.8rem",
             }}
           >
-            {savedAt && (
-              <span style={{ color: "#48BB78", fontStyle: "normal", fontWeight: 500, animation: "fadeUp 0.2s ease" }}>
-                ✓ Salvat
-              </span>
-            )}
             Scroll=pan · Ctrl+Scroll=zoom · Space+drag=pan · Săgeți=mută masa
           </span>
         </div>
@@ -654,6 +669,7 @@ export default function SeatingChart() {
           </div>
         </div>
       )}
+      <SaveIndicator status={saveStatus} isOffline={isOffline} />
       <FpsCounter />
     </>
   );

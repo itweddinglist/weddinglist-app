@@ -67,7 +67,7 @@ const RESET_ZOOM = 0.9;
  * Toate acțiunile returnează { ok, effects[] } pentru ca page.js
  * să aplice efectele UI prin applySeatingEffect.
  */
-export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
+export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStatusChange } = {}) {
   // ── STATE ──
   const [guests, setGuests] = useState(() => INITIAL_GUESTS.map((g) => ({ ...g })));
   const [tables, setTables] = useState(() => buildTemplate());
@@ -80,6 +80,8 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
   const guestsRef = useRef(guests);
   const historyRef = useRef([]);
   const spawnCounterRef = useRef(0);
+  const onSaveStatusChangeRef = useRef(onSaveStatusChange);
+  useEffect(() => { onSaveStatusChangeRef.current = onSaveStatusChange; }, [onSaveStatusChange]);
 
   useEffect(() => { tablesRef.current = tables; }, [tables]);
   useEffect(() => { guestsRef.current = guests; }, [guests]);
@@ -98,8 +100,14 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef) {
   // ── AUTOSAVE (debounced 500ms) ──
   useEffect(() => {
     if (!hydrated) return;
+    onSaveStatusChangeRef.current?.("saving");
     const timer = setTimeout(() => {
-      saveStorageState({ guests, tables, nextId, cam });
+      try {
+        saveStorageState({ guests, tables, nextId, cam });
+        onSaveStatusChangeRef.current?.("saved");
+      } catch {
+        onSaveStatusChangeRef.current?.("error");
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [guests, tables, nextId, cam, hydrated]);
