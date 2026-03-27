@@ -76,14 +76,17 @@ export default function SeatingChart() {
 
   // ── Search state (UI local) ──
   const [searchQuery, setSearchQuery] = useState("");
-  const filteredUnassigned = useMemo(
-    () => data.filteredUnassigned(searchQuery),
-    [data.filteredUnassigned, searchQuery]
-  );
-
-  // ── Export state (UI local) ──
-  const [savedAt, setSavedAt] = useState(null);
   const [highlightGroupId, setHighlightGroupId] = useState(null);
+  const [activeGroupId, setActiveGroupId] = useState(null);
+  const [savedAt, setSavedAt] = useState(null);
+  const filteredUnassigned = useMemo(
+    () => {
+      let result = data.filteredUnassigned(searchQuery);
+      if (activeGroupId) result = result.filter((g) => g.grup === activeGroupId);
+      return result;
+    },
+    [data.filteredUnassigned, searchQuery, activeGroupId]
+  );
   const [exportDialog, setExportDialog] = useState(false);
   const [exportMode, setExportMode] = useState("fit");
   const [exporting, setExporting] = useState(false);
@@ -291,6 +294,8 @@ export default function SeatingChart() {
             tables={data.tables}
             highlightGroupId={highlightGroupId}
             setHighlightGroupId={setHighlightGroupId}
+            activeGroupId={activeGroupId}
+            setActiveGroupId={setActiveGroupId}
           />
           <div className="sc-canvas-col">
             <CanvasToolbar
