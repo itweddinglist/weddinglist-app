@@ -758,9 +758,8 @@ const css = `
   .sb-bar{grid-column:span 2;border-color:rgba(72,187,120,0.2);color:#48BB78;}
   .sb-bar:hover{background:rgba(72,187,120,0.1)!important;border-color:rgba(72,187,120,0.4)!important;color:#48BB78!important;}
   .sb-divider{height:1px;background:rgba(255,255,255,0.06);margin:0.5rem 0;}
-  .sb-guests{flex:1;overflow-y:auto;padding:0 1rem;}
-  .sb-guests::-webkit-scrollbar{width:3px;}
-  .sb-guests::-webkit-scrollbar-thumb{background:rgba(201,144,122,0.25);border-radius:2px;}
+  .sb-virtual-scroll::-webkit-scrollbar{width:3px;}.sb-virtual-scroll::-webkit-scrollbar-thumb{background:rgba(201,144,122,0.8);border-radius:2px;}.sb-guests{overflow-y:auto;padding:0 1rem;}.sb-guests::-webkit-scrollbar{width:3px;}.sb-guests::-webkit-scrollbar-thumb{background:rgba(201,144,122,0.25);border-radius:2px;}.sb-section-groups{padding:0 1rem 0.5rem;flex:3 0 0;min-height:0;display:flex;flex-direction:column;}.sb-groups-scroll{flex:1;min-height:0;overflow-y:auto;}.sb-groups-scroll::-webkit-scrollbar{width:3px;}.sb-groups-scroll::-webkit-scrollbar-thumb{background:rgba(201,144,122,0.25);border-radius:2px;}.sb-section-unassigned{display:flex;flex-direction:column;flex:7 0 0;min-height:0;padding:0 0 0.5rem;}.sb-section-unassigned.has-search{flex:3.5 0 0;}.sb-unassigned-list{flex:1;min-height:0;overflow:hidden;padding:0 0.5rem;}.sb-section-seated{flex:3.5 0 0;min-height:0;display:flex;flex-direction:column;padding:0 0 0.5rem;}.sb-seated-scroll{flex:1;min-height:0;overflow-y:auto;}
+  .sb-seated-scroll::-webkit-scrollbar{width:3px;}.sb-seated-scroll::-webkit-scrollbar-thumb{background:rgba(201,144,122,0.6);border-radius:2px;}
   .sb-guest-row{display:flex;align-items:center;gap:0.55rem;padding:0.38rem 0.5rem;border-radius:7px;border:1px solid rgba(255,255,255,0.05);margin-bottom:0.22rem;cursor:grab;background:rgba(255,255,255,0.02);transition:background 0.15s ease, border-color 0.15s ease;}
   .sb-guest-row:hover{background:rgba(201,144,122,0.07);border-color:rgba(201,144,122,0.18);}
   .sb-avatar{width:23px;height:23px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:600;flex-shrink:0;cursor:help;}
