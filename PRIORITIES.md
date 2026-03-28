@@ -44,9 +44,9 @@
 | 28 | ✅ migrateIfNeeded(data) — implementat implicit în storage.js | Mică | Critic | Verificat — sanitizeLoadedTables/Guests/Cam + compatibilitate v13.1→v14 + cleanupLegacyStorage |
 | 29 | Safe write pattern — update granular (tables, seats, assignments), NU overwrite total la seating | Medie | Critic | Un bug = wedding distrus complet. Schema version check la write, nu doar la citire |
 | 30 | Auth edge cases — sesiune expirată în mijlocul lucrului, desync WP/app, refresh token flow | Medie | Critic | UX: "Session expired — reconnecting..." |
-| 31 | Undo/Redo strategy clară — ce intră (move guest, create/delete table), ce NU intră, limită 20 acțiuni | Medie | Mare | Devine critic la seating cu mulți invitați |
-| 32 | Worst Day Scenario Plan — ziua nunții, app nu merge, pași exacți de urmat | Mică | Critic | Diferența dintre "app" și "produs pe care te bazezi la nuntă" |
-| 33 | Product Rules: NO SURPRISES (userul nu e surprins), REVERSIBILITY (orice se poate anula), VISIBILITY (orice acțiune are feedback) | Mică | Mare | Reguli Apple-level de produs |
+| 31 | ✅ Undo/Redo strategy clară — ce intră (move guest, create/delete table), ce NU intră, limită 20 acțiuni | Medie | Mare | Devine critic la seating cu mulți invitați |
+| 32 | ✅ Worst Day Scenario Plan — ziua nunții, app nu merge, pași exacți de urmat | Mică | Critic | Diferența dintre "app" și "produs pe care te bazezi la nuntă" |
+| 33 | ✅ Product Rules: NO SURPRISES (userul nu e surprins), REVERSIBILITY (orice se poate anula), VISIBILITY (orice acțiune are feedback) | Mică | Mare | Reguli Apple-level de produs |
 
 ---
 
