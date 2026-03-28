@@ -78,6 +78,18 @@ Seating Chart este izolat — CSS custom propriu, fără Tailwind, nu se atinge.
 - feature/* → funcționalități noi
 - PR obligatoriu pentru merge în main și develop
 
+## Branch-to-environment map (#23)
+| Branch | Environment | URL | Supabase |
+|--------|-------------|-----|----------|
+| main | Production | app.weddinglist.ro | PROD (dtyweqcpanxmckngcyqx) |
+| develop | Staging | deploy automat Vercel preview | DEV (typpwztdmtodxfmyrtzw) |
+| feature/* | Preview | URL unic Vercel per PR | DEV (typpwztdmtodxfmyrtzw) |
+
+- **Nu se face push direct pe main sau develop** — branch protection activă
+- **Preview deployments** — fiecare PR primește URL unic de la Vercel
+- **Hotfix** — branch de la main, PR direct în main + cherry-pick în develop
+- **Deploy în producție** = PR din develop → main, după teste verzi + preview verificat
+
 ## Supabase
 - DEV: typpwztdmtodxfmyrtzw (Frankfurt)
 - PROD: dtyweqcpanxmckngcyqx (Frankfurt)
@@ -493,5 +505,38 @@ app/lib/
 - ✅ RLS pe toate tabelele
 - ✅ Data minimization în schema
 - ✅ Data retention documentat
+
+## System Boundaries (#20)
+> Ce NU face fiecare layer — anti-pattern list
+
+| Layer | Responsabilitate | NU face niciodată |
+|-------|-----------------|-------------------|
+| **useSeatingData** | data + business logic | setClickedSeat, showToast, setModal, nu știe de UI |
+| **useSeatingUI** | UI state exclusiv | nu scrie în DB, nu citește localStorage direct |
+| **useCamera** | viewport, zoom, pan | nu știe de guests sau tables |
+| **useTableInteractions** | keyboard + mouse | nu modifică guests direct, nu apelează Supabase |
+| **page.js** | orchestrare layere | nu conține business logic, nu scrie în DB direct |
+| **Componente** (TableNode, GuestSidebar) | render + events locale | nu apelează hooks de date direct, primesc totul prin props |
+| **API routes** | server-side operations | nu returnează date nesanitizate, nu expun service role key |
+
+**Anti-patterns interzise:**
+- UI nu scrie DB direct — trece prin data layer
+- Data layer nu importă componente UI
+- Hooks nu se apelează condiționat
+-  în TypeScript pe date din Supabase
+- Business logic în componente — aparține în hooks sau domain/rules.ts
+- Fetch fără error handling — orice await are try/catch
+
+## Product Principles (#21)
+> Reguli de produs — fiecare decizie de UX se validează față de acestea
+
+- **NO SURPRISES** — userul nu este niciodată surprins. Orice acțiune cu consecințe are confirmare.
+- **REVERSIBILITY** — orice acțiune poate fi anulată. Delete cu confirmare, undo disponibil.
+- **VISIBILITY** — orice acțiune are feedback instant. Loading state, success state, error state — toate vizibile.
+- **GUEST-FIRST** — UX gândit din perspectiva invitatului, nu a canvas-ului sau a developer-ului.
+- **MAX 2-3 PAȘI** — nicio acțiune critică nu durează mai mult de 3 pași. Dacă durează mai mult, regândește flow-ul.
+- **ZERO DEAD ENDS** — userul are întotdeauna o cale de ieșire. Niciun ecran fără buton de back/cancel/undo.
+- **FEEDBACK INSTANT** — latența Supabase nu se simte. Optimistic UI unde e posibil, SaveIndicator unde nu e.
+- **MESAJE ÎN ROMÂNĂ** — toate mesajele de eroare, success și empty state sunt în română, clare și umane.
 
 ## Progres total: ~41% din produs complet
