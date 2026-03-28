@@ -262,7 +262,7 @@ app/lib/
 - ✅ #25 Gravity Guard — Math.max/min pe PLAN_W/H în useSeatingData și useTableInteractions
 - ✅ #26 Guest Collision — UNIQUE constraint seat_assignments_guest_event_id_key există în Supabase DEV
 - ✅ #28 migrateIfNeeded — implementat în storage.js prin sanitize + compatibilitate v13→v14
-- ⚠️ #5 RLS policies — audit complet Mar 28, 2026: rowsecurity=true pe toate 18 tabele, zero policies. Deny-all implicit — safe acum, policies obligatorii înainte de Faza 3
+- ✅ #5 RLS policies — complet Mar 28, 2026: 71 policies pe 18 tabele, 3 helper functions, GRANT anon/authenticated. Migrație aplicată și în repo.
 
 
 ### Tooltip (P8) ✅:
@@ -320,7 +320,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 37)
+## PR-uri merged în develop (total 38)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -353,6 +353,7 @@ app/lib/
 - #35: feat(ux): first-run empty states + success states (#22)
 - #36: docs: source of truth, failure modes, cors, service role, logging, env vars, checklists (#1 #2 #3 #6 #7 #8 #9 #10 #11 #12 #13)
 - #37: docs: rls audit + status + policies plan (#5)
+- #38: feat(security): rls policies complete — 18 tabele, 71 policies (#5)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -719,19 +720,15 @@ app/lib/
 ## RLS Audit — Status (#5)
 > Audit rulat Mar 28, 2026 pe Supabase DEV (typpwztdmtodxfmyrtzw)
 
-**Rezultat:**
+**Rezultat audit inițial (Mar 28, 2026):**
 - ✅ `rowsecurity = true` pe toate 18 tabele — RLS activat
-- ❌ Zero RLS policies în schema public
-- ⚠️ Comportament curent: deny-all implicit — niciun user nu poate accesa date prin API REST
+- ✅ 71 policies aplicate — toate tabelele protejate
+- ✅ 3 helper functions: `auth_user_id()`, `is_wedding_member()`, `is_wedding_owner()`
+- ✅ GRANT corect pe rolurile `anon` și `authenticated`
+- ✅ RSVP public via token_hash, restul membership-gated
 
-**De ce e safe acum:** seating chart folosește localStorage, nu Supabase direct. Nu există user real cu date în DB.
+**Migrație:** `supabase/migrations/20260328000001_rls_policies.sql` — aplicată și în repo.
 
-**Ce trebuie făcut la Faza 3 (înainte de primul CRUD real):**
-- Policies SELECT/INSERT/UPDATE/DELETE pe: weddings, wedding_members, guests, tables, seats, seat_assignments, budget_items, payments, vendors, rsvp_invitations, rsvp_responses, app_users
-- Claim JWT de folosit: `sub` din Legacy JWT Secret (HS256) — verificat că e activ
-- Pattern policy: `wedding_id IN (SELECT wedding_id FROM wedding_members WHERE user_id = (auth.jwt()->>'sub')::uuid)`
-- Migration nouă în `supabase/migrations/` — nu manual în dashboard
-
-**Nu se începe Faza 3 fără policies RLS scrise și testate.**
+**✅ DONE — Policies aplicate și verificate Mar 28, 2026.**
 
 ## Progres total: ~41% din produs complet
