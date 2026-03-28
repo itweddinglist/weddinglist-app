@@ -198,6 +198,55 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* First-run onboarding banner */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, rgba(201,144,122,0.08) 0%, rgba(201,144,122,0.04) 100%)",
+          border: "1px solid rgba(201,144,122,0.2)",
+          borderRadius: "14px",
+          padding: "1.3rem 1.6rem",
+          marginBottom: "2rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "1.2rem",
+        }}
+      >
+        <div style={{ fontSize: "2rem", flexShrink: 0 }}>🪑</div>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "1rem",
+              color: "var(--navy)",
+              marginBottom: "0.25rem",
+              fontWeight: 400,
+            }}
+          >
+            Începe cu planul de mese
+          </div>
+          <div style={{ fontSize: "0.78rem", color: "var(--muted)", lineHeight: 1.5 }}>
+            Adaugă mese, plasează invitații și exportă planul pentru restaurant.
+          </div>
+        </div>
+        <Link
+          href="/seating-chart"
+          style={{
+            display: "inline-block",
+            padding: "0.45rem 1.1rem",
+            background: "var(--rose, #C9907A)",
+            color: "white",
+            borderRadius: "999px",
+            fontSize: "0.72rem",
+            fontWeight: 500,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            letterSpacing: "0.03em",
+          }}
+        >
+          Deschide →
+        </Link>
+      </div>
+
       {/* Module grid */}
       <div
         style={{

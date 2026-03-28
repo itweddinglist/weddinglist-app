@@ -18,6 +18,7 @@ function GuestSidebar({
   setHighlightGroupId,
   activeGroupId,
   setActiveGroupId,
+  onExport,
 }) {
   const allSeated = guests.length > 0 && filteredUnassigned.length === 0 && !searchQuery && !activeGroupId;
   const noGuests = guests.length === 0;
@@ -101,20 +102,37 @@ function GuestSidebar({
         )}
         {allSeated && (
           <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>✨</div>
+            <div style={{ fontSize: "2rem", marginBottom: "0.6rem" }}>✨</div>
             <div
               style={{
-                fontSize: "0.72rem",
+                fontSize: "0.78rem",
                 color: "#48BB78",
-                fontWeight: 500,
+                fontWeight: 600,
                 marginBottom: "0.3rem",
               }}
             >
               Toți invitații au un loc!
             </div>
-            <div style={{ fontSize: "0.62rem", color: "#6E7490", lineHeight: 1.5 }}>
-              Planul de mese este complet.
+            <div style={{ fontSize: "0.62rem", color: "#6E7490", lineHeight: 1.5, marginBottom: "1rem" }}>
+              Planul de mese este complet. Exportă-l pentru restaurant.
             </div>
+            <button
+              onClick={() => onExport && onExport()}
+              style={{
+                background: "rgba(72,187,120,0.12)",
+                border: "1px solid rgba(72,187,120,0.3)",
+                borderRadius: "999px",
+                color: "#48BB78",
+                fontSize: "0.62rem",
+                fontWeight: 600,
+                padding: "0.35rem 0.9rem",
+                cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif",
+                letterSpacing: "0.04em",
+              }}
+            >
+              Exportă PNG →
+            </button>
           </div>
         )}
         {noResults && (
