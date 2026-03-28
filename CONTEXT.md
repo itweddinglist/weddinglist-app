@@ -267,6 +267,7 @@ app/lib/
 - ✅ #17 Input sanitization — pattern documentat, câmpuri identificate per tabel, implementare la Faza 3.
 - ✅ #14 Data Model Invariants — constraints existente auditate, lipsă documentate cu SQL.
 - ✅ #15 State Transitions — tranziții valide per entitate documentate, implementare transitions.ts la Faza 3.
+- ✅ #27 Soft Delete — deleted_at pe weddings, view active_weddings, RLS actualizat, RPC soft_delete_wedding(). Migrație aplicată.
 
 
 ### Tooltip (P8) ✅:
@@ -324,7 +325,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 42)
+## PR-uri merged în develop (total 43)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -362,6 +363,7 @@ app/lib/
 - #40: docs: add adr-029 safe write pattern — approved for faza 3 (#29)
 - #41: docs: input sanitization pattern + campuri per tabel (#17)
 - #42: docs: data model invariants + state transitions (#14 #15)
+- #43: feat(db): soft delete weddings — deleted_at, view, rls update, rpc (#27)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
