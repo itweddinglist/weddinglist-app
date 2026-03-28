@@ -33,11 +33,11 @@
 | 17 | Input sanitization — server = securitate, client = UX (nu invers) | Medie | Critic | |
 | 18 | ✅ Error Recovery UX — "Saving failed", "Work is safe locally", localStorage fallback | Medie | Critic | Critic pentru produs event-based. "Nu te îngrijora, am salvat totul în browser" |
 | 19 | ✅ User Trust Signals — Saved ✔ / Syncing... / Offline mode | Mică | Mare | Ridică produsul la "tool serios" |
-| 20 | System Boundaries — ce NU face fiecare layer + anti-pattern list | Mică | Mare | UI nu scrie DB direct, data layer nu știe de UI |
-| 21 | Product Principles documentate (guest-first, max 2-3 pași, feedback instant, fără dead ends) | Mică | Mare | |
+| 20 | ✅ System Boundaries — ce NU face fiecare layer + anti-pattern list | Mică | Mare | UI nu scrie DB direct, data layer nu știe de UI |
+| 21 | ✅ Product Principles documentate (guest-first, max 2-3 pași, feedback instant, fără dead ends) | Mică | Mare | |
 | 22 | First-run empty states — primul guest, prima masă, primul vendor | Medie | Mare | Success states, nu doar error states |
-| 23 | Branch-to-environment map documentat | Mică | Mare | main=prod, develop=staging, feature/*=preview |
-| 24 | README setup local de la zero + command cheat sheet | Mică | Medie | |
+| 23 | ✅ Branch-to-environment map documentat | Mică | Mare | main=prod, develop=staging, feature/*=preview |
+| 24 | ✅ README setup local de la zero + command cheat sheet | Mică | Medie | |
 | 25 | ✅ Gravity Guard — coordonate x/y out-of-bounds resetate la centrul planului înainte de upsert | Mică | Critic | Verificat — Math.max/min pe PLAN_W/H în useSeatingData și useTableInteractions |
 | 26 | ✅ Guest Collision — UNIQUE constraint pe guest_event_id în seat_assignments (DB level) | Medie | Critic | Verificat în Supabase DEV — seat_assignments_guest_event_id_key UNIQUE există |
 | 27 | Soft Delete pentru nunți — coloană deleted_at, recovery 30 zile, documentat în Privacy Policy | Mică | Mare | ⚠️ Actualizează TOATE query-urile SELECT să filtreze deleted_at IS NULL sau folosește un VIEW Postgres |

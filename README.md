@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# weddinglist-app
 
-## Getting Started
+Aplicație Next.js pentru plan de mese la nunți (wedding planning SaaS).
 
-First, run the development server:
+- **Producție**: [app.weddinglist.ro](https://app.weddinglist.ro)
+- **WordPress**: [weddinglist.ro](https://www.weddinglist.ro)
+- **Repository**: [github.com/itweddinglist/weddinglist-app](https://github.com/itweddinglist/weddinglist-app)
 
+---
+
+## Setup local de la zero
+
+### Cerințe
+- Node.js v18+ (recomandat v24)
+- npm v9+
+- Git
+- Cont Supabase (proiect DEV existent)
+- Acces la repo GitHub
+
+### 1. Clonează repo-ul
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/itweddinglist/weddinglist-app.git
+cd weddinglist-app
+git checkout develop
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Instalează dependențele
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### 3. Configurează variabilele de mediu
+Creează fișierul `.env.local` în rădăcina proiectului:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://typpwztdmtodxfmyrtzw.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_WP_URL=https://www.weddinglist.ro
+SENTRY_DSN=your_sentry_dsn
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> ⚠️ Nu comite niciodată `.env.local` — e în `.gitignore`
 
-## Learn More
+### 4. Pornește dev server-ul
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Aplicația rulează la [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Command cheat sheet
 
-## Deploy on Vercel
+### Development
+```bash
+npm run dev          # pornește dev server (Next.js)
+npm run build        # build de producție
+npm run start        # pornește build de producție local
+npm run lint         # rulează ESLint
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Teste
+```bash
+npx vitest run       # rulează toate testele (baseline: 341/341)
+npx vitest           # watch mode
+npx vitest run --reporter=verbose  # output detaliat
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Git workflow
+```bash
+# Branch nou pentru feature
+git checkout develop
+git pull origin develop
+git checkout -b feature/nume-feature
+
+# Commit
+git add fisier1 fisier2
+git commit -m "feat(scope): descriere lowercase"
+
+# Push + PR
+git push origin feature/nume-feature
+# → deschide PR pe GitHub spre develop
+
+# Sync după merge
+git checkout develop
+git pull origin develop
+```
+
+### Supabase CLI
+```bash
+npx supabase login
+npx supabase link --project-ref typpwztdmtodxfmyrtzw
+npx supabase db diff           # vezi diferențe față de schema locală
+npx supabase migration new     # creează migrație nouă
+npx supabase db push           # aplică migrații pe DEV
+```
+
+---
+
+## Structură proiect
+
+```
+app/
+  seating-chart/          # Seating Chart (CSS custom, izolat de Tailwind)
+    components/           # TableNode, GuestSidebar, CanvasToolbar etc.
+    hooks/                # useSeatingData, useSeatingUI, useCamera etc.
+    utils/                # geometry, storage, magicFill, exportPng
+    page.js               # orchestrator principal
+  components/             # Componente globale (SaveIndicator, ErrorBoundary etc.)
+  lib/                    # Auth, autosave, migration, Supabase client
+  config/                 # wedding.js — config centralizat
+  api/                    # API routes (health, auth/provision, migrate-local)
+supabase/
+  migrations/             # Schema changes — DOAR prin migrații
+```
+
+---
+
+## Reguli esențiale
+
+- **Seating Chart e izolat** — CSS custom propriu, fără Tailwind, nu se rescrie
+- **Schema changes** — DOAR prin `supabase migration new`, niciodată manual în dashboard
+- **TypeScript strict** pe tot codul nou
+- **PR obligatoriu** — nu se face push direct pe `develop` sau `main`
+- **Teste verzi** înainte de orice merge — `npx vitest run` trebuie să fie 341/341
+- **Commit messages** în română, lowercase după tip: `feat(scope): descriere`
+
+---
+
+## Branch-to-environment
+
+| Branch | Environment | Supabase |
+|--------|-------------|----------|
+| `main` | Producție — app.weddinglist.ro | PROD |
+| `develop` | Staging — Vercel preview | DEV |
+| `feature/*` | Preview URL unic per PR | DEV |
+
+---
+
+## Stack
+
+- **Next.js 16** + React + TypeScript strict
+- **Tailwind CSS** (pagini noi) + CSS custom (seating chart)
+- **Supabase EU Frankfurt** — dev + prod separate
+- **Vercel** deploy
+- **Sentry EU** cu GDPR scrubbing
+- **Resend** pentru email
+- **Vitest** pentru teste
