@@ -311,6 +311,7 @@ export default function SeatingChart() {
             setHighlightGroupId={setHighlightGroupId}
             activeGroupId={activeGroupId}
             setActiveGroupId={setActiveGroupId}
+            onExport={() => setExportDialog(true)}
           />
           <div className="sc-canvas-col">
             <CanvasToolbar
