@@ -6,8 +6,19 @@
 import { NextResponse } from "next/server";
 import type { ApiErrorResponse, ApiSuccessResponse, ValidationError } from "../types/guests";
 
-export function successResponse<T>(data: T, status = 200): NextResponse<ApiSuccessResponse<T>> {
-  return NextResponse.json({ success: true, data }, { status });
+/**
+ * Returns a JSON success response.
+ * Optional warnings array for non-blocking issues (e.g. duplicate name detection).
+ */
+export function successResponse<T>(
+  data: T,
+  status = 200,
+  warnings?: string[]
+): NextResponse<ApiSuccessResponse<T>> {
+  return NextResponse.json(
+    { success: true, data, ...(warnings && warnings.length > 0 && { warnings }) },
+    { status }
+  );
 }
 
 export function errorResponse(

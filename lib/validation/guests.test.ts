@@ -1,6 +1,7 @@
 // =============================================================================
 // lib/validation/guests.test.ts
 // Unit tests for validateCreateGuest and validateUpdateGuest
+// Covers: 3.5 Validări + 3.7 Data sanitation
 // =============================================================================
 
 import { describe, it, expect } from "vitest";
@@ -36,6 +37,31 @@ describe("validateCreateGuest", () => {
     if (result.valid) expect(result.data.display_name).toBe("Nașul");
   });
 
+  // 3.7 Data sanitation — trim
+  it("trimează spații din first_name", () => {
+    const result = validateCreateGuest({ ...base, first_name: "  Ion  " });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.first_name).toBe("Ion");
+  });
+
+  it("colapsează spații multiple în first_name", () => {
+    const result = validateCreateGuest({ ...base, first_name: "Ion  Maria" });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.first_name).toBe("Ion Maria");
+  });
+
+  it("trimează spații din last_name", () => {
+    const result = validateCreateGuest({ ...base, last_name: "  Popescu  " });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.last_name).toBe("Popescu");
+  });
+
+  it("trimează spații din notes", () => {
+    const result = validateCreateGuest({ ...base, notes: "  O notă  " });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.notes).toBe("O notă");
+  });
+
   // empty / whitespace
   it("rejectează first_name gol", () => {
     const result = validateCreateGuest({ ...base, first_name: "" });
@@ -61,24 +87,28 @@ describe("validateCreateGuest", () => {
     if (!result.valid) expect(result.errors[0].field).toBe("display_name");
   });
 
-  // HTML input
+  // 3.7 HTML sanitization
   it("stripează HTML din first_name", () => {
     const result = validateCreateGuest({ ...base, first_name: "<b>Ion</b>" });
     expect(result.valid).toBe(true);
     if (result.valid) expect(result.data.first_name).toBe("Ion");
   });
 
+  it("stripează HTML tags fără text și rejectează", () => {
+    const result = validateCreateGuest({ ...base, first_name: "<b></b>" });
+    expect(result.valid).toBe(false);
+  });
+
   it("stripează HTML tags și păstrează textul din interior", () => {
-    // <script>alert(1)</script> → "alert(1)" după sanitizare — valid, textul rămâne
     const result = validateCreateGuest({ ...base, first_name: "<script>alert(1)</script>" });
     expect(result.valid).toBe(true);
     if (result.valid) expect(result.data.first_name).toBe("alert(1)");
   });
 
-  it("rejectează first_name cu doar HTML tags fără text", () => {
-    // <b></b> → "" după sanitizare → invalid
-    const result = validateCreateGuest({ ...base, first_name: "<b></b>" });
-    expect(result.valid).toBe(false);
+  it("stripează HTML entities din first_name", () => {
+    const result = validateCreateGuest({ ...base, first_name: "&lt;Ion&gt;" });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.first_name).toBe("Ion");
   });
 
   // null inputs
@@ -93,7 +123,7 @@ describe("validateCreateGuest", () => {
     expect(result.valid).toBe(false);
   });
 
-  // over max length
+  // max length — 3.5 Validări
   it("trunchiază first_name la 100 chars", () => {
     const long = "A".repeat(150);
     const result = validateCreateGuest({ ...base, first_name: long });
@@ -166,6 +196,13 @@ describe("validateUpdateGuest", () => {
   it("rejectează first_name cu spații", () => {
     const result = validateUpdateGuest({ first_name: "   " });
     expect(result.valid).toBe(false);
+  });
+
+  // 3.7 sanitation în update
+  it("trimează spații din first_name", () => {
+    const result = validateUpdateGuest({ first_name: "  Maria  " });
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.data.first_name).toBe("Maria");
   });
 
   it("stripează HTML din first_name", () => {

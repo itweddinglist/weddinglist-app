@@ -90,6 +90,25 @@ export async function POST(request: NextRequest): Promise<Response> {
       }
     }
 
+    // 3.5 Duplicate check — non-blocking warning
+    // Same first_name + last_name in the same wedding → warn, don't block
+    // 3.7 Data sanitation — already applied in validateCreateGuest via sanitizeName:
+    //   trim, strip HTML, collapse spaces, max 100 chars
+    const warnings: string[] = [];
+    const { data: duplicates } = await supabase
+      .from("guests")
+      .select("id")
+      .eq("wedding_id", input.wedding_id)
+      .eq("first_name", input.first_name)
+      .eq("last_name", input.last_name ?? "")
+      .limit(1);
+
+    if (duplicates && duplicates.length > 0) {
+      warnings.push(
+        `A guest named "${input.first_name}${input.last_name ? " " + input.last_name : ""}" already exists in this wedding.`
+      );
+    }
+
     const { data, error } = await supabase
       .from("guests")
       .insert({
@@ -111,7 +130,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       return internalErrorResponse(error, "POST /api/guests");
     }
 
-    return successResponse<GuestWithRelations>(data as GuestWithRelations, 201);
+    return successResponse<GuestWithRelations>(data as GuestWithRelations, 201, warnings);
   } catch (err) {
     return internalErrorResponse(err, "POST /api/guests");
   }

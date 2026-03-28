@@ -86,6 +86,8 @@ export interface UpdateGuestInput {
 export interface ApiSuccessResponse<T> {
   success: true;
   data: T;
+  /** Non-blocking warnings (e.g. duplicate name detected). Client should display these. */
+  warnings?: string[];
 }
 
 export interface ApiErrorResponse {
