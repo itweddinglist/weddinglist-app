@@ -320,7 +320,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 38)
+## PR-uri merged în develop (total 39)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -354,6 +354,7 @@ app/lib/
 - #36: docs: source of truth, failure modes, cors, service role, logging, env vars, checklists (#1 #2 #3 #6 #7 #8 #9 #10 #11 #12 #13)
 - #37: docs: rls audit + status + policies plan (#5)
 - #38: feat(security): rls policies complete — 18 tabele, 71 policies (#5)
+- #39: docs: undo strategy, worst day plan, product rules (#31 #32 #33)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -730,5 +731,99 @@ app/lib/
 **Migrație:** `supabase/migrations/20260328000001_rls_policies.sql` — aplicată și în repo.
 
 **✅ DONE — Policies aplicate și verificate Mar 28, 2026.**
+
+## Undo/Redo Strategy (#31)
+> Ce intră în undo, ce nu intră, și de ce.
+
+**Ce INTRĂ în undo (limită 20 acțiuni):**
+- Mutare masă pe canvas (drag)
+- Creare masă nouă
+- Ștergere masă
+- Redenumire masă / modificare număr locuri
+- Asignare invitat la masă
+- Eliminare invitat de la masă
+- Magic Fill
+
+**Ce NU intră în undo:**
+- Reset plan complet — acțiune destructivă cu confirmare explicită
+- Rotație masă — efect vizual minor, nu afectează date
+- Modificări de cameră (zoom, pan) — nu sunt date, sunt viewport
+- Export PNG — acțiune de output, nu de modificare
+
+**Implementare curentă:**
+- `historyRef` în `useSeatingData.js` — array de snapshots `{ guests, tables }`
+- Limită: ultimele 20 acțiuni (`historyRef.current.slice(-20)`)
+- `saveAction()` apelat înainte de orice modificare care intră în undo
+- `undo()` pop din historyRef + `setGuests` + `setTables`
+
+**Reguli:**
+- Undo nu traversează sesiuni — la refresh, history se pierde
+- Redo nu e implementat în V1 — scope prea mare pentru beneficiul real
+- La limita de 20 acțiuni, cel mai vechi snapshot se șterge automat
+
+## Worst Day Scenario Plan (#32)
+> Ziua nunții. App nu merge. Pași exacți de urmat.
+
+**Scenariul:** 15 septembrie 2026, ora 12:00. Nunta începe la 18:00. App inaccesibil.
+
+**Pași în ordine:**
+
+**1. Verifică dacă e problema ta sau a serviciului (2 minute)**
+- Deschide https://status.vercel.com — dacă Vercel e down, nu poți face nimic rapid
+- Deschide https://status.supabase.com — dacă Supabase e down, același lucru
+- Încearcă din altă rețea / alt device
+
+**2. Folosește Export PNG din cache (dacă ai exportat anterior)**
+- Planul de mese exportat PNG e suficient pentru restaurant
+- Restaurantul nu are nevoie de app live — are nevoie de lista de mese
+
+**3. Rollback Vercel (5 minute)**
+- Dashboard Vercel → Deployments → deployment anterior → Promote to Production
+- Dacă ultimul deploy a stricat ceva, rollback instant
+
+**4. Dacă nimic nu merge — plan de urgență offline**
+- localStorage conține ultima stare salvată
+- Deschide browser DevTools → Application → Local Storage → `wedding_seating_v14`
+- Copiază JSON-ul → paste în https://jsonformatter.org → printează structura
+- Sau folosește Export PNG dacă ai făcut export anterior
+
+**5. Contact suport Vercel/Supabase**
+- Vercel: vercel.com/support
+- Supabase: supabase.com/support
+
+**Prevenție (de făcut cu 1 săptămână înainte de nuntă):**
+- [ ] Export PNG salvat local pe laptop + trimis pe email
+- [ ] Screenshot plan de mese pe telefon
+- [ ] PDF cu lista invitați per masă tipărit fizic
+- [ ] Test manual al aplicației cu 48h înainte
+
+**Principiu:** restaurantul și planner-ul trebuie să poată funcționa fără app în ziua nunții. App-ul e un tool de planificare, nu o dependență critică în ziua evenimentului.
+
+## Product Rules (#33)
+> Reguli Apple-level de produs — fiecare decizie de UX se validează față de acestea.
+
+**NO SURPRISES**
+- Userul nu e niciodată surprins de rezultatul unei acțiuni
+- Orice acțiune cu consecințe ireversibile are confirmare explicită
+- Mesajele de eroare explică ce s-a întâmplat și ce poate face userul
+- Exemplu: ștergere masă → confirmare dialog cu numărul de invitați afectați
+
+**REVERSIBILITY**
+- Orice acțiune poate fi anulată (Ctrl+Z sau buton Undo)
+- Excepție acceptată: Reset plan complet — prea destructiv, necesită confirmare dublă
+- Delete cu confirmare + undo disponibil imediat după
+- La Magic Fill: userul poate da undo complet
+
+**VISIBILITY**
+- Orice acțiune are feedback instant — nu există acțiuni "silențioase"
+- SaveIndicator arată întotdeauna starea salvării
+- Progress bar arată câți invitați mai sunt de așezat
+- Toast-uri pentru toate acțiunile importante (assign, unassign, create, delete)
+
+**Aplicare practică:**
+- Înainte de orice feature nou: "Userul știe ce s-a întâmplat?" → NO SURPRISES
+- "Poate anula?" → REVERSIBILITY  
+- "Vede că s-a întâmplat ceva?" → VISIBILITY
+- Dacă răspunsul la oricare e "nu" → feature-ul nu e gata
 
 ## Progres total: ~41% din produs complet
