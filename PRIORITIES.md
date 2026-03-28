@@ -202,3 +202,26 @@
 - **Claude** (Anthropic) — arhitectură, performanță, GDPR, system boundaries
 - **ChatGPT** (OpenAI) — securitate, source of truth map, failure mode matrix, domain/rules.ts, Supabase VIEW cu deleted_at IS NULL
 - **Gemini** (Google) — data resilience, optimistic UI, gravity guard, audit trail, worst day scenario, migrateIfNeeded(), safe write pattern
+
+---
+
+## Update Mar 28, 2026
+
+### Must Now — status final
+- ✅ Toate 33 itemi bifați (exceptând #16 și #30 care sunt organice Faza 3+)
+- ✅ #16 Business rules — implementat parțial în lib/validation/ (Faza 3)
+- ✅ P10 Virtualizare sidebar — VirtualList nativ, flex layout proporțional
+
+### Faza 3 — status
+- ✅ 3.1, 3.2, 3.4, 3.5, 3.7 — complete
+- ⏳ 3.3 partyId — amânat după UI Guests
+- ⏳ 3.6 Limits — DECIZIE CONȘTIENTĂ: skip până la Stripe/planuri plătite. Schema are plan_tier, infrastructura e pregătită.
+
+### Adăugat în Before Launch
+- Rate limiting /api/guests/import — max 5 imports/min per user (Vercel middleware)
+- Export GET /api/guests/export — format identic cu import pentru round-trip
+
+### Adăugat în Later
+- Supabase generated types — elimină cast-urile as GuestWithRelations (după stabilizare schema)
+- POST /api/guest-events tranzacțional — RPC pentru 3 queries → 1
+- Bulk import → RPC pentru 1000+ guests

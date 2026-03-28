@@ -320,13 +320,13 @@ app/lib/
 - ⏳ P11 — Seat swap drag & drop (drag invitat din scaun → alt scaun/masă) | Dificultate: Mare
 
 ## Ordinea recomandată sesiunea următoare
-1. **Faza 3** — Guests Core (date reale în DB — critic pentru produs funcțional)
-2. **Faza 2B** — Seating Performance Validation (profiling pe date reale)
+1. **Faza 7 UI Guests** — pagina de gestionare invitați (Import Summary Card, Column Mapping preview, bulk actions, filters)
+2. **Faza 2B** — Seating Performance Validation (profiling pe date reale, 2B.1/2B.3/2B.4/2B.5/2B.6)
 3. **Faza 6** — Seating ↔ Guests Integration (conectare seating cu guests reali)
-4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
-→ Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
+4. **Faza 4 RSVP** — prima funcționalitate vizibilă pentru invitați
+→ 3.3 partyId + 3.6 Limits se fac natural în Faza 7 UI Guests și respectiv după Stripe.
 
-## PR-uri merged în develop (total 44)
+## PR-uri merged în develop (total 53)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -366,6 +366,11 @@ app/lib/
 - #42: docs: data model invariants + state transitions (#14 #15)
 - #43: feat(db): soft delete weddings — deleted_at, view, rls update, rpc (#27)
 - #44: feat(perf): sidebar virtualization - native virtual list, flex layout 3 sections (p10)
+- #45: docs: p10 sidebar virtualization done, pr #44 adaugat
+- #50: feat(api): guests crud api - routes, validation, sanitization, tests (3.1)
+- #51: feat(api): guest events api - routes, bulk, validation, tests (3.2)
+- #52: feat(api): duplicate warnings, sanitation tests - guests (3.5, 3.7)
+- #53: feat(api): csv import guests - parser rfc4180, validation, dedup, bulk insert (3.4)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -432,18 +437,18 @@ app/lib/
 - ✅ 2A.6 Progressive detail pe zoom | Medie
 - ✅ 2A.7 Hit testing strategy — 60 mese apropiate | Medie
 
-### ⏳ Faza 3 — Guests Core
-- ⏳ 3.1 Guests CRUD — add, edit, delete, bulk add | Medie
-- ⏳ 3.2 Event-scoped model — guest_events | Mare
-- ⏳ 3.3 partyId — schema, logică, UI minimal | Medie
-- ⏳ 3.4 Import CSV — mapping, validare, deduplicare | Medie
-- ⏳ 3.5 Validări — nume, email, status, duplicate warnings | Mică
-- ⏳ 3.6 Limits + warnings — max invitați, max mese | Mică
-- ⏳ 3.7 Data sanitation — input normalizat | Mică
+### ✅ Faza 3 — Guests Core (~85% completă)
+- ✅ 3.1 Guests CRUD — GET/POST/PUT/DELETE /api/guests, 376 teste | Medie
+- ✅ 3.2 Event-scoped model — guest_events + bulk endpoint, 403 teste | Mare
+- ⏳ 3.3 partyId — amânat după UI Guests (Faza 7) | Medie
+- ✅ 3.4 Import CSV — RFC 4180 parser zero deps, dedup, fallback row-by-row, 434 teste | Medie
+- ✅ 3.5 Validări — duplicate warnings în POST /api/guests | Mică
+- ⏳ 3.6 Limits — amânat până la Stripe / planuri plătite | Mică
+- ✅ 3.7 Data sanitation — trim, stripHTML, entities, maxLength activ în lib/sanitize.ts | Mică
 
 ### ⏳ Faza 2B — Seating Performance Validation
 - ⏳ 2B.1 Profiling real — scenarii 15/120, 35/300, 60/600 | Medie
-- ⏳ 2B.2 Virtualizare sidebar finală | Medie
+- ✅ 2B.2 Virtualizare sidebar — VirtualList nativ, flex 30/70 fără search, 30/35/35 cu search | Medie
 - ⏳ 2B.3 Tuning filtering + selectors | Mică
 - ⏳ 2B.4 Magic Fill tuning pe date reale | Medie
 - ⏳ 2B.5 Stress tests 60/600 | Mică
@@ -1040,3 +1045,44 @@ function sanitizeEmail(input: string | null): string | null {
 4. **Înainte de launch** — audit complet toate câmpurile
 
 ## Progres total: ~41% din produs complet
+
+## Recomandări viitoare — acumulate din review-uri (Mar 28, 2026)
+
+### Faza 7 — UI Guests (prioritate după Faza 3)
+- Import Summary Card — verde/portocaliu/roșu per rezultat import
+- Column Mapping UI — dacă parserul nu recunoaște o coloană, user alege manual
+- Preview CSV — primele 3 rânduri înainte de import
+- Bulk actions — edit/delete multiple guests
+- Filters — attending/declined, side (bride/groom), grup
+- Quick edit attendance inline (dropdown)
+- Stats per event — % attending, count per event
+- Export GET /api/guests/export — format identic cu import (round-trip)
+
+### Faza 3.3 partyId — când se face
+- Self-referencing FK sau tabel separat guest_parties
+- Impact pe seating: highlight grup, move group, bulk seat (2B.6)
+- Impact pe RSVP: unified RSVP per familie (soț confirmă pentru toți)
+- lead_guest_id sau guest_group_id folosit mai agresiv
+
+### Faza 4 — Post-launch optimizări API
+- Supabase generated types — elimină cast-urile `as GuestWithRelations`
+- POST /api/guest-events — 3 queries → 1 RPC pentru latență mai mică
+- Bulk guests import → RPC pentru 1000+ guests (în prezent limitat la 500)
+- Paginare GET /api/guests cu limit/offset
+
+### Post-launch (Sentry, Rate limiting, etc.)
+- Sentry — înlocuiește console.error în internalErrorResponse
+- Rate limiting pe /api/guests/import — max 5 imports/min per user (Vercel middleware)
+- If-Unmodified-Since pe guests dacă concurența devine problemă reală
+- Startup env check separat pentru deploy validation
+- UNIQUE constraint (wedding_id, first_name, last_name) — decizie de produs: NU adăugăm (pot exista 2 persoane cu același nume)
+
+### Faza 6 — Seating ↔ Guests (notes arhitecturale)
+- revalidateTag nu se aplică — proiectul folosește client-side fetching, nu Server Components cache
+- Tranzacționalitate pentru guest_groups create + guests insert — RPC în Faza 4
+
+### Notat din sesiunea Mar 28
+- 434 teste verzi la final de sesiune
+- lib/plan-limits.ts — creat și revocat (3.6 skip până la Stripe)
+- vitest.config.js actualizat să includă *.test.ts și *.test.tsx
+- react-window incompatibil cu Turbopack — înlocuit cu VirtualList nativ
