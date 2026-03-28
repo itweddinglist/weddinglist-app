@@ -264,6 +264,9 @@ app/lib/
 - ✅ #28 migrateIfNeeded — implementat în storage.js prin sanitize + compatibilitate v13→v14
 - ✅ #5 RLS policies — complet Mar 28, 2026: 71 policies pe 18 tabele, 3 helper functions, GRANT anon/authenticated. Migrație aplicată și în repo.
 - ✅ #29 Safe write pattern — ADR-029 aprobat și în repo (docs/adr/). Scor 9.3/10, review Claude+ChatGPT+Gemini.
+- ✅ #17 Input sanitization — pattern documentat, câmpuri identificate per tabel, implementare la Faza 3.
+- ✅ #14 Data Model Invariants — constraints existente auditate, lipsă documentate cu SQL.
+- ✅ #15 State Transitions — tranziții valide per entitate documentate, implementare transitions.ts la Faza 3.
 
 
 ### Tooltip (P8) ✅:
@@ -321,7 +324,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 40)
+## PR-uri merged în develop (total 42)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -357,6 +360,8 @@ app/lib/
 - #38: feat(security): rls policies complete — 18 tabele, 71 policies (#5)
 - #39: docs: undo strategy, worst day plan, product rules (#31 #32 #33)
 - #40: docs: add adr-029 safe write pattern — approved for faza 3 (#29)
+- #41: docs: input sanitization pattern + campuri per tabel (#17)
+- #42: docs: data model invariants + state transitions (#14 #15)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -829,5 +834,205 @@ app/lib/
 - "Poate anula?" → REVERSIBILITY  
 - "Vede că s-a întâmplat ceva?" → VISIBILITY
 - Dacă răspunsul la oricare e "nu" → feature-ul nu e gata
+
+## Data Model Invariants (#14)
+> DB Check Constraints — ultima linie de apărare. Nu te baza pe logica Next.js.
+
+### Constraints existente în schemă ✅
+Schema inițială are deja constraints solide:
+- Status enums pe toate tabelele (weddings, events, vendors, budget_items, rsvp_invitations, rsvp_responses, data_migrations)
+- Role enum pe wedding_members
+- Valori pozitive: seat_count > 0, amount > 0, estimated_amount >= 0, sort_order >= 0
+- Rotation range: 0 ≤ rotation < 360
+- UNIQUE constraints: token_hash, (table_id, seat_index), (wedding_id, event_id), (provider, external_user_id)
+
+### Constraints lipsă — de adăugat la Faza 3 (migrație nouă)
+
+```sql
+-- guests: first_name și display_name nu pot fi string gol
+ALTER TABLE guests
+  ADD CONSTRAINT guests_first_name_not_empty
+    CHECK (length(trim(first_name)) > 0),
+  ADD CONSTRAINT guests_display_name_not_empty
+    CHECK (length(trim(display_name)) > 0);
+
+-- weddings: title nu poate fi string gol
+ALTER TABLE weddings
+  ADD CONSTRAINT weddings_title_not_empty
+    CHECK (length(trim(title)) > 0);
+
+-- events: name nu poate fi string gol
+ALTER TABLE events
+  ADD CONSTRAINT events_name_not_empty
+    CHECK (length(trim(name)) > 0);
+
+-- tables: name nu poate fi string gol
+ALTER TABLE tables
+  ADD CONSTRAINT tables_name_not_empty
+    CHECK (length(trim(name)) > 0);
+
+-- rsvp_invitations: token_hash trebuie să aibă minim 32 caractere (securitate)
+ALTER TABLE rsvp_invitations
+  ADD CONSTRAINT rsvp_token_min_length
+    CHECK (length(token_hash) >= 32);
+
+-- budget_items: currency trebuie să fie exact 3 caractere
+ALTER TABLE budget_items
+  ADD CONSTRAINT budget_currency_format
+    CHECK (length(currency) = 3);
+
+-- payments: currency la fel
+ALTER TABLE payments
+  ADD CONSTRAINT payment_currency_format
+    CHECK (length(currency) = 3);
+```
+
+### Reguli generale
+- DB constraints = garantie matematică, nu poate fi ocolită de niciun client
+- Nu duplica logica de business în constraints — doar invarianții structurali
+- Fiecare constraint nou = migrație separată, nu modificare directă în DB
+
+## State Transitions (#15)
+> Tranziții valide per entitate. Interdicții clare.
+
+### weddings.status
+```
+draft → active → archived
+draft → archived (skip active dacă nunta e anulată)
+```
+- **Interzis:** active → draft (nu poți "dezactiva" o nuntă în progres)
+- **Interzis:** archived → orice (arhivarea e finală)
+
+### guest_events.attendance_status
+```
+pending → invited → attending
+pending → invited → declined
+pending → invited → maybe
+attending → declined (și-a schimbat răspunsul)
+maybe → attending
+maybe → declined
+```
+- **Interzis:** attending/declined → pending (resetare manuală interzisă prin UI)
+- **Permis prin admin:** orice → pending (support tool)
+
+### rsvp_invitations.status
+```
+pending → sent → opened → responded
+pending → sent → expired
+sent → expired
+```
+- **Interzis:** responded → orice (răspunsul e final)
+- **Interzis:** expired → sent (nu poți retrimite un token expirat — generezi unul nou)
+
+### vendors.status
+```
+lead → contacted → meeting → booked
+lead → contacted → declined
+meeting → declined
+booked → declined (vendor a anulat)
+```
+- **Interzis:** booked → lead (regresie logică)
+
+### budget_items.status
+```
+planned → confirmed → paid
+planned → cancelled
+confirmed → cancelled
+```
+- **Interzis:** paid → orice (un item plătit nu se mai modifică prin UI)
+- **Permis prin admin:** paid → confirmed (corecție eroare)
+
+### data_migrations.status
+```
+pending → in_progress → completed
+pending → in_progress → failed
+failed → pending (retry)
+```
+- **Interzis:** completed → orice
+
+### Implementare
+- Tranziții validate în **API routes / RPC functions** — nu în componente React
+- Eroare clară la tranziție invalidă: `"Statusul nu poate fi schimbat din X în Y"`
+- La Faza 3: `app/lib/domain/transitions.ts` cu funcția `validateTransition(entity, from, to)`
+
+## Input Sanitization (#17)
+> Server = securitate. Client = UX. Nu invers.
+
+### Principiu fundamental
+- **Server-side** sanitization = obligatorie, ultima linie de apărare
+- **Client-side** sanitization = UX feedback rapid, NU securitate
+- Un câmp validat doar pe client = vulnerabil. Un câmp validat doar pe server = UX slab.
+
+### Câmpuri care necesită sanitizare
+
+**guests (Faza 3 — prioritate maximă):**
+- `first_name`, `last_name`, `display_name` — trim whitespace, max 100 chars, strip HTML
+- `notes` — trim, max 500 chars, strip HTML
+- `email` (dacă există) — lowercase, validare format RFC 5322
+- `meal_choice`, `plus_one_label` — trim, max 100 chars
+
+**weddings:**
+- `title` — trim, max 200 chars, strip HTML
+- `location_name` — trim, max 200 chars
+
+**events:**
+- `name` — trim, max 200 chars
+- `location_name` — trim, max 200 chars
+
+**guest_groups:**
+- `name` — trim, max 100 chars
+- `notes` — trim, max 500 chars
+
+**vendors:**
+- `name` — trim, max 200 chars
+- `contact_name` — trim, max 100 chars
+- `email` — lowercase, validare format
+- `phone` — strip non-numeric (păstrează +, spații)
+- `website` — validare URL format, max 500 chars
+- `notes` — trim, max 1000 chars
+
+**budget_items:**
+- `name` — trim, max 200 chars
+- `notes` — trim, max 500 chars
+
+**rsvp_responses:**
+- `note` — trim, max 500 chars, strip HTML (input public — risc maxim)
+
+### Reguli server-side (API routes / RPC)
+```typescript
+// Exemplu pattern pentru server-side sanitization
+function sanitizeText(input: string | null, maxLength: number): string | null {
+  if (!input) return null;
+  return input
+    .trim()
+    .slice(0, maxLength)
+    .replace(/<[^>]*>/g, ''); // strip HTML tags
+}
+
+function sanitizeEmail(input: string | null): string | null {
+  if (!input) return null;
+  const trimmed = input.trim().toLowerCase();
+  // validare format basic — regex complet la implementare
+  return trimmed.includes('@') ? trimmed : null;
+}
+```
+
+### Reguli client-side (UX feedback)
+- Afișează eroare inline sub câmp, nu toast global
+- Validare în timp real pe `onChange` pentru email și URL
+- Validare pe `onBlur` pentru text fields (nu întrerupe typing)
+- Mesaje în română: "Numele este prea lung (max 100 caractere)"
+
+### Ce NU faci
+- Nu scapi HTML cu entități (`&lt;`) — strip complet
+- Nu folosești regex complex custom pentru email — folosești librărie
+- Nu validezi pe client și sari server-side — întotdeauna ambele
+- Nu returnezi date nesanitizate din DB direct în API response
+
+### Prioritate implementare
+1. **Faza 3** — guests (primul CRUD real)
+2. **Faza 7** — rsvp_responses (input public, risc maxim)
+3. **Faza 4/5** — vendors, budget_items
+4. **Înainte de launch** — audit complet toate câmpurile
 
 ## Progres total: ~41% din produs complet
