@@ -263,6 +263,7 @@ app/lib/
 - ✅ #26 Guest Collision — UNIQUE constraint seat_assignments_guest_event_id_key există în Supabase DEV
 - ✅ #28 migrateIfNeeded — implementat în storage.js prin sanitize + compatibilitate v13→v14
 - ✅ #5 RLS policies — complet Mar 28, 2026: 71 policies pe 18 tabele, 3 helper functions, GRANT anon/authenticated. Migrație aplicată și în repo.
+- ✅ #29 Safe write pattern — ADR-029 aprobat și în repo (docs/adr/). Scor 9.3/10, review Claude+ChatGPT+Gemini.
 
 
 ### Tooltip (P8) ✅:
@@ -320,7 +321,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 39)
+## PR-uri merged în develop (total 40)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -355,6 +356,7 @@ app/lib/
 - #37: docs: rls audit + status + policies plan (#5)
 - #38: feat(security): rls policies complete — 18 tabele, 71 policies (#5)
 - #39: docs: undo strategy, worst day plan, product rules (#31 #32 #33)
+- #40: docs: add adr-029 safe write pattern — approved for faza 3 (#29)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -494,6 +496,8 @@ app/lib/
 - ⏳ 10.11 Redis / rate limiting avansat | Medie
 - ⏳ 10.12 Canary deployment | Medie
 - ⏳ 10.13 Documentație internă completă | Mică
+- ⏳ 10.14 Optimistic UI feedback seating — micro-animație la write in-flight, rollback vizual | Medie
+- ⏳ 10.15 Batch writes seating — update_editor_state_batch() pentru layout reorganization | Medie
 
 ### V2 — NU în V1
 - Tasks / Checklist

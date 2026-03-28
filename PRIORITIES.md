@@ -42,7 +42,7 @@
 | 26 | ✅ Guest Collision — UNIQUE constraint pe guest_event_id în seat_assignments (DB level) | Medie | Critic | Verificat în Supabase DEV — seat_assignments_guest_event_id_key UNIQUE există |
 | 27 | Soft Delete pentru nunți — coloană deleted_at, recovery 30 zile, documentat în Privacy Policy | Mică | Mare | ⚠️ Actualizează TOATE query-urile SELECT să filtreze deleted_at IS NULL sau folosește un VIEW Postgres |
 | 28 | ✅ migrateIfNeeded(data) — implementat implicit în storage.js | Mică | Critic | Verificat — sanitizeLoadedTables/Guests/Cam + compatibilitate v13.1→v14 + cleanupLegacyStorage |
-| 29 | Safe write pattern — update granular (tables, seats, assignments), NU overwrite total la seating | Medie | Critic | Un bug = wedding distrus complet. Schema version check la write, nu doar la citire |
+| 29 | ✅ Safe write pattern — ADR-029 aprobat. granular writes jsonb_set(), OCC revision guard, rollback 3 layere, debounce, monitoring. docs/adr/ADR-029-safe-write-pattern.md | Medie | Critic | Un bug = wedding distrus complet. Schema version check la write, nu doar la citire |
 | 30 | Auth edge cases — sesiune expirată în mijlocul lucrului, desync WP/app, refresh token flow | Medie | Critic | UX: "Session expired — reconnecting..." |
 | 31 | ✅ Undo/Redo strategy clară — ce intră (move guest, create/delete table), ce NU intră, limită 20 acțiuni | Medie | Mare | Devine critic la seating cu mulți invitați |
 | 32 | ✅ Worst Day Scenario Plan — ziua nunții, app nu merge, pași exacți de urmat | Mică | Critic | Diferența dintre "app" și "produs pe care te bazezi la nuntă" |
