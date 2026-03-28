@@ -225,6 +225,24 @@ app/lib/
 
 ## Modificări arhitecturale sesiunea curentă (Mar 28, 2026)
 
+### Must Now #1 #2 #3 #6 #7 #8 #9 #10 #11 #12 #13 ✅:
+- ✅ Source of truth map (WP=identity, Supabase=operational, localStorage=draft)
+- ✅ localStorage vs Supabase conflict policy documentată
+- ✅ Failure mode matrix per serviciu (WP/Supabase/Vercel/Resend)
+- ✅ CORS/CSRF pe WP bridge documentat
+- ✅ Service role key audit — unde e folosit, unde e interzis
+- ✅ Sentry PII scrubbing rules — log behavior, not content
+- ✅ Structured logging policy cu correlation ID
+- ✅ Environment variables documentate complet
+- ✅ Deploy checklist — pași obligatorii înainte de merge în main
+- ✅ Rollback procedure pas cu pas
+- ✅ Critical flows list pentru testing manual
+
+### Must Now #22 ✅:
+- ✅ Dashboard: banner onboarding cu CTA spre Plan Mese
+- ✅ GuestSidebar: allSeated success state cu buton Export PNG
+- ✅ GuestSidebar: prop onExport conectat din page.js
+
 ### Must Now #18 + #19 ✅:
 - ✅ SaveIndicator redesenat complet: saving/saved/error/offline/idle
 - ✅ useSeatingData: callback `onSaveStatusChange` pe autosave (saving→saved/error)
@@ -302,7 +320,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 33)
+## PR-uri merged în develop (total 36)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -331,6 +349,9 @@ app/lib/
 - #31: fix: resolve eslint warnings in errorboundary and skeleton
 - #32: docs: context final + priorities locked
 - #33: feat(ux): error recovery ux + user trust signals (#18 #19)
+- #34: docs: system boundaries, product principles, branch map, readme (#20 #21 #23 #24)
+- #35: feat(ux): first-run empty states + success states (#22)
+- #36: docs: source of truth, failure modes, cors, service role, logging, env vars, checklists (#1 #2 #3 #6 #7 #8 #9 #10 #11 #12 #13)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
@@ -538,5 +559,160 @@ app/lib/
 - **ZERO DEAD ENDS** — userul are întotdeauna o cale de ieșire. Niciun ecran fără buton de back/cancel/undo.
 - **FEEDBACK INSTANT** — latența Supabase nu se simte. Optimistic UI unde e posibil, SaveIndicator unde nu e.
 - **MESAJE ÎN ROMÂNĂ** — toate mesajele de eroare, success și empty state sunt în română, clare și umane.
+
+## Source of Truth Map (#1)
+> Fiecare tip de date are un singur owner. Conflictele se rezolvă întotdeauna în favoarea owner-ului.
+
+| Date | Owner | Fallback | Regulă |
+|------|-------|----------|--------|
+| Identitate user (email, nume, rol) | **WordPress** | — | WP e sursa unică de identitate |
+| Date operaționale (guests, tables, budget, RSVP) | **Supabase** | — | Supabase e sursa unică pentru date de produs |
+| Draft seating nesincronizat | **localStorage** | Supabase la login | localStorage = draft temporar, nu adevăr |
+| Sesiune activă | **WordPress cookie** | Redirect la login | Sesiunea e validată prin WP bridge |
+
+**Regula de conflict:** după login, Supabase wins. localStorage se migrează în Supabase și devine obsolet.
+
+## localStorage vs Supabase Conflict Policy (#2)
+- **localStorage** = draft de urgență, recovery în caz de crash, stare offline
+- **Supabase** = adevărul operațional după autentificare
+- **La login:** dacă există date în localStorage → flow de migrare → datele merg în Supabase → localStorage se șterge
+- **La conflict** (localStorage mai nou decât Supabase): Supabase wins întotdeauna — userul e notificat
+- **Offline:** localStorage e folosit ca write-through cache, sincronizat la reconectare
+- **Nu** se merge niciodată date din localStorage în Supabase fără validare explicită
+
+## Failure Mode Matrix (#3)
+> Comportament concret per serviciu down. Fără asta, un incident devine o urgență.
+
+| Serviciu | Impact | Fallback | UX |
+|----------|--------|----------|-----|
+| **WordPress down** | Auth imposibil pentru useri noi | Circuit breaker activ (wp-circuit-breaker.ts) — userii logați rămân activi via cookie | Banner discret "Autentificare temporar indisponibilă" |
+| **Supabase down** | Nu se pot salva date noi | localStorage ca buffer temporar — SaveIndicator arată "Offline" | "Salvăm local, sincronizăm când revenim online" |
+| **Vercel down** | App inaccesibil complet | — | Status page extern (viitor) |
+| **Resend down** | Email-uri RSVP nu se trimit | Queue retry (viitor) — invitații nu primesc email | Admin vede eroare în dashboard, poate retrimite manual |
+| **Sentry down** | Erori neloggate | App funcționează normal, fără impact UX | — |
+
+**Regula generală:** degradare grațioasă > oprire completă. Userul trebuie să poată cel puțin vizualiza datele existente.
+
+## CORS/CSRF pe WP Bridge (#6)
+- **CORS:** Vercel trimite request-uri la WP endpoint — WP trebuie să permită originile `app.weddinglist.ro` și `*.vercel.app` (preview)
+- **Allowlist explicită:** nu `*` — doar originile cunoscute
+- **CSRF:** endpoint-urile WordPress bridge folosesc nonce WP + validare origin
+- **API routes Next.js** (`/api/auth/provision`, `/api/migrate-local`) — nu expun CORS public, sunt server-to-server
+- **Cookie-uri:** `SameSite=Strict` pe cookie-ul de sesiune WP
+
+## Service Role Key Audit (#7)
+> Service role key bypass-ează RLS complet. Trebuie tratat ca secret absolut.
+
+**Unde E folosit (corect):**
+- `app/lib/supabase/server.ts` — client server-side exclusiv
+- `app/api/auth/provision/route.ts` — provizionare user la primul login
+- `app/api/migrate-local/route.ts` — migrare date din localStorage
+
+**Unde NU este și NU trebuie să fie:**
+- Niciun fișier client-side (`use client`)
+- Niciun fișier expus în bundle frontend
+- Niciodată în variabile `NEXT_PUBLIC_*`
+- Niciodată în logs sau Sentry
+
+**Regulă:** dacă ai nevoie de service role pe client → arhitectura e greșită, creează un API route.
+
+## Sentry PII Scrubbing (#8)
+> Ce NU intră în Sentry — GDPR + privacy by design.
+
+**Scrubbed automat (configurat în Sentry):**
+- Email-uri utilizatori
+- Nume și prenume invitați
+- Numere de telefon
+- UUID-uri de wedding (pot identifica indirect un user)
+- Tokens RSVP
+- Orice câmp din `guests`, `rsvp_responses`
+
+**Ce intră în Sentry (comportament, nu conținut):**
+- Tipul erorii și stack trace
+- Browser + OS
+- URL-ul paginii (fără query params cu date personale)
+- Versiunea aplicației
+
+**Regulă:** log behavior, not content. "Guest assignment failed" ✅ — "Guest Ion Popescu assignment failed" ❌
+
+## Structured Logging Policy (#9)
+> Cum logăm — consistență și GDPR.
+
+- **Log behavior, not content** — acțiunea, nu datele
+- **Format:** `[NIVEL] [modul] mesaj` — ex: `[ERROR] [provision] User provisioning failed`
+- **Correlation ID:** fiecare request API primește un ID unic pentru tracking cross-service
+- **Nu se loghează:** date personale, tokens, UUIDs de user, conținut RSVP
+- **Console.error și console.warn** permise în producție pentru erori critice (configurat în eslint.config.mjs)
+- **Sentry** pentru erori neașteptate — nu pentru flow normal
+
+## Environment Variables (#10)
+> Toate variabilele de mediu ale aplicației.
+
+| Variabilă | Scope | Folosită în | Acces |
+|-----------|-------|-------------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Client + Server | supabase/client.ts, supabase/server.ts | Public — OK în bundle |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client + Server | supabase/client.ts | Public — RLS protejează |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | supabase/server.ts | **Secret — niciodată în client** |
+| `NEXT_PUBLIC_WP_BASE_URL` | Client + Server | fetch-wordpress-bootstrap.ts | Public — doar URL |
+| `NODE_ENV` | Server | diverse guards | Automat Next.js |
+
+**Unde sunt stocate:** Vercel Dashboard → Settings → Environment Variables
+**Cine are acces:** doar owner-ul proiectului Vercel
+**Rotație:** la orice suspiciune de leak — vezi Secrets Rotation Playbook (Before Launch)
+
+## Deploy Checklist (#11)
+> Pași obligatorii înainte de merge din develop → main (producție).
+
+1. ✅ `npx vitest run` — toate testele verzi (341/341 baseline)
+2. ✅ `npm run lint` — zero erori ESLint
+3. ✅ Preview deploy Vercel verificat manual — login, seating chart, save, export
+4. ✅ Migrații Supabase aplicate pe PROD dacă există schema changes
+5. ✅ CONTEXT.md și PRIORITIES.md actualizate
+6. ✅ PR aprobat și review făcut
+7. ✅ Rollback plan cunoscut înainte de merge
+
+**Nu se face deploy vineri după-amiaza sau înainte de evenimente importante.**
+
+## Rollback Procedure (#12)
+> Pași exacți când ceva merge prost în producție.
+
+**Decizie rollback:** dacă în primele 30 minute după deploy apare eroare critică (auth broken, date pierdute, app inaccesibil).
+
+**Pași:**
+1. **Vercel rollback instant** — Dashboard → Deployments → alege deployment anterior → Promote to Production (< 2 minute)
+2. **Dacă există migrații Supabase** — rollback manual prin migration inversă (down migration pregătită în avans)
+3. **Anunță** — dacă sunt useri activi, postează status (viitor: status page)
+4. **Postmortem** — documentează ce s-a întâmplat în 24h
+
+**Rollback automat vs hotfix:**
+- Rollback automat dacă eroarea e în cod (Vercel instant)
+- Hotfix dacă eroarea e în date sau migrații (necesită analiză)
+
+## Critical Flows pentru Testing (#13)
+> Regression checklist — testează manual după orice deploy major.
+
+**Flow 1 — Auth:**
+- [ ] Login via WordPress redirect funcționează
+- [ ] User nou e provizionat corect în Supabase
+- [ ] User existent nu e duplicat
+- [ ] Sesiune expirată → redirect la login (nu crash)
+
+**Flow 2 — Seating Chart:**
+- [ ] Datele se încarcă din localStorage la boot
+- [ ] Drag & drop invitat pe masă funcționează
+- [ ] Save indicator apare (Syncing → Saved)
+- [ ] Magic Fill distribuie invitații corect
+- [ ] Export PNG generează fișierul
+
+**Flow 3 — Save & Persist:**
+- [ ] Modificare → salvare automată în 500ms
+- [ ] Refresh pagină → datele persistă
+- [ ] Offline → SaveIndicator arată "Offline · Salvat local"
+- [ ] Online → sincronizare automată
+
+**Flow 4 — RSVP (când e implementat):**
+- [ ] Token unic per invitat
+- [ ] Submit răspuns → confirmat în DB
+- [ ] Token expirat → mesaj clar
 
 ## Progres total: ~41% din produs complet

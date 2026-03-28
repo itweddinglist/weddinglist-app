@@ -14,19 +14,19 @@
 
 | # | Item | Dificultate | ROI | Note |
 |---|------|-------------|-----|------|
-| 1 | Source of truth map (WP=identity, Supabase=operational, localStorage=draft) | Mică | Critic | Documentat în CONTEXT |
-| 2 | localStorage vs Supabase conflict policy (după login, Supabase wins) | Mică | Critic | localStorage = draft/recovery, nu adevăr operațional |
-| 3 | Failure mode matrix (WP down / Supabase down / Vercel down / Resend down) | Mică | Critic | Cu fallback behavior concret per serviciu |
+| 1 | ✅ Source of truth map (WP=identity, Supabase=operational, localStorage=draft) | Mică | Critic | Documentat în CONTEXT |
+| 2 | ✅ localStorage vs Supabase conflict policy (după login, Supabase wins) | Mică | Critic | localStorage = draft/recovery, nu adevăr operațional |
+| 3 | ✅ Failure mode matrix (WP down / Supabase down / Vercel down / Resend down) | Mică | Critic | Cu fallback behavior concret per serviciu |
 | 4 | ✅ generateTestData.js exclus din production bundle | Mică | Critic | Verificat — nu e importat nicăieri în app |
 | 5 | RLS testat real — testează că user_B nu poate accesa wedding_id al user_A chiar dacă ghicește UUID-ul | Medie | Critic | Cel mai frecvent vector de data leak în Supabase. Folosește JWT de test prin terminal |
-| 6 | CORS/CSRF documentat și configurat pe WP bridge | Medie | Critic | CORS allowlist explicit |
-| 7 | Service role key audit — unde e folosit, unde e interzis | Mică | Critic | |
-| 8 | Sentry PII scrubbing rules — ce NU intră în logs | Mică | Mare | Log behavior, not content |
-| 9 | Structured logging policy (log behavior, not content) | Mică | Mare | Correlation ID / request ID per request |
-| 10 | Environment variables documentate — unde, cine are acces | Mică | Mare | Protected env vars list |
-| 11 | Deploy checklist — pași obligatorii înainte de merge în main | Mică | Mare | Include: teste verzi, lint, preview deploy verificat |
-| 12 | Rollback procedure documentat pas cu pas | Mică | Mare | Rollback decision rule: când automat, când hotfix |
-| 13 | Critical flows list pentru testing (auth, save, assign, RSVP submit) | Mică | Mare | Regression checklist pentru seating — cea mai sensibilă zonă |
+| 6 | ✅ CORS/CSRF documentat și configurat pe WP bridge | Medie | Critic | CORS allowlist explicit |
+| 7 | ✅ Service role key audit — unde e folosit, unde e interzis | Mică | Critic | |
+| 8 | ✅ Sentry PII scrubbing rules — ce NU intră în logs | Mică | Mare | Log behavior, not content |
+| 9 | ✅ Structured logging policy (log behavior, not content) | Mică | Mare | Correlation ID / request ID per request |
+| 10 | ✅ Environment variables documentate — unde, cine are acces | Mică | Mare | Protected env vars list |
+| 11 | ✅ Deploy checklist — pași obligatorii înainte de merge în main | Mică | Mare | Include: teste verzi, lint, preview deploy verificat |
+| 12 | ✅ Rollback procedure documentat pas cu pas | Mică | Mare | Rollback decision rule: când automat, când hotfix |
+| 13 | ✅ Critical flows list pentru testing (auth, save, assign, RSVP submit) | Mică | Mare | Regression checklist pentru seating — cea mai sensibilă zonă |
 | 14 | Data Model Invariants — DB Check Constraints (ex: CHECK (status != 'seated' OR seat_id IS NOT NULL)) | Medie | Critic | Nu te baza doar pe logica Next.js. DB = ultima linie de apărare |
 | 15 | State Transitions definite (guest: new→confirmed→seated, table: new→edited→locked, RSVP: pending→accepted→declined) | Medie | Critic | Tranziții valide only, interdicții clare |
 | 16 | Business rules centralizate în domain/rules.ts — NU împrăștiate în hooks | Medie | Mare | Dacă logica RSVP e în 3 hooks = bug de securitate garantat |
@@ -35,7 +35,7 @@
 | 19 | ✅ User Trust Signals — Saved ✔ / Syncing... / Offline mode | Mică | Mare | Ridică produsul la "tool serios" |
 | 20 | ✅ System Boundaries — ce NU face fiecare layer + anti-pattern list | Mică | Mare | UI nu scrie DB direct, data layer nu știe de UI |
 | 21 | ✅ Product Principles documentate (guest-first, max 2-3 pași, feedback instant, fără dead ends) | Mică | Mare | |
-| 22 | First-run empty states — primul guest, prima masă, primul vendor | Medie | Mare | Success states, nu doar error states |
+| 22 | ✅ First-run empty states — primul guest, prima masă, primul vendor | Medie | Mare | Success states, nu doar error states |
 | 23 | ✅ Branch-to-environment map documentat | Mică | Mare | main=prod, develop=staging, feature/*=preview |
 | 24 | ✅ README setup local de la zero + command cheat sheet | Mică | Medie | |
 | 25 | ✅ Gravity Guard — coordonate x/y out-of-bounds resetate la centrul planului înainte de upsert | Mică | Critic | Verificat — Math.max/min pe PLAN_W/H în useSeatingData și useTableInteractions |
