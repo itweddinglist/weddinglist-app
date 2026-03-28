@@ -267,6 +267,7 @@ app/lib/
 - ✅ #17 Input sanitization — pattern documentat, câmpuri identificate per tabel, implementare la Faza 3.
 - ✅ #14 Data Model Invariants — constraints existente auditate, lipsă documentate cu SQL.
 - ✅ #15 State Transitions — tranziții valide per entitate documentate, implementare transitions.ts la Faza 3.
+- ✅ P10 Virtualizare sidebar — VirtualList nativ, flex layout 30/70 fără search, 30/35/35 cu search.
 - ✅ #27 Soft Delete — deleted_at pe weddings, view active_weddings, RLS actualizat, RPC soft_delete_wedding(). Migrație aplicată.
 
 
@@ -315,7 +316,7 @@ app/lib/
 ### Rămase seating chart:
 - ⏳ P3 — isDimmed opacity 0.3 → 0.6 | Dificultate: Mică
 - ⏳ P9 — Zoom < 0.2 rect redus la 60-70% din dimensiune | Dificultate: Mică
-- ⏳ P10 — Virtualizare sidebar cu react-window (600 invitați neatribuiți) | Dificultate: Medie
+- ✅ P10 — Virtualizare sidebar — VirtualList nativ, flex layout proporțional | Dificultate: Medie
 - ⏳ P11 — Seat swap drag & drop (drag invitat din scaun → alt scaun/masă) | Dificultate: Mare
 
 ## Ordinea recomandată sesiunea următoare
@@ -325,7 +326,7 @@ app/lib/
 4. **Faza 7** — RSVP (prima funcționalitate vizibilă pentru invitați)
 → Faza 5 (Budget) și Faza 4 (Vendors) pot fi paralele sau după Faza 7.
 
-## PR-uri merged în develop (total 43)
+## PR-uri merged în develop (total 44)
 - #1-4: Foundation, Auth, Data setup
 - #5: saveEdit/rotateTable undo, rotații negative
 - #6: tableId null safety, ConfirmDialog, getGroupColor, guest initials
@@ -364,6 +365,7 @@ app/lib/
 - #41: docs: input sanitization pattern + campuri per tabel (#17)
 - #42: docs: data model invariants + state transitions (#14 #15)
 - #43: feat(db): soft delete weddings — deleted_at, view, rls update, rpc (#27)
+- #44: feat(perf): sidebar virtualization - native virtual list, flex layout 3 sections (p10)
 
 ## Scor Seating Chart
 - Înainte de sesiunea curentă: 8.2/10
