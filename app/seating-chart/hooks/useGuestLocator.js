@@ -1,11 +1,9 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { getTableDims } from "../utils/geometry.js";
 
 export function useGuestLocator({ tables, getGuestTableId, focusPoint }) {
-  const [highlightTableId, setHighlightTableId] = useState(null);
   const [highlightGuestId, setHighlightGuestId] = useState(null);
-  const timeoutRef = useRef(null);
 
   const locateGuest = useCallback(
     (guestId) => {
@@ -20,18 +18,14 @@ export function useGuestLocator({ tables, getGuestTableId, focusPoint }) {
       const cy = table.y + d.h / 2;
 
       focusPoint(cx, cy, 1.3);
-
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      setHighlightTableId(tableId);
       setHighlightGuestId(guestId);
-      timeoutRef.current = setTimeout(() => {
-        setHighlightTableId(null);
-        setHighlightGuestId(null);
-        timeoutRef.current = null;
-      }, 1500);
     },
     [tables, getGuestTableId, focusPoint]
   );
 
-  return { highlightTableId, highlightGuestId, locateGuest };
+  const clearHighlight = useCallback(() => {
+    setHighlightGuestId(null);
+  }, []);
+
+  return { highlightGuestId, locateGuest, clearHighlight };
 }

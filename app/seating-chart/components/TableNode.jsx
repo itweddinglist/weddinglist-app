@@ -78,10 +78,8 @@ function TableNodeImpl({
     : t.name;
   const isDraggingThisTable = draggingTableRef?.current?.id === t.id;
   const tooltipTimeoutRef = useRef(null);
-  const isDimmed =
-    (highlightGuestId != null && !assignedGuests.some((g) => g.id === highlightGuestId)) ||
-    (highlightGroupId != null && !assignedGuests.some((g) => g.grup === highlightGroupId));
-  const tableOpacity = !isFocused ? 0.5 : isDimmed ? 0.3 : 1;
+  const isDimmedByGroup = highlightGroupId != null && !assignedGuests.some((g) => g.grup === highlightGroupId);
+  const tableOpacity = !isFocused ? 0.5 : isDimmedByGroup ? 0.3 : 1;
 
   const handleMouseDown = (e) => {
     if (lockMode || e.button !== 0) return;
@@ -403,7 +401,7 @@ function TableNodeImpl({
           const gc = guest ? getGroupColor(guest.grup) : "#48BB78";
           if (guest)
             return (
-              <g key={idx} style={{ cursor: "pointer" }}
+              <g key={idx} style={{ cursor: "pointer", opacity: highlightGuestId != null && assignedGuests.some(g => g.id === highlightGuestId) && highlightGuestId !== guest.id ? 0.25 : 1 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setHoveredGuest(null);
