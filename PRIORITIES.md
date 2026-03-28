@@ -40,7 +40,7 @@
 | 24 | ✅ README setup local de la zero + command cheat sheet | Mică | Medie | |
 | 25 | ✅ Gravity Guard — coordonate x/y out-of-bounds resetate la centrul planului înainte de upsert | Mică | Critic | Verificat — Math.max/min pe PLAN_W/H în useSeatingData și useTableInteractions |
 | 26 | ✅ Guest Collision — UNIQUE constraint pe guest_event_id în seat_assignments (DB level) | Medie | Critic | Verificat în Supabase DEV — seat_assignments_guest_event_id_key UNIQUE există |
-| 27 | Soft Delete pentru nunți — coloană deleted_at, recovery 30 zile, documentat în Privacy Policy | Mică | Mare | ⚠️ Actualizează TOATE query-urile SELECT să filtreze deleted_at IS NULL sau folosește un VIEW Postgres |
+| 27 | ✅ Soft Delete pentru nunți — deleted_at pe weddings, view active_weddings, RLS actualizat, RPC soft_delete_wedding(). Recovery 30 zile. | Mică | Mare | Migrație 20260328000002_soft_delete_weddings.sql aplicată în Supabase DEV și în repo. |
 | 28 | ✅ migrateIfNeeded(data) — implementat implicit în storage.js | Mică | Critic | Verificat — sanitizeLoadedTables/Guests/Cam + compatibilitate v13.1→v14 + cleanupLegacyStorage |
 | 29 | ✅ Safe write pattern — ADR-029 aprobat. granular writes jsonb_set(), OCC revision guard, rollback 3 layere, debounce, monitoring. docs/adr/ADR-029-safe-write-pattern.md | Medie | Critic | Un bug = wedding distrus complet. Schema version check la write, nu doar la citire |
 | 30 | Auth edge cases — sesiune expirată în mijlocul lucrului, desync WP/app, refresh token flow | Medie | Critic | UX: "Session expired — reconnecting..." |
