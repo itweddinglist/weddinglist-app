@@ -18,7 +18,7 @@
 | 2 | ✅ localStorage vs Supabase conflict policy (după login, Supabase wins) | Mică | Critic | localStorage = draft/recovery, nu adevăr operațional |
 | 3 | ✅ Failure mode matrix (WP down / Supabase down / Vercel down / Resend down) | Mică | Critic | Cu fallback behavior concret per serviciu |
 | 4 | ✅ generateTestData.js exclus din production bundle | Mică | Critic | Verificat — nu e importat nicăieri în app |
-| 5 | RLS testat real — testează că user_B nu poate accesa wedding_id al user_A chiar dacă ghicește UUID-ul | Medie | Critic | Cel mai frecvent vector de data leak în Supabase. Folosește JWT de test prin terminal |
+| 5 | ⚠️ RLS testat real — audit Mar 28: rowsecurity=true pe 18 tabele, zero policies, deny-all implicit. Policies de scris la Faza 3. | Medie | Critic | Safe acum (localStorage only). Policies obligatorii înainte de primul CRUD real. |
 | 6 | ✅ CORS/CSRF documentat și configurat pe WP bridge | Medie | Critic | CORS allowlist explicit |
 | 7 | ✅ Service role key audit — unde e folosit, unde e interzis | Mică | Critic | |
 | 8 | ✅ Sentry PII scrubbing rules — ce NU intră în logs | Mică | Mare | Log behavior, not content |
