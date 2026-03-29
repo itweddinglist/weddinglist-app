@@ -320,11 +320,15 @@ app/lib/
 - ⏳ P11 — Seat swap drag & drop (drag invitat din scaun → alt scaun/masă) | Dificultate: Mare
 
 ## Ordinea recomandată sesiunea următoare
-1. **Faza 7 UI Guests** — pagina de gestionare invitați (Import Summary Card, Column Mapping preview, bulk actions, filters)
-2. **Faza 2B** — Seating Performance Validation (profiling pe date reale, 2B.1/2B.3/2B.4/2B.5/2B.6)
-3. **Faza 6** — Seating ↔ Guests Integration (conectare seating cu guests reali)
-4. **Faza 4 RSVP** — prima funcționalitate vizibilă pentru invitați
-→ 3.3 partyId + 3.6 Limits se fac natural în Faza 7 UI Guests și respectiv după Stripe.
+1. **Faza 2B** — Seating Performance Validation (profiling pe date reale, 2B.1/2B.3/2B.4/2B.5/2B.6)
+2. **Faza 5** — Budget Core
+3. **Faza 6** — Seating ↔ Guests Integration
+4. **Faza 4** — Vendors Mirror
+5. **Faza 7** — RSVP + UI Guests
+→ Task Engine se implementează la final V1 după Faza 9.
+→ Dashboard redesign după ce toate modulele au date reale.
+→ Module eliminate: Moodboard, Wishlist, Notes, Checklist, Timeline — absorbite în Dashboard/Task Engine.
+→ Module rămase: 9 (Dashboard, Seating, Guests, Budget, Vendors, RSVP, Export, Settings, Guest Moments).
 
 ## PR-uri merged în develop (total 53)
 - #1-4: Foundation, Auth, Data setup
@@ -418,7 +422,7 @@ app/lib/
 
 ### ✅ Faza 0B — Auth & Data — DONE
 - ✅ 0B.1 Bootstrap endpoint WordPress + API contract stabil | Medie
-- ✅ 0B.2 Session Bridge Next.js + Feature flags + Circuit breaker WP | Mare
+- ✅ 0B.2 Session Bridge Next.js + Feature flags + Circuit breaker WP (timeout agresiv, max 2-3 retry-uri, cooldown 60s) | Mare
 - ✅ 0B.3 Idempotent provisioning + Idempotency API endpoints | Mare
 - ✅ 0B.4 localStorage hydration + Migration flow + Race conditions | Mare
 - ✅ 0B.5 Autosave + persistence + Saving/Saved/Error indicator | Medie
