@@ -225,3 +225,45 @@
 - Supabase generated types — elimină cast-urile as GuestWithRelations (după stabilizare schema)
 - POST /api/guest-events tranzacțional — RPC pentru 3 queries → 1
 - Bulk import → RPC pentru 1000+ guests
+
+---
+
+## 💡 IDEI DE VIITOR
+> Neplanificate, necomise. Notate ca potențial valoros pentru versiuni ulterioare.
+
+| # | Idee | Note |
+|---|------|------|
+| 1 | Contract & Document Vault | Bucket securizat Supabase Storage per vendor_state — contracte + facturi proformă |
+| 2 | Live Share Read-Only | Link tokenizat pentru managerul locației — vede seating + meniuri în timp real, fără PDF static |
+
+---
+
+## Update Mar 29, 2026
+
+### Decizii arhitecturale adăugate
+- Optimistic UI aprobat fără Zustand/React Query — pattern manual controlat
+- Schema Drift: modificări de schemă EXCLUSIV prin Supabase CLI, niciodată manual din Dashboard
+- Circuit breaker: timeout agresiv, max 2-3 retry-uri, cooldown 60s
+- Task Engine planificat pentru final V1 (după Faza 9)
+
+### Module restructurate
+- Module rămase: 9 (Dashboard, Seating, Guests, Budget, Vendors, RSVP, Export, Settings, Guest Moments)
+- Eliminate/absorbite: Moodboard, Wishlist, Notes, Checklist, Timeline
+
+### PRIORITIES.md Later — adăugat
+- Optimistic UI pattern pe Guests + Budget (fără Zustand/React Query)
+
+### 3.6 Limits — clarificare
+- Nu e blocat de Stripe ci de integrarea Voxel bootstrap (plan vine din WP)
+- Se implementează când legăm Voxel — plan_tier populat din bootstrap response
+
+---
+
+## Update Mar 29, 2026 — post review Gemini
+
+### Adăugat în Must Now
+- RLS negative tests — testăm că userul neautorizat NU poate vedea datele altui wedding (nu doar că cel autorizat le vede). Ex: user cu wedding_id A nu poate accesa guest_id din wedding_id B.
+
+### Adăugat în Before Launch
+- Duplicate names warning în UI Guests — când există 2 persoane cu același nume în același wedding, UI afișează un indicator vizual clar (deja implementat în API la 3.5, lipsește în UI)
+- Circuit breaker Maintenance mode — dacă WP bridge e jos, dashboard afișează banner discret dar Guests/Seating/Budget rămân funcționale. Userul nu trebuie să simtă că "aplicația e stricată".
