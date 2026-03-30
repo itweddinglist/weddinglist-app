@@ -27,6 +27,8 @@ import ToastStack from "./components/ToastStack.jsx";
 import { exportToPng } from "./utils/exportPng.js";
 import FpsCounter from "./components/FpsCounter.jsx";
 import SaveIndicator from "../components/SaveIndicator.jsx";
+import { supabaseClient } from "../lib/supabase/client";
+import { useSeatingSync } from "../../lib/seating/use-seating-sync";
 
 const EMPTY_ARRAY = [];
 
@@ -41,7 +43,7 @@ function isTableVisible(t, cam, canvasW, canvasH) {
   );
 }
 
-export default function SeatingChart() {
+function SeatingChartInner({ initialGuests, onSeatingStateChanged }) {
   // ── Layer 1: Camera ──
   const {
     cam,
@@ -94,6 +96,8 @@ export default function SeatingChart() {
   // ── Layer 2: Data ──
   const data = useSeatingData(cam, camRef, canvasWRef, canvasHRef, {
     onSaveStatusChange: handleSaveStatusChange,
+    initialGuests,
+    onSeatingStateChanged,
   });
 
   // ── Layer 3: UI ──
@@ -731,6 +735,51 @@ function ModalCreate({ modal, setModal, createTable }) {
       </div>
     </div>
   );
+}
+
+// =============================================================================
+// SeatingChartWrapper — fetch date canonice + injectare în SeatingChartInner.
+// page.js orchestrează, nu devine service layer.
+// =============================================================================
+
+function SeatingChartWrapperInner({ weddingId, eventId }) {
+  const { initialGuests, isLoading, error, onSeatingStateChanged } = useSeatingSync({
+    weddingId,
+    eventId,
+    supabase: supabaseClient,
+  });
+
+  // Loading state — nu montăm inner până nu avem date canonice
+  if (isLoading) {
+    return <div style={{ minHeight: "100vh", background: "#FAF7F2" }} />;
+  }
+
+  if (error) {
+    // Fallback la comportamentul existent — seating funcționează fără Supabase sync
+    console.warn("[SeatingWrapper] Failed to load seating data, using local fallback:", error);
+    return <SeatingChartInner initialGuests={null} onSeatingStateChanged={null} />;
+  }
+
+  return (
+    <SeatingChartInner
+      initialGuests={initialGuests}
+      onSeatingStateChanged={onSeatingStateChanged}
+    />
+  );
+}
+
+export default function SeatingChart() {
+  // TODO Faza 6: preia weddingId + eventId din sesiune/context
+  // Deocamdată: wrapper fără integrare completă până la conectarea sesiunii
+  const [weddingId] = useState(null);
+  const [eventId] = useState(null);
+
+  // Fallback la comportamentul existent dacă nu avem sesiune conectată
+  if (!weddingId || !eventId) {
+    return <SeatingChartInner initialGuests={null} onSeatingStateChanged={null} />;
+  }
+
+  return <SeatingChartWrapperInner weddingId={weddingId} eventId={eventId} />;
 }
 
 const css = `
