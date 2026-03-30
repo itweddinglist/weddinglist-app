@@ -267,3 +267,46 @@
 ### Adăugat în Before Launch
 - Duplicate names warning în UI Guests — când există 2 persoane cu același nume în același wedding, UI afișează un indicator vizual clar (deja implementat în API la 3.5, lipsește în UI)
 - Circuit breaker Maintenance mode — dacă WP bridge e jos, dashboard afișează banner discret dar Guests/Seating/Budget rămân funcționale. Userul nu trebuie să simtă că "aplicația e stricată".
+
+## Update Mar 30, 2026
+
+### Roadmap — status actualizat
+
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 complete |
+| Faza 6 Seating ↔ Guests | ✅ Implementat, mergeuit |
+| Faza 2B Seating Perf Validation | ⏳ |
+| Faza 4 Vendors Mirror | ⏳ |
+| Faza 7 RSVP | ⏳ |
+| Faza 8 Export & Compliance | ⏳ |
+| Faza 9 Reliability & QA | ⏳ |
+| Faza 10 Power Features | ⏳ |
+
+### Teste
+- 505/505 verzi (era 434 la Mar 29)
+- 19 fișiere de test
+
+### Faza 5 — Budget Core — DONE (5.1, 5.2, 5.3)
+- ✅ 5.1 Budget items CRUD cu state transitions
+- ✅ 5.2 Payments CRUD imutabile
+- ✅ 5.3 Summary cu has_mixed_currencies
+- ⏳ 5.4 Plan limits — skip până la Voxel
+- ⏳ 5.5 Downgrade — skip până la Stripe
+
+### Faza 6 — Seating ↔ Guests — DONE
+- ✅ Arhitectură aprobată (4 runde review: Opus + ChatGPT + Gemini, scor 9.7/10)
+- ✅ ID Bridge persistent + RPC batch atomic
+- ✅ sync_seating_editor_state tranzacțional SECURITY DEFINER
+- ✅ Patch minim useSeatingData.js + page.js wrapper
+- ✅ Mergeuit în develop
+
+### Următor recomandat
+1. Faza 2B — Seating Performance Validation
+2. Faza 4 — Vendors Mirror
+3. Faza 7 — RSVP + UI Guests
