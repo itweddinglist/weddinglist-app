@@ -87,18 +87,11 @@ export async function getGuestEventWeddingId(
 
   return data?.wedding_id ?? null;
 }
-// =============================================================================
-// ADAUGĂ în lib/authorization.ts — după getGuestEventWeddingId()
-// =============================================================================
-
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Fetches wedding_id AND status for a budget_item.
  * Used by PATCH/DELETE /api/weddings/[weddingId]/budget/items/[itemId].
- *
- * Returnează null dacă itemul nu există SAU userul nu e member (RLS).
- * Un singur fetch acoperă: ownership check + status pentru transition guard.
+ * RLS ensures null is returned if user isn't a wedding member.
  */
 export async function getBudgetItemMeta(
   supabase: SupabaseClient,
