@@ -331,3 +331,35 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - dacă există ambiguitate de produs → oprește și semnalează
 - dacă e nevoie de o decizie de produs → nu improviza
 - lucrăm cu disciplină — obiectivul nu este doar să "meargă" ci să fie premium, coerent, scalabil, sigur
+
+## Update Mar 30, 2026 — post Faza 5 + Faza 6
+
+### Roadmap — actualizat
+
+```
+1. Seating polish ✅
+2. Faza 0A — Foundation ✅
+3. Faza 0B — Auth & Data ✅
+4. Faza 2A — Seating Performance Foundation ✅
+5. Faza 3 — Guests Core ✅ (~85%)
+6. Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7. Faza 6 — Seating ↔ Guests Integration ✅
+8. Faza 2B — Seating Performance Validation ⏳
+9. Faza 4 — Vendors Mirror ⏳
+10. Faza 7 — RSVP ⏳
+11. Faza 8 — Export & Compliance ⏳
+12. Faza 9 — Reliability & QA ⏳
+13. Faza 10 — Power Features ⏳
+```
+
+### Schema DB — adăugat Mar 30, 2026
+- seating_id_maps — bridge UUID ↔ numeric ID pentru seating engine
+- seating_id_counters — counter atomic per (wedding_id, event_id, entity_type)
+- tables.deleted_at — soft delete pe mese
+
+### Decizii de produs noi
+- Budget currency default = RON
+- BudgetSummary.has_mixed_currencies — UI afișează warning dacă valute mixte
+- DELETE payment — permis doar pe budget_items cu status planned/confirmed
+- Seating ↔ Guests — sync prin RPC tranzacțional, nu prin route handlers JS
+- Soft delete în DB pentru tables, hard delete în editor UX

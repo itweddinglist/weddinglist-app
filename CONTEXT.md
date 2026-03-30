@@ -1090,3 +1090,66 @@ function sanitizeEmail(input: string | null): string | null {
 - lib/plan-limits.ts — creat și revocat (3.6 skip până la Stripe)
 - vitest.config.js actualizat să includă *.test.ts și *.test.tsx
 - react-window incompatibil cu Turbopack — înlocuit cu VirtualList nativ
+
+## Update Mar 30, 2026
+
+### PR-uri merged în develop (total 59)
+- #54: (anterior)
+- #55: fix(seating): guest highlight fix
+- #56: docs: product.md nou + context + priorities update
+- #57: feat(api): budget items and payments crud - validation, routes, tests (faza 5.1, 5.2)
+- #58: feat(seating): guests integration - id bridge, sync rpc, wrapper, patch useseatingdata (faza 6)
+- #59: fix(budget): total_remaining min 0, round total_paid to 2 decimals
+
+### Teste: 505/505 verzi (era 434)
+
+### Faza 5 — Budget Core — COMPLETATĂ (5.1, 5.2, 5.3)
+- ✅ 5.1 Budget items CRUD — GET/POST/PATCH/DELETE cu state transitions
+- ✅ 5.2 Payments CRUD — imutabile, DELETE permis doar pe items planned/confirmed
+- ✅ 5.3 Derived totals — summary endpoint cu has_mixed_currencies, currency default RON
+- ⏳ 5.4 Plan limits — skip până la Voxel bootstrap
+- ⏳ 5.5 Downgrade — skip până la Stripe
+
+### Faza 6 — Seating ↔ Guests Integration — COMPLETATĂ (arhitectură + implementare)
+- ✅ ID Bridge persistent în Supabase (seating_id_maps + seating_id_counters)
+- ✅ RPC allocate_seating_numeric_ids_batch — atomic, fără race conditions
+- ✅ RPC sync_seating_editor_state — SECURITY DEFINER, tranzacțional, rollback complet
+- ✅ Patch minim useSeatingData.js (4 modificări: semnătură, useState, hydration guard, change detection)
+- ✅ page.js wrapper cu useSeatingSync + fallback la comportamentul existent
+- ✅ Migrații: seating_id_maps + extend table_types (deleted_at, bar/prezidiu, seat_count >= 0)
+
+### Decizii arhitecturale noi (Mar 30, 2026)
+- Budget currency default = RON (schema DB era EUR — migrație aplicată)
+- DELETE payment permis doar dacă budget_item.status IN (planned, confirmed)
+- BudgetSummary include has_mixed_currencies: boolean — UI afișează warning dacă true
+- Soft delete în DB pentru tables (deleted_at), hard delete în editor UX
+- sync_seating_editor_state = SECURITY DEFINER cu membership check explicit în corp
+- allocate_seating_numeric_ids_batch cu RLS normal (nu SECURITY DEFINER)
+- uuidToNumericId hash eliminat — înlocuit cu RPC persistent + counter atomic
+- SeatingSnapshot payload minim: { reason, assignments, tables } — fără guest model coupling
+
+### Schema DB — tabele noi (Mar 30, 2026)
+- seating_id_maps — mapping UUID ↔ numeric ID, persistent în Supabase
+- seating_id_counters — counter atomic per (wedding_id, event_id, entity_type)
+
+### Fișiere noi adăugate
+- lib/budget/calculate-summary.ts
+- lib/validation/budget-items.ts + .test.ts
+- lib/validation/payments.ts + .test.ts
+- lib/seating/types.ts
+- lib/seating/id-bridge.ts
+- lib/seating/map-guests.ts
+- lib/seating/map-assignments.ts
+- lib/seating/assignment-diff.ts (cu toMove extins)
+- lib/seating/use-seating-sync.ts
+- types/budget.ts
+- types/seating.ts (standalone)
+- supabase/migrations/20260329000001_fix_currency_default.sql
+- supabase/migrations/20260330000001_seating_id_maps.sql
+- supabase/migrations/20260330000002_extend_table_types.sql
+
+### Lecții învățate (workflow)
+- npx tsc --noEmit înainte de push — prinde erori de tip înainte de CI
+- Fișierele create în ferestre separate (Opus) trebuie trimise la verificare înainte de commit
+- types/* standalone când lib/* nu e în același PR
+
