@@ -1,4 +1,16 @@
 
+export interface PaymentRow {
+  id: string;
+  wedding_id: string;
+  budget_item_id: string;
+  amount: number;
+  currency: string;
+  paid_at: string | null;
+  payment_method: string | null;
+  note: string | null;
+  created_at: string;
+}
+
 // ─── Budget Summary ───────────────────────────────────────────────────────────
 
 export interface BudgetSummary {
