@@ -87,3 +87,32 @@ export async function getGuestEventWeddingId(
 
   return data?.wedding_id ?? null;
 }
+// =============================================================================
+// ADAUGĂ în lib/authorization.ts — după getGuestEventWeddingId()
+// =============================================================================
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Fetches wedding_id AND status for a budget_item.
+ * Used by PATCH/DELETE /api/weddings/[weddingId]/budget/items/[itemId].
+ *
+ * Returnează null dacă itemul nu există SAU userul nu e member (RLS).
+ * Un singur fetch acoperă: ownership check + status pentru transition guard.
+ */
+export async function getBudgetItemMeta(
+  supabase: SupabaseClient,
+  itemId: string
+): Promise<{ wedding_id: string; status: string } | null> {
+  const { data, error } = await supabase
+    .from("budget_items")
+    .select("wedding_id, status")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Auth] BudgetItem meta lookup failed:", error.message);
+    return null;
+  }
+  return data ?? null;
+}
