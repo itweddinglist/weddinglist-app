@@ -67,9 +67,9 @@ const RESET_ZOOM = 0.9;
  * Toate acțiunile returnează { ok, effects[] } pentru ca page.js
  * să aplice efectele UI prin applySeatingEffect.
  */
-export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStatusChange } = {}) {
+export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStatusChange, initialGuests, onSeatingStateChanged } = {}) {
   // ── STATE ──
-  const [guests, setGuests] = useState(() => INITIAL_GUESTS.map((g) => ({ ...g })));
+  const [guests, setGuests] = useState(() => (initialGuests ?? INITIAL_GUESTS).map((g) => ({ ...g })));
   const [tables, setTables] = useState(() => buildTemplate());
   const [nextId, setNextId] = useState(10);
   const [hydrated, setHydrated] = useState(false);
@@ -91,11 +91,57 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     const cw = canvasWRef.current || 1200;
     const ch = canvasHRef.current || 700;
     const result = loadStorageState(cw, ch);
-    if (result.data.guests) setGuests(result.data.guests);
+    if (!initialGuests && result.data.guests) setGuests(result.data.guests);
     if (result.data.tables) setTables(result.data.tables);
     if (result.data.nextId) setNextId(result.data.nextId);
     setHydrated(true);
   }, []);
+
+  // ── SEATING STATE CHANGE NOTIFICATION ──
+  // Detectează schimbări în guests SAU tables post-render.
+  // Emite snapshot minim: { reason, assignments, tables } — fără guest model coupling.
+  // NU emite la: cam, nextId, zoom, pan.
+  // Prinde: assign, unassign, magicFill, createTable, deleteTable,
+  //         rotateTable, saveEdit, drag, arrow keys, resetPlan.
+  const prevSnapshotRef = useRef(null);
+  const onSeatingStateChangedRef = useRef(onSeatingStateChanged);
+  useEffect(() => { onSeatingStateChangedRef.current = onSeatingStateChanged; }, [onSeatingStateChanged]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const assignmentsSnapshot = Object.fromEntries(
+      guests.map((g) => [g.id, g.tableId ?? null])
+    );
+
+    const tablesSnapshot = tables.map((t) => ({
+      id:       t.id,
+      name:     t.name,
+      type:     t.type,
+      seats:    t.seats,
+      x:        Math.round(t.x),
+      y:        Math.round(t.y),
+      rotation: Math.round(t.rotation || 0),
+      isRing:   !!t.isRing,
+    }));
+
+    const snapshot = { assignments: assignmentsSnapshot, tables: tablesSnapshot };
+    const prev = prevSnapshotRef.current;
+    prevSnapshotRef.current = snapshot;
+
+    if (prev === null) return; // primul run — init, nu emite
+
+    const assignmentsChanged = JSON.stringify(prev.assignments) !== JSON.stringify(snapshot.assignments);
+    const tablesChanged = JSON.stringify(prev.tables) !== JSON.stringify(snapshot.tables);
+
+    if (!assignmentsChanged && !tablesChanged) return;
+
+    const reason = assignmentsChanged && tablesChanged ? "both"
+      : assignmentsChanged ? "assignments"
+      : "layout";
+
+    onSeatingStateChangedRef.current?.({ reason, assignments: assignmentsSnapshot, tables: tablesSnapshot });
+  }, [guests, tables, hydrated]);
 
   // ── AUTOSAVE (debounced 500ms) ──
   useEffect(() => {
@@ -321,7 +367,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     spawnCounterRef.current++;
 
     const proto = { type: modal.type, seats: modal.seats || 0, isRing: false, rotation: 0 };
-    const { x, y } = getSpawnPosition(proto, newTableIds.size, camRef, canvasWRef, canvasHRef);
+    const { x, y } = getSpawnPosition(proto, spawnCounterRef.current, camRef, canvasWRef, canvasHRef);
 
     setTables((prev) => [
       ...prev,
