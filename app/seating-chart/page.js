@@ -29,8 +29,8 @@ import FpsCounter from "./components/FpsCounter.jsx";
 import SaveIndicator from "../components/SaveIndicator.jsx";
 import { supabaseClient } from "../lib/supabase/client";
 import { useSeatingSync } from "../../lib/seating/use-seating-sync";
-import { useSession } from "../../lib/auth/use-session";
-import { clearSessionCache } from "../../lib/auth/session-bridge";
+import { useSession } from "../lib/auth/use-session";
+import { clearSessionCache } from "../lib/auth/session-bridge";
 import "./seating-chart.css";
 
 const EMPTY_ARRAY = [];
