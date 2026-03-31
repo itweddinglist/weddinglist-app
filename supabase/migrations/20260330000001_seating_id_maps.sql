@@ -233,7 +233,7 @@ BEGIN
   SELECT COUNT(*) INTO v_assignments_deleted FROM deleted_assignments;
 
   -- Procesează fiecare masă din request
-  FOR v_table IN SELECT * FROM jsonb_array_elements(p_tables) LOOP
+  FOR v_table IN SELECT value FROM jsonb_array_elements(p_tables) LOOP
     -- Normalizează rotația: ((r % 360) + 360) % 360
     v_rotation := (((v_table->>'rotation')::numeric % 360) + 360) % 360;
 
@@ -331,12 +331,11 @@ BEGIN
       v_tables_updated := v_tables_updated + 1;
 
       -- Creează seats lipsă dacă seat_count a crescut
-      FOR i IN (
-        SELECT generate_series(
-          COALESCE((SELECT MAX(seat_index) FROM seats WHERE table_id = v_table_uuid), 0) + 1,
-          (v_table->>'seat_count')::integer
-        )
-      ) LOOP
+      FOR i IN
+        COALESCE((SELECT MAX(seat_index) FROM seats WHERE table_id = v_table_uuid), 0) + 1
+        ..
+        (v_table->>'seat_count')::integer
+      LOOP
         INSERT INTO seats (wedding_id, event_id, table_id, seat_index)
         VALUES (p_wedding_id, p_event_id, v_table_uuid, i)
         ON CONFLICT DO NOTHING;
@@ -347,7 +346,7 @@ BEGIN
 
   -- ── 4. RECONCILIERE ASSIGNMENTS ───────────────────────────────────────────
 
-  FOR v_assignment IN SELECT * FROM jsonb_array_elements(p_assignments) LOOP
+  FOR v_assignment IN SELECT value FROM jsonb_array_elements(p_assignments) LOOP
     -- Resolve guest UUID din bridge
     SELECT entity_uuid INTO v_guest_uuid
     FROM seating_id_maps

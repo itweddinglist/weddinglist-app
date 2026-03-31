@@ -1,13 +1,23 @@
 import {
   fetchWordPressBootstrap,
   type BootstrapResponse,
+  type BootstrapWedding,
+  type ProvisioningStatus,
 } from "../fetch-wordpress-bootstrap";
 import { withCircuitBreaker } from "./wp-circuit-breaker";
 import { isEnabled } from "../feature-flags";
 
 export type SessionState =
   | { status: "loading" }
-  | { status: "authenticated"; wpUser: BootstrapResponse["user"]; appUserId: string | null }
+  | {
+      status: "authenticated";
+      wpUser: BootstrapResponse["user"];
+      appUserId: string | null;
+      weddings: BootstrapWedding[];
+      activeWeddingId: string | null;
+      activeEventId: string | null;
+      provisioningStatus: ProvisioningStatus | null;
+    }
   | { status: "guest" }
   | { status: "error"; message: string }
   | { status: "wp_down" };
@@ -53,6 +63,22 @@ export function clearSessionCache(): void {
   }
 }
 
+/**
+ * Builds the authenticated session state from a bootstrap response.
+ * Consumes all fields directly — no inference, no resolution.
+ */
+function buildAuthenticatedState(bootstrap: BootstrapResponse): SessionState {
+  return {
+    status: "authenticated",
+    wpUser: bootstrap.user,
+    appUserId: bootstrap.app_user_id ?? null,
+    weddings: bootstrap.weddings ?? [],
+    activeWeddingId: bootstrap.active_wedding_id ?? null,
+    activeEventId: bootstrap.active_event_id ?? null,
+    provisioningStatus: bootstrap.provisioning_status ?? null,
+  };
+}
+
 export async function resolveSession(): Promise<SessionState> {
   if (!isEnabled("wpBridgeEnabled")) {
     return { status: "guest" };
@@ -61,7 +87,7 @@ export async function resolveSession(): Promise<SessionState> {
   const cached = getCachedSession();
   if (cached) {
     if (cached.authenticated && cached.user) {
-      return { status: "authenticated", wpUser: cached.user, appUserId: null };
+      return buildAuthenticatedState(cached);
     }
     return { status: "guest" };
   }
@@ -82,9 +108,5 @@ export async function resolveSession(): Promise<SessionState> {
     return { status: "guest" };
   }
 
-  return {
-    status: "authenticated",
-    wpUser: bootstrap.user,
-    appUserId: null,
-  };
+  return buildAuthenticatedState(bootstrap);
 }
