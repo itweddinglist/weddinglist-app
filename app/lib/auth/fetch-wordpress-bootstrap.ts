@@ -5,13 +5,22 @@ export type BootstrapUser = {
   plan_tier: string | null;
 };
 
+export type BootstrapWedding = {
+  id: string;
+  title: string;
+  role: string;
+};
+
+export type ProvisioningStatus = "ready" | "pending" | "failed";
+
 export type BootstrapResponse = {
   authenticated: boolean;
   user: BootstrapUser | null;
-  weddings: Array<{
-    id: string;
-    title: string;
-  }>;
+  app_user_id: string | null;
+  weddings: BootstrapWedding[];
+  active_wedding_id: string | null;
+  active_event_id: string | null;
+  provisioning_status: ProvisioningStatus | null;
   error?: string;
 };
 

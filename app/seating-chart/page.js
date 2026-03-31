@@ -29,6 +29,8 @@ import FpsCounter from "./components/FpsCounter.jsx";
 import SaveIndicator from "../components/SaveIndicator.jsx";
 import { supabaseClient } from "../lib/supabase/client";
 import { useSeatingSync } from "../../lib/seating/use-seating-sync";
+import { useSession } from "../../lib/auth/use-session";
+import { clearSessionCache } from "../../lib/auth/session-bridge";
 import "./seating-chart.css";
 
 const EMPTY_ARRAY = [];
@@ -738,8 +740,8 @@ function ModalCreate({ modal, setModal, createTable }) {
 }
 
 // =============================================================================
-// SeatingChartWrapper — fetch date canonice + injectare în SeatingChartInner.
-// page.js orchestrează, nu devine service layer.
+// SeatingChartWrapper — fetch canonical data + inject into SeatingChartInner.
+// Authenticated sync error = explicit error state. No local fallback.
 // =============================================================================
 
 function SeatingChartWrapperInner({ weddingId, eventId }) {
@@ -749,15 +751,13 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
     supabase: supabaseClient,
   });
 
-  // Loading state — nu montăm inner până nu avem date canonice
   if (isLoading) {
-    return <div style={{ minHeight: "100vh", background: "#FAF7F2" }} />;
+    return <FullPageLoader message="Se încarcă planul de mese..." />;
   }
 
   if (error) {
-    // Fallback la comportamentul existent — seating funcționează fără Supabase sync
-    console.warn("[SeatingWrapper] Failed to load seating data, using local fallback:", error);
-    return <SeatingChartInner initialGuests={null} onSeatingStateChanged={null} />;
+    // Authenticated user — NEVER fall back to local mode. Show explicit error.
+    return <SyncErrorState error={error} />;
   }
 
   return (
@@ -768,16 +768,278 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
   );
 }
 
-export default function SeatingChart() {
-  // TODO Faza 6: preia weddingId + eventId din sesiune/context
-  // Deocamdată: wrapper fără integrare completă până la conectarea sesiunii
-  const [weddingId] = useState(null);
-  const [eventId] = useState(null);
+// =============================================================================
+// UI States
+// =============================================================================
 
-  // Fallback la comportamentul existent dacă nu avem sesiune conectată
-  if (!weddingId || !eventId) {
-    return <SeatingChartInner initialGuests={null} onSeatingStateChanged={null} />;
+function FullPageLoader({ message }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#FAF7F2",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: "1rem",
+    }}>
+      <div style={{
+        width: 32,
+        height: 32,
+        border: "3px solid #E8DDD0",
+        borderTopColor: "#C9907A",
+        borderRadius: "50%",
+        animation: "spin 0.8s linear infinite",
+      }} />
+      {message && (
+        <p style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.8rem",
+          color: "#6E7490",
+        }}>
+          {message}
+        </p>
+      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function ForceResyncButton() {
+  const handleResync = useCallback(() => {
+    clearSessionCache();
+    window.location.reload();
+  }, []);
+
+  return (
+    <button
+      onClick={handleResync}
+      style={{
+        marginTop: "0.5rem",
+        padding: "0.5rem 1.5rem",
+        borderRadius: "999px",
+        border: "none",
+        background: "#C9907A",
+        color: "white",
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.72rem",
+        fontWeight: 600,
+        cursor: "pointer",
+      }}
+    >
+      Reîncearcă
+    </button>
+  );
+}
+
+function ProvisioningErrorState({ error }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#FAF7F2",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: "1rem",
+      padding: "2rem",
+    }}>
+      <div style={{ fontSize: "2rem" }}>⚠️</div>
+      <p style={{
+        fontFamily: "Cormorant Garamond, serif",
+        fontSize: "1.2rem",
+        color: "#1E2340",
+        fontWeight: 600,
+        textAlign: "center",
+      }}>
+        Nu am putut încărca datele contului
+      </p>
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.75rem",
+        color: "#6E7490",
+        textAlign: "center",
+        maxWidth: 400,
+      }}>
+        {error || "Încearcă din nou sau contactează suportul dacă problema persistă."}
+      </p>
+      <ForceResyncButton />
+    </div>
+  );
+}
+
+function SyncErrorState({ error }) {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#FAF7F2",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: "1rem",
+      padding: "2rem",
+    }}>
+      <div style={{ fontSize: "2rem" }}>⚠️</div>
+      <p style={{
+        fontFamily: "Cormorant Garamond, serif",
+        fontSize: "1.2rem",
+        color: "#1E2340",
+        fontWeight: 600,
+        textAlign: "center",
+      }}>
+        Nu am putut sincroniza planul de mese
+      </p>
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.75rem",
+        color: "#6E7490",
+        textAlign: "center",
+        maxWidth: 400,
+      }}>
+        {error || "Verifică conexiunea la internet și încearcă din nou."}
+      </p>
+      <ForceResyncButton />
+    </div>
+  );
+}
+
+function EmptyEventState() {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#FAF7F2",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "column",
+      gap: "1rem",
+      padding: "2rem",
+    }}>
+      <div style={{ fontSize: "2rem" }}>🪑</div>
+      <p style={{
+        fontFamily: "Cormorant Garamond, serif",
+        fontSize: "1.2rem",
+        color: "#1E2340",
+        fontWeight: 600,
+      }}>
+        Planul de mese nu este încă disponibil
+      </p>
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.75rem",
+        color: "#6E7490",
+        textAlign: "center",
+        maxWidth: 400,
+      }}>
+        Contul tău este în curs de configurare. Revino în câteva momente.
+      </p>
+      <ForceResyncButton />
+    </div>
+  );
+}
+
+function GuestModeBanner() {
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 300,
+      background: "rgba(30, 35, 64, 0.92)",
+      backdropFilter: "blur(8px)",
+      padding: "0.6rem 1.2rem",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "1rem",
+    }}>
+      <p style={{
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.72rem",
+        color: "#FAF7F2",
+        margin: 0,
+      }}>
+        Ești în modul vizitator — modificările nu sunt salvate.
+      </p>
+      <a
+        href={typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_WP_BASE_URL || "/") : "/"}
+        style={{
+          padding: "0.3rem 1rem",
+          borderRadius: "999px",
+          border: "none",
+          background: "#C9907A",
+          color: "white",
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.65rem",
+          fontWeight: 600,
+          textDecoration: "none",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Conectează-te →
+      </a>
+    </div>
+  );
+}
+
+// =============================================================================
+// Default export — strict flow: session → seating
+// All operational context from bootstrap → session. No second resolver.
+// =============================================================================
+
+export default function SeatingChart() {
+  const session = useSession();
+
+  // ── Session loading → full page loader (NEVER flash local mode) ──
+  if (session.status === "loading") {
+    return <FullPageLoader message="Se conectează..." />;
   }
 
-  return <SeatingChartWrapperInner weddingId={weddingId} eventId={eventId} />;
+  // ── Guest (not authenticated) → local mode with banner ──
+  if (session.status === "guest" || session.status === "wp_down") {
+    return (
+      <>
+        <SeatingChartInner initialGuests={null} onSeatingStateChanged={null} />
+        <GuestModeBanner />
+      </>
+    );
+  }
+
+  // ── Session error → error state with force re-sync ──
+  if (session.status === "error") {
+    return <ProvisioningErrorState error={session.message} />;
+  }
+
+  // ── Authenticated — strict state machine ──
+
+  // Provisioning failed at bootstrap level
+  if (session.provisioningStatus === "failed") {
+    return <ProvisioningErrorState error="Provizionarea contului a eșuat." />;
+  }
+
+  // Provisioning pending (no wedding or no event yet)
+  if (session.provisioningStatus === "pending") {
+    return <EmptyEventState />;
+  }
+
+  // No activeWeddingId — should not happen if provisioning_status is ready
+  if (!session.activeWeddingId) {
+    return <ProvisioningErrorState error="Nu am găsit o nuntă activă." />;
+  }
+
+  // No activeEventId — explicit empty state
+  if (!session.activeEventId) {
+    return <EmptyEventState />;
+  }
+
+  // ── Everything ready — render seating with full sync ──
+  return (
+    <SeatingChartWrapperInner
+      weddingId={session.activeWeddingId}
+      eventId={session.activeEventId}
+    />
+  );
 }
