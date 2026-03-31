@@ -98,11 +98,6 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, []);
 
   // ── SEATING STATE CHANGE NOTIFICATION ──
-  // Detectează schimbări în guests SAU tables post-render.
-  // Emite snapshot minim: { reason, assignments, tables } — fără guest model coupling.
-  // NU emite la: cam, nextId, zoom, pan.
-  // Prinde: assign, unassign, magicFill, createTable, deleteTable,
-  //         rotateTable, saveEdit, drag, arrow keys, resetPlan.
   const prevSnapshotRef = useRef(null);
   const onSeatingStateChangedRef = useRef(onSeatingStateChanged);
   useEffect(() => { onSeatingStateChangedRef.current = onSeatingStateChanged; }, [onSeatingStateChanged]);
@@ -129,7 +124,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     const prev = prevSnapshotRef.current;
     prevSnapshotRef.current = snapshot;
 
-    if (prev === null) return; // primul run — init, nu emite
+    if (prev === null) return;
 
     const assignmentsChanged = JSON.stringify(prev.assignments) !== JSON.stringify(snapshot.assignments);
     const tablesChanged = JSON.stringify(prev.tables) !== JSON.stringify(snapshot.tables);
@@ -404,7 +399,6 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
       : t.type === "bar" ? "Obiectul va fi eliminat."
       : "Invitatii revin in neatribuiti.";
 
-    // Returnează un effect special pentru confirm dialog
     return {
       ok: true,
       confirmRequired: {
@@ -491,6 +485,14 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     setTables(updater);
   }, []);
 
+  // ── FILTERED UNASSIGNED ──
+  const filteredUnassigned = useCallback((searchQuery) => {
+    if (!searchQuery) return guests.filter((g) => g.tableId == null);
+    const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return guests.filter((g) => g.tableId == null &&
+      `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q));
+  }, [guests]);
+
   return {
     // State
     guests,
@@ -539,11 +541,6 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     },
 
     // Search
-    filteredUnassigned: (searchQuery) => {
-      if (!searchQuery) return guests.filter((g) => g.tableId == null);
-      const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return guests.filter((g) => g.tableId == null &&
-        `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q));
-    },
+    filteredUnassigned,
   };
 }
