@@ -5,7 +5,7 @@
 
 export const featureFlags = {
   // Auth & Session
-  wpBridgeEnabled: true,
+  wpBridgeEnabled: false,
   supabaseEnabled: true,
 
   // Module
