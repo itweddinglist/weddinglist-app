@@ -99,6 +99,13 @@
 | 43 | Competitor monitoring documentat — Bridebook, Zola, SeatPuzzle | Mică | Medie | |
 | 44 | Release health checks — după deploy, ce verifici manual | Mică | Mare | Critical journey monitoring: login, save seating, RSVP submit |
 | 45 | Safe debug strategy în producție — flags, temporary logs, no secret leakage | Mică | Mare | |
+| 46 | Rate limiting /api/guests/import — max 5 imports/min per user (Vercel middleware) | Mică | Mare | Adăugat Mar 28 |
+| 47 | Export GET /api/guests/export — format identic cu import pentru round-trip | Mică | Mare | Adăugat Mar 28 |
+| 48 | Duplicate names warning în UI Guests | Mică | Mare | API bifat (3.5), UI lipsă |
+| 49 | Circuit breaker Maintenance mode — dacă WP bridge e jos, app continuă | Medie | Mare | Adăugat Mar 29 |
+| 50 | RESEND_API_KEY configurat în Vercel | Mică | Critic | **Blocker pentru Faza 7.4** — neconfigurat la Mar 31 |
+| 51 | wpBridgeEnabled: true în feature-flags.ts la launch | Mică | Critic | Acum e false pentru dev local — schimbă înainte de launch |
+| 52 | Migrații aplicate pe Supabase PROD la launch | Mică | Critic | Toate migrațiile din develop aplicate pe PROD |
 
 ---
 
@@ -151,6 +158,15 @@
 | 43 | Focus states design standard | Mică | Medie | |
 | 44 | Screen reader / aria labels pe elementele interactive | Medie | Medie | Seating chart full a11y nu e obiectiv V1 |
 | 45 | Visual regression testing | Mare | Medie | Overengineering pentru solo dev V1 |
+| 46 | Supabase generated types — elimină cast-urile as GuestWithRelations | Mică | Medie | Adăugat Mar 28 |
+| 47 | POST /api/guest-events tranzacțional — RPC pentru 3 queries → 1 | Medie | Medie | Adăugat Mar 28 |
+| 48 | Bulk import → RPC pentru 1000+ guests | Medie | Medie | Adăugat Mar 28 |
+| 49 | Optimistic UI pattern pe Guests + Budget (fără Zustand/React Query) | Medie | Mare | Adăugat Mar 29 |
+| 50 | Snapshot hashing stabil în useSeatingSync (nu JSON.stringify pe obiecte mari) | Mică | Mare | Adăugat din audit Mar 31 |
+| 51 | Cancel stale retries / backpressure în useSeatingSync | Mică | Mare | Adăugat din audit Mar 31 |
+| 52 | Maintenance mode UX când WP bridge e jos — nu guest illusion | Medie | Mare | Adăugat din audit Mar 31 |
+| 53 | Extrage page.js shell în componente mici | Medie | Medie | Adăugat din audit Mar 31 |
+| 54 | Metrics pentru sync latency și conflict rate | Medie | Mare | Adăugat din audit Mar 31 |
 
 ---
 
@@ -159,9 +175,9 @@
 | Categorie | Total itemi | Dificultate dominantă | ROI dominant |
 |-----------|------------|----------------------|--------------|
 | Must Now | 33 | Mică/Medie | Critic/Mare |
-| Before Launch | 45 | Medie | Critic/Mare |
-| Later | 45 | Medie/Mare | Medie/Mare |
-| **Total** | **123** | | |
+| Before Launch | 52 | Medie | Critic/Mare |
+| Later | 54 | Medie/Mare | Medie/Mare |
+| **Total** | **139** | | |
 
 ---
 
@@ -250,23 +266,18 @@
 - Module rămase: 9 (Dashboard, Seating, Guests, Budget, Vendors, RSVP, Export, Settings, Guest Moments)
 - Eliminate/absorbite: Moodboard, Wishlist, Notes, Checklist, Timeline
 
-### PRIORITIES.md Later — adăugat
-- Optimistic UI pattern pe Guests + Budget (fără Zustand/React Query)
-
 ### 3.6 Limits — clarificare
 - Nu e blocat de Stripe ci de integrarea Voxel bootstrap (plan vine din WP)
 - Se implementează când legăm Voxel — plan_tier populat din bootstrap response
 
+### Adăugat în Must Now (post review Gemini)
+- RLS negative tests — testăm că userul neautorizat NU poate vedea datele altui wedding
+
+### Adăugat în Before Launch (post review Gemini)
+- Duplicate names warning în UI Guests
+- Circuit breaker Maintenance mode
+
 ---
-
-## Update Mar 29, 2026 — post review Gemini
-
-### Adăugat în Must Now
-- RLS negative tests — testăm că userul neautorizat NU poate vedea datele altui wedding (nu doar că cel autorizat le vede). Ex: user cu wedding_id A nu poate accesa guest_id din wedding_id B.
-
-### Adăugat în Before Launch
-- Duplicate names warning în UI Guests — când există 2 persoane cu același nume în același wedding, UI afișează un indicator vizual clar (deja implementat în API la 3.5, lipsește în UI)
-- Circuit breaker Maintenance mode — dacă WP bridge e jos, dashboard afișează banner discret dar Guests/Seating/Budget rămân funcționale. Userul nu trebuie să simtă că "aplicația e stricată".
 
 ## Update Mar 30, 2026
 
@@ -288,25 +299,52 @@
 | Faza 9 Reliability & QA | ⏳ |
 | Faza 10 Power Features | ⏳ |
 
-### Teste
-- 505/505 verzi (era 434 la Mar 29)
-- 19 fișiere de test
+### Teste: 505/505 verzi
 
-### Faza 5 — Budget Core — DONE (5.1, 5.2, 5.3)
-- ✅ 5.1 Budget items CRUD cu state transitions
-- ✅ 5.2 Payments CRUD imutabile
-- ✅ 5.3 Summary cu has_mixed_currencies
-- ⏳ 5.4 Plan limits — skip până la Voxel
-- ⏳ 5.5 Downgrade — skip până la Stripe
+---
 
-### Faza 6 — Seating ↔ Guests — DONE
-- ✅ Arhitectură aprobată (4 runde review: Opus + ChatGPT + Gemini, scor 9.7/10)
-- ✅ ID Bridge persistent + RPC batch atomic
-- ✅ sync_seating_editor_state tranzacțional SECURITY DEFINER
-- ✅ Patch minim useSeatingData.js + page.js wrapper
-- ✅ Mergeuit în develop
+## Update Mar 31, 2026
 
-### Următor recomandat
-1. Faza 2B — Seating Performance Validation
-2. Faza 4 — Vendors Mirror
-3. Faza 7 — RSVP + UI Guests
+### Realizări sesiunea Mar 31, 2026
+- ✅ Faza 0B completă — identity provisioning + active planning context
+- ✅ WordPress plugin v3.1.1 deployed pe server (confirmat în cPanel)
+- ✅ Migrații Supabase DEV aplicate (seating_id_maps fix, extend_table_types, active_wedding_id)
+- ✅ session-bridge.ts — expune activeWeddingId, activeEventId, provisioningStatus
+- ✅ page.js — state machine strictă cu toate stările
+- ✅ 2B.3 — filteredUnassigned memoizat cu useCallback
+- ✅ Teste: 505/505 verzi
+
+### Roadmap — status actualizat Mar 31
+
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ Mar 31, 2026 |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| **Faza 7 RSVP** | ⏳ **URMĂTOR** |
+| Faza 8 Export & Compliance | ⏳ |
+| Faza 9 Reliability & QA | ⏳ |
+| Faza 10 Power Features | ⏳ |
+
+### Adăugat în Before Launch (Mar 31)
+- #50 RESEND_API_KEY configurat în Vercel — blocker pentru Faza 7.4
+- #51 wpBridgeEnabled: true la launch
+- #52 Migrații aplicate pe Supabase PROD la launch
+
+### Adăugat în Later (din audit Mar 31, scor 87/100)
+- #50 Snapshot hashing stabil în useSeatingSync
+- #51 Cancel stale retries în useSeatingSync
+- #52 Maintenance mode UX când WP bridge e jos
+- #53 Extrage page.js shell în componente mici
+- #54 Metrics pentru sync latency și conflict rate
+
+### Decizii Mar 31
+- wpBridgeEnabled: false pentru dev local — schimbă în true la launch
+- Faza 4 Vendors Mirror sărită — revine când Voxel e gata
+- Faza 7 RSVP = următoarea fază activă
