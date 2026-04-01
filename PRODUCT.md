@@ -363,3 +363,42 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - DELETE payment — permis doar pe budget_items cu status planned/confirmed
 - Seating ↔ Guests — sync prin RPC tranzacțional, nu prin route handlers JS
 - Soft delete în DB pentru tables, hard delete în editor UX
+
+## Update Mar 31, 2026 — post Faza 0B + 2B
+
+### Roadmap — actualizat
+
+```
+1. Seating polish ✅
+2. Faza 0A — Foundation ✅
+3. Faza 0B — Auth & Data ✅ (completat Mar 31, 2026)
+4. Faza 2A — Seating Performance Foundation ✅
+5. Faza 3 — Guests Core ✅ (~85%)
+6. Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7. Faza 6 — Seating ↔ Guests Integration ✅
+8. Faza 2B — Seating Performance Validation ✅ (parțial: 2B.2, 2B.3)
+9. Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+10. Faza 7 — RSVP ⏳ URMĂTOR
+11. Faza 8 — Export & Compliance ⏳
+12. Faza 9 — Reliability & QA ⏳
+13. Faza 10 — Power Features ⏳
+```
+
+### Realizări sesiunea Mar 31, 2026
+- ✅ WordPress plugin v3.1.1 deployed pe server (confirmat în cPanel)
+- ✅ Migrații Supabase DEV aplicate (seating_id_maps fix, extend_table_types, active_wedding_id)
+- ✅ session-bridge.ts — expune activeWeddingId, activeEventId, provisioningStatus
+- ✅ page.js — state machine strictă cu toate stările
+- ✅ filteredUnassigned memoizat cu useCallback
+- ✅ Teste: 505/505 verzi
+
+### Schema DB — adăugat Mar 31, 2026
+- app_users.active_wedding_id — uuid NULL REFERENCES weddings(id) DEFERRABLE INITIALLY DEFERRED
+
+### Decizii de produs noi (Mar 31, 2026)
+- wpBridgeEnabled: false în feature-flags.ts pentru development local — schimbă în true la launch
+- Bootstrap PHP = sursă canonică pentru active_wedding_id și active_event_id — nu se deduc în client
+- weddings[0] eliminat complet — active_wedding_id explicit în DB
+- Faza 4 Vendors Mirror sărită — revine când Voxel e gata
+- Faza 7 RSVP = următoarea fază activă
+- RESEND_API_KEY de adăugat în Vercel înainte de Faza 7.4

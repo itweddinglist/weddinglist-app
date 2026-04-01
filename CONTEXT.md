@@ -1153,3 +1153,61 @@ function sanitizeEmail(input: string | null): string | null {
 - Fișierele create în ferestre separate (Opus) trebuie trimise la verificare înainte de commit
 - types/* standalone când lib/* nu e în același PR
 
+
+## Update Mar 31, 2026
+
+### Realizări sesiunea Mar 31, 2026
+- ✅ Faza 0B completă — identity provisioning + active planning context
+- ✅ WordPress plugin v3.1.1 deployed pe server (confirmat în cPanel)
+- ✅ Migrații Supabase DEV aplicate:
+  - 20260330000001_seating_id_maps.sql (fix bug FOR loop variable)
+  - 20260330000002_extend_table_types.sql
+  - 20260331115741_active_wedding_id.sql
+- ✅ session-bridge.ts — expune activeWeddingId, activeEventId, provisioningStatus
+- ✅ fetch-wordpress-bootstrap.ts — tipuri actualizate cu active_event_id, provisioning_status
+- ✅ page.js — state machine strictă: loading/guest/error/provisioning_failed/pending/no_wedding/no_event/ready
+- ✅ wp-config.php actualizat cu WL_SUPABASE_URL și WL_SUPABASE_SERVICE_KEY (Supabase DEV)
+- ✅ 2B.3 — filteredUnassigned memoizat cu useCallback([guests])
+- ✅ Teste: 505/505 verzi
+
+### PR-uri merged în develop (total 65 la Mar 31)
+- #60: refactor(seating): extract inline css to seating-chart.css
+- #61: feat(auth): phase 0b — identity provisioning + active planning context
+- #62: fix(seating): correct import paths for session subfolder
+- #63: fix(dev): disable wp bridge for local development
+- #64: perf(seating): memoize filteredunassigned with usecallback
+
+### Decizii arhitecturale noi (Mar 31, 2026)
+- **wpBridgeEnabled: false** în feature-flags.ts pentru development local — schimbă în true la launch
+- Bootstrap PHP = sursă canonică pentru active_wedding_id și active_event_id
+- weddings[0] eliminat complet — active_wedding_id explicit în DB
+- Faza 4 Vendors Mirror sărită complet — revine când Voxel e gata
+- Faza 7 RSVP = următoarea fază activă
+- **RESEND_API_KEY** de adăugat în Vercel înainte de Faza 7.4
+
+### Schema DB — adăugat Mar 31, 2026
+- app_users.active_wedding_id — uuid NULL REFERENCES weddings(id) DEFERRABLE INITIALLY DEFERRED
+
+### Structură lib — actualizată Mar 31, 2026
+app/lib/
+  auth/
+    fetch-wordpress-bootstrap.ts  ← tipuri noi: active_wedding_id, active_event_id, provisioning_status
+    use-wordpress-bootstrap.ts
+    feature-flags.ts              ← wpBridgeEnabled: false pentru dev local
+    session/
+      session-bridge.ts           ← expune activeWeddingId, activeEventId, provisioningStatus
+      use-session.ts
+      wp-circuit-breaker.ts
+
+### Optimizări SVG — actualizat Mar 31, 2026
+21. ✅ filteredUnassigned memoizat cu useCallback([guests])
+
+### Checklist launch (când ești gata de main)
+- [ ] Schimbă wpBridgeEnabled: true în feature-flags.ts
+- [ ] Aplică toate migrațiile pe Supabase PROD
+- [ ] Testează bootstrap real cu user WordPress logat pe app.weddinglist.ro
+- [ ] Adaugă RESEND_API_KEY în Vercel (pentru Faza 7.4)
+- [x] SUPABASE_SERVICE_ROLE_KEY există deja în Vercel pentru ambele environments
+
+### Teste: 505/505 verzi (baseline actualizat Mar 31, 2026)
+### Progres total: ~45% din produs complet
