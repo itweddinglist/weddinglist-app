@@ -1,10 +1,13 @@
+﻿// =============================================================================
+// lib/auth.ts
+// JWT extraction and validation for API routes.
+// WordPress bridge auth: JWT `sub` claim = app_users.id (uuid)
+// =============================================================================
+
 import { type NextRequest } from "next/server";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const DEV_AUTH_TOKEN = process.env.DEV_AUTH_TOKEN;
-const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 export interface AuthContext {
   userId: string;
@@ -21,6 +24,13 @@ export type AuthResult =
   | { authenticated: true; context: AuthContext }
   | { authenticated: false; error: AuthError };
 
+/**
+ * Extracts and validates the JWT from the Authorization header.
+ *
+ * Does NOT do full cryptographic verification ΓÇö that's Supabase's job.
+ * We extract the `sub` claim and pass the raw token to Supabase which
+ * validates it against the JWT secret on every query via RLS.
+ */
 export function extractAuth(request: NextRequest): AuthResult {
   const authHeader = request.headers.get("authorization");
 
@@ -39,23 +49,10 @@ export function extractAuth(request: NextRequest): AuthResult {
   }
 
   const token = authHeader.slice(7).trim();
-
   if (!token) {
     return {
       authenticated: false,
       error: { status: 401, code: "EMPTY_TOKEN", message: "Bearer token is empty." },
-    };
-  }
-
-  // DEV BYPASS — doar în development
-  if (
-    process.env.NODE_ENV === "development" &&
-    DEV_AUTH_TOKEN &&
-    token === DEV_AUTH_TOKEN
-  ) {
-    return {
-      authenticated: true,
-      context: { userId: DEV_USER_ID, token },
     };
   }
 
@@ -70,8 +67,8 @@ export function extractAuth(request: NextRequest): AuthResult {
   try {
     const payloadJson = Buffer.from(parts[1], "base64url").toString("utf-8");
     const payload = JSON.parse(payloadJson) as Record<string, unknown>;
-    const sub = payload.sub;
 
+    const sub = payload.sub;
     if (typeof sub !== "string" || !UUID_REGEX.test(sub)) {
       return {
         authenticated: false,
@@ -79,6 +76,7 @@ export function extractAuth(request: NextRequest): AuthResult {
       };
     }
 
+    // Check expiration with 30s leeway for clock skew
     const exp = payload.exp;
     if (typeof exp === "number") {
       const now = Math.floor(Date.now() / 1000);
