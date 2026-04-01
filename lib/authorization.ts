@@ -1,32 +1,25 @@
 // =============================================================================
 // lib/authorization.ts
 // Wedding membership checks for API route authorization.
-//
-// Two levels of protection:
-// 1. This check: explicit membership verification BEFORE the query.
-//    Catches unauthorized access early with a clear 403 response.
-// 2. RLS policies: even if this check is somehow bypassed, Supabase
-//    returns 0 rows for unauthorized queries. Defense in depth.
-//
-// STANDARD — 404 vs 403:
-//   ID-scoped resources (PUT/DELETE /[id]):
-//     → 404 when resource not found OR user not authorized
-//     → avoids leaking existence information
-//   Parent-scoped endpoints with explicit wedding_id (GET/POST/bulk):
-//     → 403 when user is not a wedding member
-//     → 400 when wedding_id/event_id is invalid or cross-wedding
 // =============================================================================
-
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * Checks if the authenticated user is a member of the specified wedding.
- * RLS on wedding_members ensures only the caller's own rows are visible.
- */
+const DEV_AUTH_TOKEN = process.env.DEV_AUTH_TOKEN;
+
 export async function isWeddingMember(
   supabase: SupabaseClient,
   weddingId: string
 ): Promise<boolean> {
+  // DEV BYPASS — doar în development când DEV_AUTH_TOKEN e configurat
+  // În producție NODE_ENV=production → nu se execută niciodată
+  // DEV_AUTH_TOKEN nu e setat în Vercel production → dublu guard
+  if (
+    process.env.NODE_ENV === "development" &&
+    DEV_AUTH_TOKEN
+  ) {
+    return true;
+  }
+
   const { data, error } = await supabase
     .from("wedding_members")
     .select("id")
@@ -38,15 +31,9 @@ export async function isWeddingMember(
     console.error("[Auth] Wedding membership check failed:", error.message);
     return false;
   }
-
   return data !== null;
 }
 
-/**
- * Fetches the wedding_id for a guest by guest ID.
- * Used by PUT/DELETE /api/guests/[id].
- * RLS ensures null is returned if user isn't a wedding member.
- */
 export async function getGuestWeddingId(
   supabase: SupabaseClient,
   guestId: string
@@ -61,15 +48,9 @@ export async function getGuestWeddingId(
     console.error("[Auth] Guest lookup failed:", error.message);
     return null;
   }
-
   return data?.wedding_id ?? null;
 }
 
-/**
- * Fetches the wedding_id for a guest_event by its ID.
- * Used by PUT/DELETE /api/guest-events/[id].
- * RLS ensures null is returned if user isn't a wedding member.
- */
 export async function getGuestEventWeddingId(
   supabase: SupabaseClient,
   guestEventId: string
@@ -84,15 +65,9 @@ export async function getGuestEventWeddingId(
     console.error("[Auth] GuestEvent lookup failed:", error.message);
     return null;
   }
-
   return data?.wedding_id ?? null;
 }
 
-/**
- * Fetches wedding_id AND status for a budget_item.
- * Used by PATCH/DELETE /api/weddings/[weddingId]/budget/items/[itemId].
- * RLS ensures null is returned if user isn't a wedding member.
- */
 export async function getBudgetItemMeta(
   supabase: SupabaseClient,
   itemId: string
