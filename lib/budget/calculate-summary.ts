@@ -8,20 +8,19 @@
 
 import type { BudgetSummary } from "../../types/budget";
 
-interface BudgetItemRow {
+export interface BudgetItemForSummary {
   estimated_amount: number;
   actual_amount: number | null;
   status: string;
   currency: string;
 }
-
-interface PaymentRow {
+export interface PaymentForSummary {
   amount: number;
 }
 
 export function calculateBudgetSummary(
-  items: BudgetItemRow[],
-  payments: PaymentRow[]
+  items: BudgetItemForSummary[],
+  payments: PaymentForSummary[]
 ): BudgetSummary {
   const activeItems = items.filter((i) => i.status !== "cancelled");
 
