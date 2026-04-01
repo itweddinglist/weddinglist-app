@@ -9,7 +9,7 @@
 function stripHtml(input: string): string {
   return input
     .replace(/<!--[\s\S]*?-->/g, "")   // HTML comments
-    .replace(/<[^>]*>/g, "")           // HTML tags
+    .replace(/<[^>]*>/g, " ")          // HTML tags → spațiu pentru separare
     .replace(/&[a-zA-Z]+;/g, " ")      // Named HTML entities
     .replace(/&#\d+;/g, " ")           // Numeric HTML entities
     .replace(/&#x[0-9a-fA-F]+;/g, " "); // Hex HTML entities

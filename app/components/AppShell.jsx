@@ -19,11 +19,12 @@ const MODULES = [
 ];
 
 const NO_SHELL = ["/", "/seating-chart"];
+const NO_SHELL_PREFIXES = ["/rsvp/"];
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
 
-  if (NO_SHELL.includes(pathname)) {
+  if (NO_SHELL.includes(pathname) || NO_SHELL_PREFIXES.some((p) => pathname.startsWith(p))) {
     return <>{children}</>;
   }
 
