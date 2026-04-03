@@ -184,12 +184,14 @@ app/lib/
 - ✅ app/seating-chart/components/CanvasToolbar.jsx — rezolvat: border shorthand fix pe lock button
 
 ## Teste
-- 341/341 teste verzi
+- 541/541 teste verzi
 - useSeatingData.test.js — 80 teste
 - useSeatingUI.test.js — 42 teste
 - useTableInteractions.test.js — 20 teste
 - TableNode.test.jsx — 22 teste
 - useCamera.test.js, geometry.test.js, magicFill.test.js, storage.test.js, camera.test.js, GuestSidebar.test.jsx, StatsPanel.test.jsx, EditPanel.test.jsx, CanvasToolbar.test.jsx
+- lib/rsvp/token.test.ts — 19 teste
+- lib/rsvp/validate-rsvp-submission.test.ts — 17 teste
 
 ## Optimizări SVG — STATUS COMPLET (50-60 FPS la drag cu 60 mese + 600 invitați)
 
@@ -399,7 +401,7 @@ app/lib/
 - ✅ Empty State sidebar (3 stări)
 - ✅ Esc închide overlay-uri
 - ✅ Card clickedSeat cu buton X
-- ✅ 341/341 teste verzi
+- ✅ 541/541 teste verzi
 - ✅ 50-60 FPS cu 60 mese + 600 invitați
 
 ### ✅ Faza 0A — Foundation — DONE
@@ -479,13 +481,16 @@ app/lib/
 - ⏳ 4.3 Degraded mode — cache local, banner discret | Medie
 - ⏳ 4.4 Hook în Budget — vendor costs, status | Mică
 
-### ⏳ Faza 7 — RSVP
-- ⏳ 7.1 RSVP model — rsvp_status, meal_choice, dietary_notes | Medie
-- ⏳ 7.2 rsvp_invitations — token hash, sent_at, expires_at | Medie
-- ⏳ 7.3 Public RSVP page — app.weddinglist.ro/rsvp/[token] | Medie
-- ⏳ 7.4 Email via Resend — invite, reminder, confirmation | Medie
-- ⏳ 7.5 RSVP token security — lung, random, expirat, one-time | Medie
-- ⏳ 7.6 Household-based invitation | V2
+### ⏳ Faza 7 — RSVP (parțial completată)
+- ✅ 7.1 Migrație DB — enums, rsvp_invitations extins, rsvp_responses extins
+- ✅ 7.2 Token security — SHA-256, TTL 30 zile, one-time
+- ✅ 7.3 API routes — GET + POST public, POST autentificat
+- ✅ 7.4 Email stub Resend — activat cu RESEND_API_KEY
+- ✅ 7.5 Pagina publică /rsvp/[token]
+- ✅ 7.6 Translations RO + structură multilingvă
+- ⏳ 7.7 Invite Delivery Hub UI — pentru cuplu
+- ⏳ 7.8 RSVP Dashboard UI — pentru cuplu
+- ⏳ 7.9 Household-based invitation | V2
 
 ### ⏳ Faza 8 — Export & Compliance
 - ⏳ 8.1 Export JSON — backup, transfer | Mică
@@ -536,9 +541,10 @@ app/lib/
 - Dau întotdeauna fișierul complet pentru verificare înainte de commit
 - Fac modificări local pas cu pas după instrucțiunile Claude
 - Commit după fiecare feature/fix, nu bulk commits
-- Testele rulează cu `npx vitest run` — baseline curent: 341/341
+- Testele rulează cu `npx vitest run` — baseline curent: 541/541
 - PR obligatoriu chiar și când lucrez singur — protect develop și main
 - Limbă română în toate conversațiile și commit messages
+
 
 ## Bug-uri cunoscute (nedocumentate în issues)
 - ✅ CanvasToolbar.jsx — mixing `border` shorthand cu `borderColor` pe butonul de lock (warning React non-blocant)
@@ -688,7 +694,7 @@ app/lib/
 ## Deploy Checklist (#11)
 > Pași obligatorii înainte de merge din develop → main (producție).
 
-1. ✅ `npx vitest run` — toate testele verzi (341/341 baseline)
+1. ✅ `npx vitest run` — toate testele verzi (541/541 baseline)
 2. ✅ `npm run lint` — zero erori ESLint
 3. ✅ Preview deploy Vercel verificat manual — login, seating chart, save, export
 4. ✅ Migrații Supabase aplicate pe PROD dacă există schema changes
@@ -1048,7 +1054,7 @@ function sanitizeEmail(input: string | null): string | null {
 3. **Faza 4/5** — vendors, budget_items
 4. **Înainte de launch** — audit complet toate câmpurile
 
-## Progres total: ~41% din produs complet
+## Progres total: ~55% din produs complet
 
 ## Recomandări viitoare — acumulate din review-uri (Mar 28, 2026)
 
@@ -1211,3 +1217,77 @@ app/lib/
 
 ### Teste: 505/505 verzi (baseline actualizat Mar 31, 2026)
 ### Progres total: ~45% din produs complet
+
+## Update Apr 1, 2026
+
+### Realizări sesiunea Apr 1, 2026
+- ✅ UI Lista Invitați completă — pagina + 7 componente (PR #66)
+- ✅ Restore auth files — eliminat dev bypass (PR #67)
+- ✅ Faza 7 RSVP core — token security, API routes, pagina publică, translations, email stub (PR #68)
+- ✅ Fix export tipuri lib/budget/calculate-summary.ts
+- ✅ Fix lib/sanitize.ts — strip HTML adaugă spațiu
+- ✅ Teste: 541/541 verzi (era 505)
+
+### PR-uri merged în develop (total 68 la Apr 1, 2026)
+- #66: feat(guests): add guest list ui - page, components, filters, modals
+- #67: fix(auth): restore original auth and authorization files
+- #68: feat(rsvp): faza 7 - token security, api routes, public page, translations, email stub
+
+### Fișiere noi adăugate
+- app/(public)/layout.tsx
+- app/(public)/rsvp/[token]/page.tsx
+- app/api/rsvp/invitations/route.ts
+- app/api/rsvp/[token]/route.ts
+- lib/rsvp/token.ts + token.test.ts
+- lib/rsvp/validate-rsvp-submission.ts + .test.ts
+- lib/rsvp/rsvp-translations.ts
+- lib/rsvp/send-invitation-email.ts
+- types/rsvp.ts
+- supabase/migrations/20260401000001_rsvp_model.sql
+- app/guest-list/page.tsx + 7 componente
+
+### Decizii arhitecturale noi (Apr 1, 2026)
+- RSVP per individ în V1 — party/group RSVP = V2
+- rsvp_responses = tabel separat (schema inițială respectată)
+- rsvp_invitations = delivery layer, rsvp_responses = răspuns oficial
+- Token: SHA-256 hash în DB, raw doar pentru link
+- O singură invitație activă per guest (UNIQUE index parțial)
+- Email stub — activat cu RESEND_API_KEY în Vercel
+- UI Lista Invitați netestat vizual până la wpBridgeEnabled: true
+- party_id amânat — validat după launch cu useri reali
+
+### Roadmap — status actualizat Apr 1, 2026
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP core | ✅ token, API, pagina publică, email stub |
+| Faza 7 RSVP UI cuplu | ⏳ URMĂTOR |
+| Faza 8 Export & Compliance | ⏳ |
+| Faza 9 Reliability & QA | ⏳ |
+| Faza 10 Power Features | ⏳ |
+
+### Lecții învățate (Apr 1, 2026)
+- Nu modifica lib/auth.ts pentru dev bypass fără a verifica că testarea e posibilă
+- Înainte de UI, verifică că auth funcționează în environment-ul de test
+- Schema inițială e bine gândită — respectă-o înainte de a o modifica
+
+### Checklist launch (actualizat)
+- [ ] Schimbă wpBridgeEnabled: true în feature-flags.ts
+- [ ] Aplică toate migrațiile pe Supabase PROD
+- [ ] Testează bootstrap real cu user WordPress logat
+- [ ] Adaugă RESEND_API_KEY în Vercel
+- [ ] Semnează DPA Resend (resend.com/legal/dpa)
+- [ ] Adaugă NEXT_PUBLIC_APP_URL în Vercel env vars
+- [x] SUPABASE_SERVICE_ROLE_KEY există deja în Vercel
+
+### Teste: 541/541 verzi (baseline actualizat Apr 1, 2026)
+### Progres total: ~55% din produs complet

@@ -348,3 +348,39 @@
 - wpBridgeEnabled: false pentru dev local — schimbă în true la launch
 - Faza 4 Vendors Mirror sărită — revine când Voxel e gata
 - Faza 7 RSVP = următoarea fază activă
+
+## Update Apr 1, 2026
+
+### Roadmap — status actualizat Apr 1, 2026
+
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP core | ✅ token, API, pagina publică, email stub |
+| **Faza 7 RSVP UI cuplu** | ⏳ **URMĂTOR** |
+| Faza 8 Export & Compliance | ⏳ |
+| Faza 9 Reliability & QA | ⏳ |
+| Faza 10 Power Features | ⏳ |
+
+### Teste: 541/541 verzi (era 505)
+
+### Adăugat în Before Launch (Apr 1)
+- #53 Semnează DPA Resend înainte de launch (resend.com/legal/dpa)
+- #54 Adaugă NEXT_PUBLIC_APP_URL în Vercel env vars
+
+### Decizii Apr 1, 2026
+- RSVP per individ în V1 — party/group RSVP = V2
+- rsvp_responses = tabel separat — schema inițială respectată
+- Token: SHA-256 hash în DB, raw doar pentru link
+- O singură invitație activă per guest — UNIQUE index parțial
+- party_id amânat — validat după launch cu useri reali
+- UI Lista Invitați netestat vizual până la wpBridgeEnabled: true
