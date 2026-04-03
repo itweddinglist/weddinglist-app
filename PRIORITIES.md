@@ -384,3 +384,39 @@
 - O singură invitație activă per guest — UNIQUE index parțial
 - party_id amânat — validat după launch cu useri reali
 - UI Lista Invitați netestat vizual până la wpBridgeEnabled: true
+## Update Apr 3, 2026
+
+### Roadmap — status actualizat Apr 3, 2026
+
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP | ✅ COMPLETĂ (7.1-7.8) |
+| **Faza 8 Export & Compliance** | ⏳ **URMĂTOR** |
+| Faza 9 Reliability & QA | ⏳ |
+| Faza 10 Power Features | ⏳ |
+
+### Teste: 541/541 verzi (neschimbat)
+### Progres total: ~60%
+
+### Decizii Apr 3, 2026
+- rsvp_responses = source of truth pentru răspuns RSVP — locked
+- rsvp_invitations = delivery/tracking layer — locked
+- guest_events = relationship/context layer — NU stochează RSVP status
+- Polling 30s în loc de realtime pentru MVP
+- Seating integration cu RSVP = fază separată după launch
+- token = null în client — de revăzut la #30 Must Now
+
+### Lecții învățate (Apr 3, 2026)
+- JWT-ul nu e expus în client — fetch-urile dashboard merg fără Authorization header
+- Funcția copyLink ștearsă temporar din app/rsvp/page.tsx — re-adăugată când implementăm butonul "Copiază link"
+- Cod șters temporar trebuie documentat explicit cu motivul și când se re-adaugă

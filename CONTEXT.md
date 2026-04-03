@@ -1291,3 +1291,63 @@ app/lib/
 
 ### Teste: 541/541 verzi (baseline actualizat Apr 1, 2026)
 ### Progres total: ~55% din produs complet
+## Update Apr 3, 2026
+
+### Realizări sesiunea Apr 3, 2026
+- ✅ Faza 7.8 RSVP Dashboard UI — stats, filtre, lista invitați, WhatsApp, manual override, export CSV (PR #70)
+- ✅ Decizii arhitecturale RSVP finalizate — rsvp_responses = truth, rsvp_invitations = delivery
+- ✅ Teste: 541/541 verzi (neschimbat)
+
+### PR-uri merged în develop (total 70 la Apr 3, 2026)
+- #69: docs: update context, priorities, product — apr 1 session
+- #70: feat(rsvp): faza 7.8 - rsvp dashboard ui, stats, filters, whatsapp, manual override
+
+### Fișiere noi adăugate
+- app/rsvp/page.tsx — RSVP Dashboard UI
+- app/api/rsvp/dashboard/route.ts — stats + lista invitați
+- app/api/rsvp/manual/route.ts — manual override status
+- app/api/rsvp/invitations/[id]/mark-sent/route.ts — tracking WhatsApp
+
+### Fișiere modificate
+- lib/rsvp/rsvp-translations.ts — adăugat whatsapp_message
+
+### Decizii arhitecturale noi (Apr 3, 2026)
+- rsvp_responses = source of truth pentru răspuns RSVP
+- rsvp_invitations = delivery/tracking layer
+- guest_events = relationship/context layer — NU stochează RSVP status
+- Manual override scrie în rsvp_responses cu rsvp_source = 'couple_manual'
+- Un singur răspuns activ per guest_event_id — upsert pe UNIQUE constraint
+- WhatsApp: wa.me fără număr — user alege contactul manual
+- Polling 30s în loc de realtime — mai simplu și stabil pentru MVP
+- Seating integration cu RSVP = fază separată după launch
+- token = null în client — API routes folosesc cookie WP, nu JWT explicit
+- Authorization header eliminat din fetch-urile dashboard — de revăzut la #30 Must Now (refresh token flow)
+
+### Cod șters temporar — de readăugat
+- Funcția `copyLink` ștearsă din app/rsvp/page.tsx — va fi re-adăugată când implementăm butonul "Copiază link" în dashboard
+
+### Roadmap — status actualizat Apr 3, 2026
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP | ✅ COMPLETĂ (7.1-7.8) |
+| **Faza 8 Export & Compliance** | ⏳ **URMĂTOR** |
+| Faza 9 Reliability & QA | ⏳ |
+| Faza 10 Power Features | ⏳ |
+
+### Lecții învățate (Apr 3, 2026)
+- JWT-ul nu e expus în client — API routes autentificate folosesc cookie-ul WP direct
+- token eliminat complet din dashboard client — fetch-urile merg fără Authorization header
+- Această decizie rămâne până când implementăm refresh token flow (#30 Must Now)
+
+### Teste: 541/541 verzi (neschimbat)
+### Progres total: ~60% din produs complet

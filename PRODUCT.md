@@ -449,3 +449,39 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - Email stub complet — activat când RESEND_API_KEY e în Vercel
 - party_id amânat — validat după launch cu useri reali
 - Întotdeauna alege soluția premium și lipsită de buguri pe termen lung
+## Update Apr 3, 2026 — post Faza 7 completă
+
+### Roadmap — actualizat
+```
+1. Seating polish ✅
+2. Faza 0A — Foundation ✅
+3. Faza 0B — Auth & Data ✅
+4. Faza 2A — Seating Performance Foundation ✅
+5. Faza 3 — Guests Core ✅ (~85%)
+6. Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7. Faza 6 — Seating ↔ Guests Integration ✅
+8. Faza 2B — Seating Performance Validation ✅ parțial (2B.2, 2B.3)
+9. Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+10. UI Lista Invitați ✅ implementat — netestat vizual până la launch
+11. Faza 7 — RSVP ✅ COMPLETĂ (7.1-7.8)
+12. Faza 8 — Export & Compliance ⏳ URMĂTOR
+13. Faza 9 — Reliability & QA ⏳
+14. Faza 10 — Power Features ⏳
+```
+
+### Realizări sesiunea Apr 3, 2026
+- ✅ RSVP Dashboard UI — stats, filtre, lista invitați, WhatsApp, manual override, export CSV (PR #70)
+- ✅ Faza 7 RSVP completă — 7.1-7.8 toate implementate
+- ✅ Teste: 541/541 verzi
+
+### Decizii de produs noi (Apr 3, 2026)
+- rsvp_responses = source of truth pentru răspuns RSVP — locked definitiv
+- rsvp_invitations = delivery/tracking layer — locked definitiv
+- guest_events = relationship/context layer — NU stochează RSVP status
+- Manual override scrie în rsvp_responses cu rsvp_source = 'couple_manual'
+- Un singur răspuns activ per guest_event_id — upsert pe UNIQUE constraint
+- WhatsApp delivery: wa.me fără număr de telefon — user alege contactul manual
+- Polling 30s pentru dashboard — realtime = V2
+- Seating integration cu RSVP (declined nu apare în seating) = fază separată după launch
+- copyLink temporar șters din dashboard — re-adăugat când implementăm butonul "Copiază link"
+- token = null în client — Authorization header eliminat din fetch-uri dashboard
