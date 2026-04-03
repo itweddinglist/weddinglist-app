@@ -22,15 +22,12 @@ interface RsvpGuestRow {
   guest_event_id: string;
   event_id: string;
   event_name: string;
-  // Din rsvp_responses
   rsvp_status: "pending" | "accepted" | "declined" | "maybe" | null;
   meal_choice: "standard" | "vegetarian" | null;
   dietary_notes: string | null;
   responded_at: string | null;
   rsvp_source: "guest_link" | "couple_manual" | "import" | null;
-  // Din rsvp_invitations
   invitation_id: string | null;
-  token_raw: null; // nu expunem tokenul raw în dashboard
   delivery_channel: string | null;
   delivery_status: string | null;
   opened_at: string | null;
@@ -62,22 +59,18 @@ export default function RsvpDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set());
   const [manualOverride, setManualOverride] = useState<string | null>(null);
 
   const weddingId = sessionState.status === "authenticated" ? sessionState.activeWeddingId : null;
-  const token = null; // JWT nu e expus în client — API routes folosesc cookie-ul WP
 
   // ─── Fetch data ─────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
-    if (!weddingId || !token) return;
+    if (!weddingId) return;
 
     try {
-      const res = await fetch(`/api/rsvp/dashboard?wedding_id=${weddingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/rsvp/dashboard?wedding_id=${weddingId}`);
       const json = await res.json();
       if (!json.success) {
         setError(json.error?.message ?? "Eroare la încărcarea datelor.");
@@ -91,16 +84,15 @@ export default function RsvpDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [weddingId, token]);
+  }, [weddingId]);
 
-  // Initial fetch + polling 30s
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 30_000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // ─── Filtered guests ─────────────────────────────────────────────────────────
+  // ─── Filtered guests ──────────────────────────────────────────────────────
 
   const filtered = guests.filter((g) => {
     const matchSearch = g.display_name
@@ -121,24 +113,19 @@ export default function RsvpDashboard() {
     return matchSearch && matchFilter;
   });
 
-  // ─── Actions ──────────────────────────────────────────────────────────────────
+  // ─── Actions ──────────────────────────────────────────────────────────────
 
   const generateLink = async (guestId: string) => {
-    if (!weddingId || !token) return;
+    if (!weddingId) return;
     setGeneratingLinks((prev) => new Set(prev).add(guestId));
     try {
       const res = await fetch("/api/rsvp/invitations", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
       });
       const json = await res.json();
-      if (json.success) {
-        await fetchData();
-      }
+      if (json.success) await fetchData();
     } finally {
       setGeneratingLinks((prev) => {
         const next = new Set(prev);
@@ -146,11 +133,6 @@ export default function RsvpDashboard() {
         return next;
       });
     }
-  };
-
-  const copyLink = async (invitationId: string, tokenRaw: string) => {
-    const url = `${window.location.origin}/rsvp/${tokenRaw}`;
-    await navigator.clipboard.writeText(url);
   };
 
   const sendWhatsApp = async (
@@ -163,15 +145,11 @@ export default function RsvpDashboard() {
       .replace("{firstName}", guest.first_name)
       .replace("{rsvpLink}", link);
 
-    // Track în DB
     await fetch(`/api/rsvp/invitations/${invitationId}/mark-sent`, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ delivery_channel: "whatsapp" }),
-    }).catch(() => {}); // fire and forget
+    }).catch(() => {});
 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
@@ -180,13 +158,9 @@ export default function RsvpDashboard() {
     guestEventId: string,
     status: "accepted" | "declined" | "maybe"
   ) => {
-    if (!token) return;
     await fetch(`/api/rsvp/manual`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ guest_event_id: guestEventId, status }),
     });
     setManualOverride(null);
@@ -200,14 +174,33 @@ export default function RsvpDashboard() {
     }
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  const exportCsv = () => {
+    const rows = filtered.map((g) => [
+      g.display_name,
+      g.rsvp_status ?? "pending",
+      g.meal_choice ?? "",
+      g.dietary_notes ?? "",
+      g.responded_at ?? "",
+    ]);
+    const csv = [["Nume", "Status", "Meniu", "Alergii", "Data răspuns"], ...rows]
+      .map((r) => r.join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rsvp-raspunsuri.csv";
+    a.click();
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   if (sessionState.status !== "authenticated") {
     return (
       <div style={styles.page}>
         <div style={styles.emptyState}>
           <div style={{ fontSize: "2rem" }}>🔒</div>
-          <p style={styles.emptyText}>Sesiune inactivă</p>
+          <p style={styles.emptyText}>Sesiune inactivă. Autentifică-te prin WordPress pentru a accesa RSVP.</p>
         </div>
       </div>
     );
@@ -235,49 +228,22 @@ export default function RsvpDashboard() {
 
   return (
     <div style={styles.page}>
-      {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>RSVP</h1>
         <button onClick={fetchData} style={styles.refreshBtn}>↻ Actualizează</button>
       </div>
 
-      {/* Stats */}
-      {stats && <RsvpStats stats={stats} />}
+      {stats && <RsvpStatsGrid stats={stats} />}
 
-      {/* Action Bar */}
       <div style={styles.actionBar}>
         <button onClick={bulkGenerateLinks} style={styles.primaryBtn}>
           Generează invitații
         </button>
-        <button
-          onClick={() => {
-            const rows = filtered.map((g) => [
-              g.display_name,
-              g.rsvp_status ?? "pending",
-              g.meal_choice ?? "",
-              g.dietary_notes ?? "",
-              g.responded_at ?? "",
-            ]);
-            const csv = [
-              ["Nume", "Status", "Meniu", "Alergii", "Data răspuns"],
-              ...rows,
-            ]
-              .map((r) => r.join(","))
-              .join("\n");
-            const blob = new Blob([csv], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "rsvp-raspunsuri.csv";
-            a.click();
-          }}
-          style={styles.secondaryBtn}
-        >
+        <button onClick={exportCsv} style={styles.secondaryBtn}>
           Export CSV
         </button>
       </div>
 
-      {/* Filters */}
       <div style={styles.filters}>
         <input
           type="text"
@@ -304,20 +270,17 @@ export default function RsvpDashboard() {
         </div>
       </div>
 
-      {/* Empty state */}
       {filtered.length === 0 && (
         <div style={styles.emptyState}>
           <p style={styles.emptyText}>Niciun invitat găsit.</p>
         </div>
       )}
 
-      {/* Guest list */}
       <div style={styles.table}>
         {filtered.map((g) => (
           <GuestRow
             key={g.guest_event_id}
             guest={g}
-            token={token!}
             onGenerate={() => generateLink(g.guest_id)}
             onWhatsApp={(invToken) => sendWhatsApp(g, invToken, g.invitation_id!)}
             onManual={(status) => manualOverrideStatus(g.guest_event_id, status)}
@@ -335,9 +298,9 @@ export default function RsvpDashboard() {
   );
 }
 
-// ─── Stats Component ──────────────────────────────────────────────────────────
+// ─── Stats Grid ───────────────────────────────────────────────────────────────
 
-function RsvpStats({ stats }: { stats: RsvpStats }) {
+function RsvpStatsGrid({ stats }: { stats: RsvpStats }) {
   return (
     <div style={styles.statsGrid}>
       <StatCard label="Confirmați" value={stats.accepted} color="var(--color-success)" />
@@ -362,7 +325,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
   );
 }
 
-// ─── Guest Row Component ──────────────────────────────────────────────────────
+// ─── Guest Row ────────────────────────────────────────────────────────────────
 
 function GuestRow({
   guest,
@@ -374,7 +337,6 @@ function GuestRow({
   onToggleManual,
 }: {
   guest: RsvpGuestRow;
-  token: string;
   onGenerate: () => void;
   onWhatsApp: (token: string) => void;
   onManual: (status: "accepted" | "declined" | "maybe") => void;
@@ -386,31 +348,23 @@ function GuestRow({
 
   return (
     <div style={styles.row}>
-      {/* Nume + event */}
       <div style={{ flex: 2 }}>
         <p style={styles.guestName}>{guest.display_name}</p>
         <p style={styles.guestEvent}>{guest.event_name}</p>
       </div>
 
-      {/* RSVP Status badge */}
       <div style={{ flex: 1 }}>
         <span style={{ ...styles.badge, ...badgeColors[guest.rsvp_status ?? "pending"] }}>
           {statusLabels[guest.rsvp_status ?? "pending"]}
         </span>
       </div>
 
-      {/* Invitation status */}
       <div style={{ flex: 1 }}>
         <span style={styles.invStatus}>
-          {!guest.invitation_id
-            ? "Fără link"
-            : guest.opened_at
-            ? "Deschis"
-            : "Link generat"}
+          {!guest.invitation_id ? "Fără link" : guest.opened_at ? "Deschis" : "Link generat"}
         </span>
       </div>
 
-      {/* Data răspuns */}
       <div style={{ flex: 1 }}>
         <p style={styles.date}>
           {guest.responded_at
@@ -419,21 +373,13 @@ function GuestRow({
         </p>
       </div>
 
-      {/* Acțiuni */}
       <div style={{ flex: 2, display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
         {!hasInvitation ? (
-          <button
-            onClick={onGenerate}
-            disabled={isGenerating}
-            style={styles.actionBtn}
-          >
+          <button onClick={onGenerate} disabled={isGenerating} style={styles.actionBtn}>
             {isGenerating ? "..." : "Generează link"}
           </button>
         ) : (
-          <button
-            onClick={() => onWhatsApp(guest.invitation_id!)}
-            style={styles.whatsappBtn}
-          >
+          <button onClick={() => onWhatsApp(guest.invitation_id!)} style={styles.whatsappBtn}>
             WhatsApp
           </button>
         )}
