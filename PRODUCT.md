@@ -402,3 +402,50 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - Faza 4 Vendors Mirror sărită — revine când Voxel e gata
 - Faza 7 RSVP = următoarea fază activă
 - RESEND_API_KEY de adăugat în Vercel înainte de Faza 7.4
+
+## Update Apr 1, 2026 — post Faza 7 core + UI Lista Invitați
+
+### Roadmap — actualizat
+```
+1. Seating polish ✅
+2. Faza 0A — Foundation ✅
+3. Faza 0B — Auth & Data ✅
+4. Faza 2A — Seating Performance Foundation ✅
+5. Faza 3 — Guests Core ✅ (~85%)
+6. Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7. Faza 6 — Seating ↔ Guests Integration ✅
+8. Faza 2B — Seating Performance Validation ✅ parțial (2B.2, 2B.3)
+9. Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+10. UI Lista Invitați ✅ implementat — netestat vizual până la launch
+11. Faza 7 — RSVP ✅ parțial (core: token, API, pagina publică, email stub)
+    ⏳ 7.7 Invite Delivery Hub UI
+    ⏳ 7.8 RSVP Dashboard UI
+12. Faza 8 — Export & Compliance ⏳
+13. Faza 9 — Reliability & QA ⏳
+14. Faza 10 — Power Features ⏳
+```
+
+### Realizări sesiunea Apr 1, 2026
+- ✅ UI Lista Invitați — pagina + 7 componente (PR #66)
+- ✅ Restore auth files — eliminat dev bypass (PR #67)
+- ✅ Faza 7 RSVP core — token security, API routes, pagina publică, translations, email stub (PR #68)
+- ✅ Fix export tipuri lib/budget/calculate-summary.ts
+- ✅ Fix lib/sanitize.ts — strip HTML adaugă spațiu
+- ✅ Teste: 541/541 verzi
+
+### Schema DB — adăugat Apr 1, 2026
+- rsvp_invitations extins — guest_id, delivery_channel, delivery_status, opened_at, last_sent_at, is_active
+- rsvp_responses extins — dietary_notes, rsvp_source, used_at
+- Enums noi: rsvp_attendance_status, rsvp_meal_choice, rsvp_delivery_channel, rsvp_delivery_status, rsvp_response_source
+- UNIQUE index parțial pe rsvp_invitations(guest_id) WHERE is_active=true
+
+### Decizii de produs noi (Apr 1, 2026)
+- RSVP V1 = per individ — un token, un link, un răspuns
+- Party/group RSVP = V2 după validare cu useri reali
+- rsvp_responses = tabel separat — schema inițială respectată
+- rsvp_invitations = delivery layer, rsvp_responses = răspuns oficial
+- Token: SHA-256 hash în DB, tokenul raw niciodată stocat
+- O singură invitație activă per guest — UNIQUE index parțial
+- Email stub complet — activat când RESEND_API_KEY e în Vercel
+- party_id amânat — validat după launch cu useri reali
+- Întotdeauna alege soluția premium și lipsită de buguri pe termen lung
