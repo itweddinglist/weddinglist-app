@@ -64,6 +64,7 @@ export interface RsvpTranslations {
     generate_qr: string;
     mark_sent: string;
     resend: string;
+    whatsapp_message: string;
   };
 }
 
@@ -119,6 +120,7 @@ const ro: RsvpTranslations = {
     generate_qr: 'Generează QR',
     mark_sent: 'Marchează trimis',
     resend: 'Retrimite',
+    whatsapp_message: 'Bună, {firstName}! Ne-ar face mare plăcere să fii alături de noi. Confirmă participarea aici: {rsvpLink}',
   },
 };
 
