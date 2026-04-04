@@ -1,49 +1,38 @@
 // =============================================================================
 // app/api/export/json/route.ts
-// GET /api/export/json?wedding_id=...
+// GET /api/export/json
 // Export complet wedding data în format JSON
 // Autentificat — doar membrii wedding-ului pot exporta
 // Token-uri RSVP excluse din export
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
-import { isValidUuid } from "@/lib/sanitize";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { exportWeddingJson, buildExportFilename } from "@/lib/export/json-export";
 import { wl_audit } from "@/lib/audit/wl-audit";
 import {
-  authErrorResponse,
-  validationErrorResponse,
-  errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
 
 export async function GET(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
-
-  const { searchParams } = new URL(request.url);
-  const weddingId = searchParams.get("wedding_id");
-
-  if (!isValidUuid(weddingId)) {
-    return validationErrorResponse([
-      { field: "wedding_id", message: "A valid wedding_id (UUID) is required." },
-    ]);
-  }
-
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   // ── Authorization ──────────────────────────────────────────────────────────
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) {
-    return errorResponse(403, "FORBIDDEN", "You are not a member of this wedding.");
-  }
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
+
+  const weddingId = access.wedding_id;
 
   // ── Export ─────────────────────────────────────────────────────────────────
-  const result = await exportWeddingJson(supabase, weddingId);
+  const result = await exportWeddingJson(supabaseServer, weddingId);
 
   if (!result.success) {
     return internalErrorResponse(new Error(result.error), "GET /api/export/json");
@@ -57,7 +46,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   await wl_audit("export.json_completed", {
     request_id: crypto.randomUUID(),
     actor_type: "user",
-    app_user_id: auth.context.userId,
+    app_user_id: authResult.ctx.app_user_id,
     wedding_id: weddingId,
     metadata: { filename },
   });

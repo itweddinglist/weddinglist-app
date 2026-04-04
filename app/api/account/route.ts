@@ -5,27 +5,29 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { sendAccountDeletionEmail } from "@/lib/gdpr/send-deletion-email";
 import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   successResponse,
-  authErrorResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
 
 export async function DELETE(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const userId = auth.context.userId;
+  const userId = authResult.ctx.app_user_id;
   const requestId = crypto.randomUUID();
-  const supabase = createAuthenticatedClient(auth.context.token);
 
   // ── Step 1: Verifică status curent ────────────────────────────────────────
-  const { data: appUser, error: userErr } = await supabase
+  const { data: appUser, error: userErr } = await supabaseServer
     .from("app_users")
     .select("id, status, email")
     .eq("id", userId)
@@ -44,7 +46,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
   }
 
   // ── Step 2: Ownership check ────────────────────────────────────────────────
-  const { data: memberships, error: memErr } = await supabase
+  const { data: memberships, error: memErr } = await supabaseServer
     .from("wedding_members")
     .select("wedding_id, role")
     .eq("app_user_id", userId);
@@ -54,7 +56,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
   const ownedWeddings = (memberships ?? []).filter((m: any) => m.role === "owner");
 
   for (const owned of ownedWeddings) {
-    const { data: otherOwners } = await supabase
+    const { data: otherOwners } = await supabaseServer
       .from("wedding_members")
       .select("id")
       .eq("wedding_id", owned.wedding_id)
@@ -78,7 +80,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
   });
 
   // ── Step 3: Marchează 'deleting' ──────────────────────────────────────────
-  const { error: statusErr } = await supabase
+  const { error: statusErr } = await supabaseServer
     .from("app_users")
     .update({ status: "deleting", updated_at: new Date().toISOString() })
     .eq("id", userId);
@@ -90,38 +92,38 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     const weddingIds = (memberships ?? []).map((m: any) => m.wedding_id);
 
     if (weddingIds.length > 0) {
-      const { error: rsvpErr } = await supabase
+      const { error: rsvpErr } = await supabaseServer
         .from("rsvp_invitations")
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .in("wedding_id", weddingIds);
 
       if (rsvpErr) {
-        await markDeletionFailed(supabase, userId, requestId);
+        await markDeletionFailed(userId, requestId);
         return internalErrorResponse(rsvpErr, "DELETE /api/account — rsvp_invitations");
       }
     }
 
     // ── Step 5: Revocă wedding_members ───────────────────────────────────────
-    const { error: memberErr } = await supabase
+    const { error: memberErr } = await supabaseServer
       .from("wedding_members")
       .delete()
       .eq("app_user_id", userId);
 
     if (memberErr) {
-      await markDeletionFailed(supabase, userId, requestId);
+      await markDeletionFailed(userId, requestId);
       return internalErrorResponse(memberErr, "DELETE /api/account — wedding_members");
     }
 
     // ── Step 6: Soft delete weddings fără membri rămași ───────────────────────
     for (const weddingId of weddingIds) {
-      const { data: remainingMembers } = await supabase
+      const { data: remainingMembers } = await supabaseServer
         .from("wedding_members")
         .select("id")
         .eq("wedding_id", weddingId)
         .limit(1);
 
       if (!remainingMembers || remainingMembers.length === 0) {
-        await supabase
+        await supabaseServer
           .from("weddings")
           .update({
             deleted_at: new Date().toISOString(),
@@ -142,24 +144,24 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     }
 
     // ── Step 8: Hard delete identity_links ───────────────────────────────────
-    const { error: ilErr } = await supabase
+    const { error: ilErr } = await supabaseServer
       .from("identity_links")
       .delete()
       .eq("app_user_id", userId);
 
     if (ilErr) {
-      await markDeletionFailed(supabase, userId, requestId);
+      await markDeletionFailed(userId, requestId);
       return internalErrorResponse(ilErr, "DELETE /api/account — identity_links");
     }
 
     // ── Step 9: Hard delete app_users ────────────────────────────────────────
-    const { error: auErr } = await supabase
+    const { error: auErr } = await supabaseServer
       .from("app_users")
       .delete()
       .eq("id", userId);
 
     if (auErr) {
-      await markDeletionFailed(supabase, userId, requestId);
+      await markDeletionFailed(userId, requestId);
       return internalErrorResponse(auErr, "DELETE /api/account — app_users");
     }
 
@@ -176,7 +178,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     });
 
   } catch (err: unknown) {
-    await markDeletionFailed(supabase, userId, requestId);
+    await markDeletionFailed(userId, requestId);
     return internalErrorResponse(err, "DELETE /api/account");
   }
 }
@@ -184,17 +186,17 @@ export async function DELETE(request: NextRequest): Promise<Response> {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function markDeletionFailed(
-  supabase: any,
   userId: string,
   requestId: string
 ): Promise<void> {
-  await supabase
-    .from("app_users")
-    .update({ status: "deletion_failed", updated_at: new Date().toISOString() })
-    .eq("id", userId)
-    .catch((e: unknown) => {
-      console.error("[Account Delete] Failed to mark deletion_failed:", e);
-    });
+  try {
+    await supabaseServer
+      .from("app_users")
+      .update({ status: "deletion_failed", updated_at: new Date().toISOString() })
+      .eq("id", userId);
+  } catch (e: unknown) {
+    console.error("[Account Delete] Failed to mark deletion_failed:", e);
+  }
 
   await wl_audit("account.delete_failed", {
     request_id: requestId,

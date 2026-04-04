@@ -1,6 +1,6 @@
 // =============================================================================
 // app/api/export/pdf/route.ts
-// GET /api/export/pdf?wedding_id=...
+// GET /api/export/pdf
 // Generează PDF cu plan de mese + lista invitați + sumar
 // Autentificat — doar membrii wedding-ului pot exporta
 // =============================================================================
@@ -8,45 +8,36 @@
 import { type NextRequest } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
-import { isValidUuid, sanitizeText } from "@/lib/sanitize";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
+import { sanitizeText } from "@/lib/sanitize";
 import { WeddingPdfDocument } from "@/lib/export/pdf-export";
 import type { PdfData, PdfGuest, PdfTable } from "@/lib/export/pdf-export";
 import { wl_audit } from "@/lib/audit/wl-audit";
 import {
-  authErrorResponse,
-  validationErrorResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
 
 export async function GET(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
-
-  const { searchParams } = new URL(request.url);
-  const weddingId = searchParams.get("wedding_id");
-
-  if (!isValidUuid(weddingId)) {
-    return validationErrorResponse([
-      { field: "wedding_id", message: "A valid wedding_id (UUID) is required." },
-    ]);
-  }
-
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   // ── Authorization ──────────────────────────────────────────────────────────
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) {
-    return errorResponse(403, "FORBIDDEN", "You are not a member of this wedding.");
-  }
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
+
+  const weddingId = access.wedding_id;
 
   try {
     // ── Fetch wedding ──────────────────────────────────────────────────────
-    const { data: wedding, error: wErr } = await supabase
+    const { data: wedding, error: wErr } = await supabaseServer
       .from("weddings")
       .select("title, event_date, location_name")
       .eq("id", weddingId)
@@ -57,7 +48,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
 
     // ── Fetch guests cu rsvp_responses ────────────────────────────────────
-    const { data: guestEvents, error: geErr } = await supabase
+    const { data: guestEvents, error: geErr } = await supabaseServer
       .from("guest_events")
       .select(`
         id,
@@ -72,7 +63,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (geErr) return internalErrorResponse(geErr, "GET /api/export/pdf — guest_events");
 
     // ── Fetch rsvp_responses ──────────────────────────────────────────────
-    const { data: responses, error: rErr } = await supabase
+    const { data: responses, error: rErr } = await supabaseServer
       .from("rsvp_responses")
       .select("guest_event_id, status, meal_choice, dietary_notes")
       .eq("wedding_id", weddingId);
@@ -84,7 +75,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
 
     // ── Fetch seat assignments ────────────────────────────────────────────
-    const { data: assignments, error: aErr } = await supabase
+    const { data: assignments, error: aErr } = await supabaseServer
       .from("seat_assignments")
       .select(`
         guest_event_id,
@@ -107,7 +98,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
 
     // ── Fetch tables ──────────────────────────────────────────────────────
-    const { data: tables, error: tErr } = await supabase
+    const { data: tables, error: tErr } = await supabaseServer
       .from("tables")
       .select("id, name, seat_count")
       .eq("wedding_id", weddingId)
@@ -175,7 +166,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     await wl_audit("export.pdf_completed", {
       request_id: crypto.randomUUID(),
       actor_type: "user",
-      app_user_id: auth.context.userId,
+      app_user_id: authResult.ctx.app_user_id,
       wedding_id: weddingId,
       metadata: { filename },
     });
