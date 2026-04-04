@@ -6,22 +6,25 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateImportPayload, buildImportPreview, MAX_FILE_SIZE_BYTES } from "@/lib/import/validate-import";
 import { importWeddingJson } from "@/lib/import/json-import";
 import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   successResponse,
-  authErrorResponse,
   errorResponse,
   validationErrorResponse,
 } from "@/lib/api-response";
 
 export async function POST(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   const requestId = crypto.randomUUID();
 
@@ -60,25 +63,26 @@ export async function POST(request: NextRequest): Promise<Response> {
     return successResponse({ preview });
   }
 
+  const userId = authResult.ctx.app_user_id;
+
   // ── Audit: import started ──────────────────────────────────────────────────
   await wl_audit("import.json_started", {
     request_id: requestId,
     actor_type: "user",
-    app_user_id: auth.context.userId,
+    app_user_id: userId,
     metadata: {
       counts: exportData.counts as unknown as Record<string, number>,
     },
   });
 
   // ── Import ─────────────────────────────────────────────────────────────────
-  const supabase = createAuthenticatedClient(auth.context.token);
-  const result = await importWeddingJson(supabase, exportData, auth.context.userId);
+  const result = await importWeddingJson(supabaseServer, exportData, userId);
 
   if (!result.success) {
     await wl_audit("import.json_failed", {
       request_id: requestId,
       actor_type: "user",
-      app_user_id: auth.context.userId,
+      app_user_id: userId,
       metadata: {
         reason_code: result.step ?? "unknown",
       },
@@ -95,7 +99,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   await wl_audit("import.json_completed", {
     request_id: requestId,
     actor_type: "user",
-    app_user_id: auth.context.userId,
+    app_user_id: userId,
     wedding_id: result.new_wedding_id,
     metadata: {
       counts: result.counts,
