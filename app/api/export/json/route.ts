@@ -12,6 +12,7 @@ import { createAuthenticatedClient } from "@/lib/supabase-server";
 import { isWeddingMember } from "@/lib/authorization";
 import { isValidUuid } from "@/lib/sanitize";
 import { exportWeddingJson, buildExportFilename } from "@/lib/export/json-export";
+import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   authErrorResponse,
   validationErrorResponse,
@@ -51,6 +52,15 @@ export async function GET(request: NextRequest): Promise<Response> {
   // ── Filename ───────────────────────────────────────────────────────────────
   const weddingTitle = (result.data.data.wedding as any)?.title ?? "export";
   const filename = buildExportFilename(weddingTitle, result.data.exported_at);
+
+  // ── Audit ──────────────────────────────────────────────────────────────────
+  await wl_audit("export.json_completed", {
+    request_id: crypto.randomUUID(),
+    actor_type: "user",
+    app_user_id: auth.context.userId,
+    wedding_id: weddingId,
+    metadata: { filename },
+  });
 
   // ── Response ca file download ──────────────────────────────────────────────
   return new Response(JSON.stringify(result.data, null, 2), {

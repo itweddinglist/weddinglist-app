@@ -8,6 +8,7 @@ import { type NextRequest } from "next/server";
 import { extractAuth } from "@/lib/auth";
 import { createAuthenticatedClient } from "@/lib/supabase-server";
 import { sendAccountDeletionEmail } from "@/lib/gdpr/send-deletion-email";
+import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   successResponse,
   authErrorResponse,
@@ -16,11 +17,11 @@ import {
 } from "@/lib/api-response";
 
 export async function DELETE(request: NextRequest): Promise<Response> {
-  // ── Auth ───────────────────────────────────────────────────────────────────
   const auth = extractAuth(request);
   if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
 
   const userId = auth.context.userId;
+  const requestId = crypto.randomUUID();
   const supabase = createAuthenticatedClient(auth.context.token);
 
   // ── Step 1: Verifică status curent ────────────────────────────────────────
@@ -69,6 +70,13 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     }
   }
 
+  // ── Audit: delete requested ───────────────────────────────────────────────
+  await wl_audit("account.delete_requested", {
+    request_id: requestId,
+    actor_type: "user",
+    app_user_id: userId,
+  });
+
   // ── Step 3: Marchează 'deleting' ──────────────────────────────────────────
   const { error: statusErr } = await supabase
     .from("app_users")
@@ -88,7 +96,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
         .in("wedding_id", weddingIds);
 
       if (rsvpErr) {
-        await markDeletionFailed(supabase, userId);
+        await markDeletionFailed(supabase, userId, requestId);
         return internalErrorResponse(rsvpErr, "DELETE /api/account — rsvp_invitations");
       }
     }
@@ -100,7 +108,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
       .eq("app_user_id", userId);
 
     if (memberErr) {
-      await markDeletionFailed(supabase, userId);
+      await markDeletionFailed(supabase, userId, requestId);
       return internalErrorResponse(memberErr, "DELETE /api/account — wedding_members");
     }
 
@@ -140,7 +148,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
       .eq("app_user_id", userId);
 
     if (ilErr) {
-      await markDeletionFailed(supabase, userId);
+      await markDeletionFailed(supabase, userId, requestId);
       return internalErrorResponse(ilErr, "DELETE /api/account — identity_links");
     }
 
@@ -151,9 +159,16 @@ export async function DELETE(request: NextRequest): Promise<Response> {
       .eq("id", userId);
 
     if (auErr) {
-      await markDeletionFailed(supabase, userId);
+      await markDeletionFailed(supabase, userId, requestId);
       return internalErrorResponse(auErr, "DELETE /api/account — app_users");
     }
+
+    // ── Audit: delete completed ───────────────────────────────────────────────
+    await wl_audit("account.delete_completed", {
+      request_id: requestId,
+      actor_type: "user",
+      app_user_id: userId,
+    });
 
     return successResponse({
       success: true,
@@ -161,14 +176,18 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     });
 
   } catch (err: unknown) {
-    await markDeletionFailed(supabase, userId);
+    await markDeletionFailed(supabase, userId, requestId);
     return internalErrorResponse(err, "DELETE /api/account");
   }
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-async function markDeletionFailed(supabase: any, userId: string): Promise<void> {
+async function markDeletionFailed(
+  supabase: any,
+  userId: string,
+  requestId: string
+): Promise<void> {
   await supabase
     .from("app_users")
     .update({ status: "deletion_failed", updated_at: new Date().toISOString() })
@@ -176,4 +195,11 @@ async function markDeletionFailed(supabase: any, userId: string): Promise<void> 
     .catch((e: unknown) => {
       console.error("[Account Delete] Failed to mark deletion_failed:", e);
     });
+
+  await wl_audit("account.delete_failed", {
+    request_id: requestId,
+    actor_type: "user",
+    app_user_id: userId,
+    metadata: { reason_code: "deletion_failed" },
+  });
 }

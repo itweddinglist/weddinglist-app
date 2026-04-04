@@ -14,6 +14,7 @@ import { isWeddingMember } from "@/lib/authorization";
 import { isValidUuid, sanitizeText } from "@/lib/sanitize";
 import { WeddingPdfDocument } from "@/lib/export/pdf-export";
 import type { PdfData, PdfGuest, PdfTable } from "@/lib/export/pdf-export";
+import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   authErrorResponse,
   validationErrorResponse,
@@ -169,6 +170,15 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
 
     const filename = `weddinglist-${sanitizeText(wedding.title, 50)?.replace(/\s+/g, "-").toLowerCase() ?? "export"}-${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    // ── Audit ──────────────────────────────────────────────────────────────
+    await wl_audit("export.pdf_completed", {
+      request_id: crypto.randomUUID(),
+      actor_type: "user",
+      app_user_id: auth.context.userId,
+      wedding_id: weddingId,
+      metadata: { filename },
+    });
 
     return new Response(buffer as unknown as BodyInit, {
       status: 200,
