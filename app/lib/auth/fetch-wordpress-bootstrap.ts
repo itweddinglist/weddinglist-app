@@ -1,4 +1,4 @@
-export type BootstrapUser = {
+﻿export type BootstrapUser = {
   wp_user_id: number;
   email: string;
   display_name: string;
@@ -24,15 +24,14 @@ export type BootstrapResponse = {
   error?: string;
 };
 
-const WP_BASE_URL = process.env.NEXT_PUBLIC_WP_BASE_URL;
-
-if (!WP_BASE_URL) {
-  throw new Error("Missing NEXT_PUBLIC_WP_BASE_URL env variable");
-}
-
 export async function fetchWordPressBootstrap(): Promise<BootstrapResponse> {
+  const wpBaseUrl = process.env.NEXT_PUBLIC_WP_BASE_URL;
+  if (!wpBaseUrl) {
+    throw new Error("Missing NEXT_PUBLIC_WP_BASE_URL env variable");
+  }
+
   const response = await fetch(
-    `${WP_BASE_URL}/wp-json/weddinglist/v1/bootstrap`,
+    `${wpBaseUrl}/wp-json/weddinglist/v1/bootstrap`,
     {
       method: "GET",
       credentials: "include",
