@@ -1,7 +1,8 @@
-// =============================================================================
+﻿// =============================================================================
 // lib/seating/use-seating-sync.ts
 // Orchestrator Faza 6 — Seating ↔ Guests Integration.
 // Snapshot minim: { reason, assignments, tables } — fără guest model coupling.
+// Faza 9.5: cancel stale retries + snapshot hashing stabil
 // =============================================================================
 
 "use client";
@@ -30,6 +31,22 @@ export interface SeatingSyncState {
   idMaps: NumericIdMap | null;
 }
 
+// ── Faza 9.5: hash stabil fără JSON.stringify pe obiecte mari ─────────────────
+function stableSnapshotHash(
+  tables: SeatingFullSyncRequest["tables"],
+  assignments: SeatingFullSyncRequest["assignments"]
+): string {
+  const tHash = tables
+    .map((t) => `${t.local_id}:${t.name}:${t.x}:${t.y}:${t.rotation}:${t.seat_count}`)
+    .sort()
+    .join("|")
+  const aHash = assignments
+    .map((a) => `${a.guest_local_id}:${a.table_local_id ?? "null"}`)
+    .sort()
+    .join("|")
+  return `t:${tHash}__a:${aHash}`
+}
+
 export function useSeatingSync({
   weddingId,
   eventId,
@@ -42,6 +59,8 @@ export function useSeatingSync({
 
   const idMapsRef = useRef<NumericIdMap | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Faza 9.5: ref pentru retry timers — permite cancel stale retries
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedSnapshotRef = useRef<string | null>(null);
 
   // ── LOAD ────────────────────────────────────────────────────────────────────
@@ -137,8 +156,6 @@ export function useSeatingSync({
       is_ring:    t.isRing,
     }));
 
-    // FIX 1: snapshot.assignments (Record<number, number|null>) — nu snapshot.guests
-    // FIX 2: guard pe assignments — previne crash la snapshot corupt
     if (!snapshot.assignments) return;
 
     const assignments: SeatingFullSyncRequest["assignments"] = Object.entries(
@@ -148,7 +165,8 @@ export function useSeatingSync({
       table_local_id: tableId,
     }));
 
-    const snapshotKey = JSON.stringify({ tables, assignments });
+    // Faza 9.5: hash stabil în loc de JSON.stringify
+    const snapshotKey = stableSnapshotHash(tables, assignments);
     if (snapshotKey === lastSyncedSnapshotRef.current) return;
 
     try {
@@ -165,12 +183,11 @@ export function useSeatingSync({
         const err = await response.json().catch(() => ({}));
         console.error("[SeatingSync] sync failed:", err);
 
-        // FIX 5: retry exponential
         if (retryCount < SYNC_MAX_RETRIES) {
           const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
-          setTimeout(() => doSync(snapshot, retryCount + 1), delay);
+          // Faza 9.5: salvăm retry timer pentru a putea cancela
+          retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1), delay);
         } else {
-          // Marcam ca nesincronizat — retry la next change
           lastSyncedSnapshotRef.current = null;
         }
         return;
@@ -178,20 +195,17 @@ export function useSeatingSync({
 
       const result = await response.json();
 
-      // Update bridge cu tables noi create pe server
       if (result.data?.bridge_updates?.tables?.length > 0) {
         for (const update of result.data.bridge_updates.tables) {
           maps.tables.set(update.uuid, update.local_id);
           maps.tablesReverse.set(update.local_id, update.uuid);
         }
-        // FIX 6: reset snapshot după bridge update — mapping s-a schimbat
         lastSyncedSnapshotRef.current = null;
       } else {
         lastSyncedSnapshotRef.current = snapshotKey;
       }
     } catch (err) {
       console.error("[SeatingSync] sync network error:", err);
-      // FIX 5: retry la next change
       lastSyncedSnapshotRef.current = null;
     }
   }, [weddingId, eventId]);
@@ -200,15 +214,23 @@ export function useSeatingSync({
     (snapshot: SeatingSnapshot) => {
       if (!idMapsRef.current) return;
 
+      // Faza 9.5: cancelăm retry stale când vine un nou snapshot
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
       syncTimerRef.current = setTimeout(() => doSync(snapshot), SYNC_DEBOUNCE_MS);
     },
     [doSync]
   );
 
+  // Faza 9.5: cleanup complet — debounce + retry timers
   useEffect(() => {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
   }, []);
 
