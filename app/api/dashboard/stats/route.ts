@@ -46,7 +46,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       budgetItemsResult,
       paymentsResult,
     ] = await Promise.all([
-      supabase.from("weddings").select("id, title").eq("id", weddingId).single(),
+      supabase.from("weddings").select("id, title, event_date").eq("id", weddingId).single(),
       supabase.from("guests").select("id").eq("wedding_id", weddingId),
       supabase.from("rsvp_responses").select("status").eq("wedding_id", weddingId),
       supabase.from("tables").select("id").eq("wedding_id", weddingId),
@@ -101,6 +101,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       wedding: {
         id: weddingResult.data.id,
         title: weddingResult.data.title ?? "",
+        event_date: weddingResult.data.event_date ?? null,
       },
       stats: {
         guests_total,
@@ -123,3 +124,5 @@ export async function GET(request: NextRequest): Promise<Response> {
     return internalErrorResponse(err, "GET /api/dashboard/stats")
   }
 }
+
+

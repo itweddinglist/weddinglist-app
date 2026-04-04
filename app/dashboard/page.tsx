@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "@/app/lib/auth/session/use-session"
+import { generateTasks, type TaskEngineResult } from "@/lib/task-engine"
+import { buildTaskEngineContext } from "@/lib/selectors/dashboard-selectors"
 import type { DashboardStats } from "@/types/dashboard"
 
 const MODULES = [
@@ -48,6 +50,18 @@ const MODULES = [
   },
 ]
 
+const PRIORITY_COLORS: Record<string, string> = {
+  HIGH: "#E53E3E",
+  MEDIUM: "#ECC94B",
+  LOW: "#48BB78",
+}
+
+const PRIORITY_LABELS: Record<string, string> = {
+  HIGH: "Urgent",
+  MEDIUM: "Important",
+  LOW: "Recomandat",
+}
+
 type LoadingState = "idle" | "loading" | "success" | "error"
 
 function StatCardSkeleton() {
@@ -71,6 +85,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loadingState, setLoadingState] = useState<LoadingState>("idle")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [taskResult, setTaskResult] = useState<TaskEngineResult | null>(null)
 
   const activeWeddingId =
     session.status === "authenticated" ? session.activeWeddingId : null
@@ -121,6 +136,22 @@ export default function Dashboard() {
 
         setStats(json.data)
         setLoadingState("success")
+
+        // ── Task Engine ────────────────────────────────────────────────────────
+        const daysUntilWedding = json.data.wedding.event_date
+          ? Math.max(0, Math.ceil((new Date(json.data.wedding.event_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+          : 365
+
+        const supabaseForTasks = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          { global: { headers: { Authorization: `Bearer ${jwt}` } } }
+        )
+
+        const taskCtx = await buildTaskEngineContext(supabaseForTasks, activeWeddingId!, daysUntilWedding)
+        if (taskCtx) {
+          setTaskResult(generateTasks(taskCtx))
+        }
       } catch {
         setLoadingState("error")
         setErrorMessage("Nu s-a putut contacta serverul.")
@@ -134,6 +165,7 @@ export default function Dashboard() {
 
   return (
     <div>
+      {/* Header */}
       <div style={{ marginBottom: "2rem" }}>
         <div style={{
           fontSize: "0.68rem",
@@ -154,6 +186,7 @@ export default function Dashboard() {
         </h1>
       </div>
 
+      {/* Error state */}
       {loadingState === "error" && (
         <div style={{
           background: "#fff5f5",
@@ -168,6 +201,7 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* No wedding state */}
       {session.status === "authenticated" && !activeWeddingId && (
         <div style={{
           background: "#fffbeb",
@@ -182,6 +216,7 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Stats cards */}
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(3, 1fr)",
@@ -286,6 +321,106 @@ export default function Dashboard() {
         ) : null}
       </div>
 
+      {/* Task Engine */}
+      {taskResult && taskResult.primary && (
+        <div style={{ marginBottom: "2.5rem" }}>
+          <div style={{
+            fontSize: "0.68rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--muted)",
+            marginBottom: "1rem",
+          }}>
+            Următorul pas
+          </div>
+
+          {/* Primary task */}
+          <Link href={taskResult.primary.action_path} style={{ textDecoration: "none" }}>
+            <div style={{
+              background: "white",
+              borderRadius: "14px",
+              padding: "1.3rem 1.6rem",
+              boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
+              borderLeft: `4px solid ${PRIORITY_COLORS[taskResult.primary.priority]}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+              marginBottom: "0.75rem",
+              cursor: "pointer",
+              transition: "transform 0.15s",
+            }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+            >
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.25rem" }}>
+                  <span style={{
+                    fontSize: "0.6rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: PRIORITY_COLORS[taskResult.primary.priority],
+                    background: `${PRIORITY_COLORS[taskResult.primary.priority]}15`,
+                    padding: "0.15rem 0.5rem",
+                    borderRadius: "999px",
+                  }}>
+                    {PRIORITY_LABELS[taskResult.primary.priority]}
+                  </span>
+                </div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem", fontWeight: 400, color: "var(--navy)", marginBottom: "0.2rem" }}>
+                  {taskResult.primary.title}
+                </div>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
+                  {taskResult.primary.description}
+                </div>
+              </div>
+              <div style={{
+                padding: "0.4rem 1rem",
+                background: "var(--rose, #C9907A)",
+                color: "white",
+                borderRadius: "999px",
+                fontSize: "0.72rem",
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+              }}>
+                {taskResult.primary.action_label} →
+              </div>
+            </div>
+          </Link>
+
+          {/* Secondary tasks */}
+          {taskResult.secondary.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "0.75rem" }}>
+              {taskResult.secondary.map((task) => (
+                <Link key={task.id} href={task.action_path} style={{ textDecoration: "none" }}>
+                  <div style={{
+                    background: "white",
+                    borderRadius: "12px",
+                    padding: "1rem 1.2rem",
+                    boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
+                    borderLeft: `3px solid ${PRIORITY_COLORS[task.priority]}`,
+                    cursor: "pointer",
+                    transition: "transform 0.15s",
+                  }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                  >
+                    <div style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--navy)", marginBottom: "0.2rem" }}>
+                      {task.title}
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
+                      {task.description}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Module grid */}
       <div style={{
         fontSize: "0.68rem",
         textTransform: "uppercase",
