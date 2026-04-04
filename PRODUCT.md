@@ -485,3 +485,41 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - Seating integration cu RSVP (declined nu apare în seating) = fază separată după launch
 - copyLink temporar șters din dashboard — re-adăugat când implementăm butonul "Copiază link"
 - token = null în client — Authorization header eliminat din fetch-uri dashboard
+## Update Apr 4, 2026 — Faza 8 completă
+
+### Roadmap — actualizat
+```
+1. Seating polish ✅
+2. Faza 0A — Foundation ✅
+3. Faza 0B — Auth & Data ✅
+4. Faza 2A — Seating Performance Foundation ✅
+5. Faza 3 — Guests Core ✅ (~85%)
+6. Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7. Faza 6 — Seating ↔ Guests Integration ✅
+8. Faza 2B — Seating Performance Validation ✅ parțial (2B.2, 2B.3)
+9. Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+10. UI Lista Invitați ✅ implementat — netestat vizual până la launch
+11. Faza 7 — RSVP ✅ COMPLETĂ (7.1-7.8)
+12. Faza 8 — Export & Compliance ✅ COMPLETĂ (8.1-8.5)
+13. Faza 9 — Reliability & QA ⏳ URMĂTOR
+14. Faza 10 — Power Features ⏳
+```
+
+### Realizări sesiunea Apr 4, 2026
+- ✅ Faza 8.1 Export JSON
+- ✅ Faza 8.2 Import JSON
+- ✅ Faza 8.3 Export PDF
+- ✅ Faza 8.4 GDPR — account deletion
+- ✅ Faza 8.5 Audit Trail
+- ✅ Teste: 588/588 verzi
+
+### Decizii de produs noi (Apr 4, 2026)
+- Export JSON = backup complet, token_hash exclus permanent
+- Import JSON = wedding nou ÎNTOTDEAUNA, preview înainte de confirmare
+- Export PDF = 2 pagini: plan mese + lista invitați, font cu diacritice RO
+- GDPR delete = flow controlat în 9 pași, sole owner blocat cu mesaj clar
+- Audit Trail = append-only ledger, fără PII, 12 acțiuni controlate
+- Privacy Policy WordPress = de actualizat cu Art. 17 și Art. 20 înainte de launch
+- copyLink temporar șters din dashboard — re-adăugat când implementăm butonul "Copiază link"
+
+### Progres total: ~67%
