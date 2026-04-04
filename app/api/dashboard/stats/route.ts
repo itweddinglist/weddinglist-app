@@ -1,39 +1,30 @@
-﻿// app/api/dashboard/stats/route.ts
-// GET /api/dashboard/stats?wedding_id=<uuid>
+// app/api/dashboard/stats/route.ts
+// GET /api/dashboard/stats
+// Dashboard is active-wedding-only — no wedding_id from client.
+// Auth via Server App Context Layer (WP bootstrap, no JWT).
 
 import { type NextRequest } from "next/server"
-import { extractAuth } from "@/lib/auth"
-import { createAuthenticatedClient } from "@/lib/supabase-server"
-import { isWeddingMember } from "@/lib/authorization"
-import { isValidUuid } from "@/lib/sanitize"
+import { supabaseServer } from "@/app/lib/supabase/server"
+import { getServerAppContext } from "@/lib/server-context/get-server-app-context"
+import { requireAuthenticatedContext } from "@/lib/server-context/require-authenticated"
+import { requireWeddingAccess } from "@/lib/server-context/require-wedding-access"
 import {
   successResponse,
-  authErrorResponse,
-  validationErrorResponse,
-  errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response"
 import type { DashboardStats } from "@/types/dashboard"
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request)
-  if (!auth.authenticated)
-    return authErrorResponse(auth.error.code, auth.error.message)
+  const ctx = await getServerAppContext(request)
 
-  const { searchParams } = new URL(request.url)
-  const weddingId = searchParams.get("wedding_id")
+  const authResult = requireAuthenticatedContext(ctx)
+  if (!authResult.ok) return authResult.response
 
-  if (!isValidUuid(weddingId)) {
-    return validationErrorResponse([
-      { field: "wedding_id", message: "A valid wedding_id (UUID) is required." },
-    ])
-  }
+  // Dashboard uses the session's active wedding — no requestedWeddingId from client
+  const accessResult = await requireWeddingAccess({ ctx: authResult.ctx })
+  if (!accessResult.ok) return accessResult.response
 
-  const supabase = createAuthenticatedClient(auth.context.token)
-
-  const isMember = await isWeddingMember(supabase, weddingId)
-  if (!isMember)
-    return errorResponse(403, "FORBIDDEN", "You are not a member of this wedding.")
+  const { wedding_id: weddingId } = accessResult
 
   try {
     const [
@@ -46,14 +37,14 @@ export async function GET(request: NextRequest): Promise<Response> {
       budgetItemsResult,
       paymentsResult,
     ] = await Promise.all([
-      supabase.from("weddings").select("id, title, event_date").eq("id", weddingId).single(),
-      supabase.from("guests").select("id").eq("wedding_id", weddingId),
-      supabase.from("rsvp_responses").select("status").eq("wedding_id", weddingId),
-      supabase.from("tables").select("id").eq("wedding_id", weddingId),
-      supabase.from("seats").select("id").eq("wedding_id", weddingId),
-      supabase.from("seat_assignments").select("guest_id").eq("wedding_id", weddingId),
-      supabase.from("budget_items").select("estimated_amount").eq("wedding_id", weddingId),
-      supabase.from("payments").select("amount").eq("wedding_id", weddingId),
+      supabaseServer.from("weddings").select("id, title, event_date").eq("id", weddingId).single(),
+      supabaseServer.from("guests").select("id").eq("wedding_id", weddingId),
+      supabaseServer.from("rsvp_responses").select("status").eq("wedding_id", weddingId),
+      supabaseServer.from("tables").select("id").eq("wedding_id", weddingId),
+      supabaseServer.from("seats").select("id").eq("wedding_id", weddingId),
+      supabaseServer.from("seat_assignments").select("guest_id").eq("wedding_id", weddingId),
+      supabaseServer.from("budget_items").select("estimated_amount").eq("wedding_id", weddingId),
+      supabaseServer.from("payments").select("amount").eq("wedding_id", weddingId),
     ])
 
     if (weddingResult.error)
@@ -124,5 +115,3 @@ export async function GET(request: NextRequest): Promise<Response> {
     return internalErrorResponse(err, "GET /api/dashboard/stats")
   }
 }
-
-
