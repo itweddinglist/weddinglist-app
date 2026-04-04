@@ -549,3 +549,49 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - ✅ Teste: 588/588 verzi
 
 ### Progres total: ~70%
+
+## Update Apr 4, 2026 — Faza 10 + Auth Refactor
+
+### Roadmap — actualizat
+
+Seating polish ✅
+Faza 0A — Foundation ✅
+Faza 0B — Auth & Data ✅
+Faza 2A — Seating Performance Foundation ✅
+Faza 3 — Guests Core ✅ (~85%)
+Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+Faza 6 — Seating ↔ Guests Integration ✅
+Faza 2B — Seating Performance Validation ✅ parțial (2B.2, 2B.3)
+Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+UI Lista Invitați ✅
+Faza 7 — RSVP ✅ COMPLETĂ (7.1-7.8)
+Faza 8 — Export & Compliance ✅ COMPLETĂ (8.1-8.5)
+Faza 9 — Reliability & QA ✅ COMPLETĂ
+Faza 10 — Power Features ⏳ ÎN PROGRES
+
+
+### Realizări sesiunea Apr 4, 2026
+- ✅ Task Engine — generateTasks() funcție pură, 8 reguli, 24 teste
+- ✅ Dashboard Selectors — buildTaskEngineContext din Supabase
+- ✅ Dashboard conectat la Task Engine
+- ✅ Server App Context Layer — auth refactor complet
+
+### Decizii arhitecturale locked (Apr 4, 2026)
+
+#### Auth Layer
+- JWT client-side eliminat complet din internal API routes
+- Model unic: WP bootstrap (server-side) → ServerAppContext → Supabase
+- extractAuth deprecated pentru browser/internal routes
+- getServerAppContext = entry point unic pentru auth
+- requireAuthenticatedContext + requireWeddingAccess = helperi standard
+- supabaseServer folosit DOAR după auth + authz complet
+- Cache L1 server-side 30s per cookie wordpress_logged_in_*
+- Dashboard = active-wedding-only
+
+#### Task Engine
+- generateTasks(ctx) = funcție pură, fără side effects
+- 8 reguli în ordine de prioritate
+- PRIMARY task + max 2 SECONDARY tasks
+- Rulează la fiecare load dashboard
+
+### Progres total: ~72%
