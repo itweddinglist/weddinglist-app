@@ -3,20 +3,20 @@
 // GET  — lista budget items pentru un wedding
 // POST — creare budget item nou
 //
-// Pattern: extractAuth → createAuthenticatedClient → isWeddingMember → validate → query
-// Consistent cu toate routes din Faza 3 (guests, guest-events).
+// Pattern: getServerAppContext → requireAuthenticatedContext → requireWeddingAccess → query
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateCreateBudgetItem } from "@/lib/validation/budget-items";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   validationErrorResponse,
   errorResponse,
   internalErrorResponse,
@@ -32,19 +32,18 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse();
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   const { searchParams } = new URL(request.url);
   const statusFilter = searchParams.get("status");
   const VALID_STATUSES = ["planned", "confirmed", "paid", "cancelled"];
 
-  let query = supabase
+  let query = supabaseServer
     .from("budget_items")
     .select("*")
     .eq("wedding_id", weddingId)
@@ -68,13 +67,12 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
 
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse();
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   let body: unknown;
   try {
@@ -91,7 +89,7 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
   const validation = validateCreateBudgetItem(bodyWithWeddingId);
   if (!validation.valid) return validationErrorResponse(validation.errors);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from("budget_items")
     .insert(validation.data)
     .select()

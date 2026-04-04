@@ -13,13 +13,15 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { getBudgetItemMeta } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   notFoundResponse,
   errorResponse,
   internalErrorResponse,
@@ -36,13 +38,21 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
   if (!isValidUuid(paymentId)) return errorResponse(400, "INVALID_ID", "Payment ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
-  // Verifică existență + ownership budget_item (RLS)
-  const meta = await getBudgetItemMeta(supabase, itemId);
+  // Verifică existență + ownership budget_item
+  const { data: meta, error: metaError } = await supabaseServer
+    .from("budget_items")
+    .select("wedding_id, status")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (metaError) return internalErrorResponse(metaError, `DELETE payment ${paymentId} — item meta`);
   if (!meta || meta.wedding_id !== weddingId) return notFoundResponse("Budget item");
 
   // PRODUCT RULE: DELETE permis doar pe items planned sau confirmed
@@ -55,7 +65,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   }
 
   // Verifică că payment-ul există și aparține acestui budget_item + wedding
-  const { data: payment, error: fetchError } = await supabase
+  const { data: payment, error: fetchError } = await supabaseServer
     .from("payments")
     .select("id")
     .eq("id", paymentId)
@@ -67,7 +77,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   if (!payment) return notFoundResponse("Payment");
 
   // Delete
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from("payments")
     .delete()
     .eq("id", paymentId)

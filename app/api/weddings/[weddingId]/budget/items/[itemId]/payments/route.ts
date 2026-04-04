@@ -3,19 +3,20 @@
 // GET  — lista payments pentru un budget item
 // POST — creare payment nou
 //
-// Pattern: params → UUID check → auth → supabase → membership/ownership → validate → query
-// Consistent cu toate routes din Faza 3.
+// Pattern: getServerAppContext → requireAuthenticatedContext → requireWeddingAccess → query
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { getBudgetItemMeta } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateCreatePayment } from "@/lib/validation/payments";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   notFoundResponse,
   validationErrorResponse,
   errorResponse,
@@ -34,16 +35,23 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
-  // getBudgetItemMeta folosește RLS — returnează null dacă userul nu e member
-  const meta = await getBudgetItemMeta(supabase, itemId);
+  const { data: meta, error: metaError } = await supabaseServer
+    .from("budget_items")
+    .select("wedding_id, status")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (metaError) return internalErrorResponse(metaError, `GET payments for item ${itemId} — meta`);
   if (!meta || meta.wedding_id !== weddingId) return notFoundResponse("Budget item");
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from("payments")
     .select("*")
     .eq("budget_item_id", itemId)
@@ -68,13 +76,21 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   // Verifică existență + ownership + status
-  const meta = await getBudgetItemMeta(supabase, itemId);
+  const { data: meta, error: metaError } = await supabaseServer
+    .from("budget_items")
+    .select("wedding_id, status")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (metaError) return internalErrorResponse(metaError, `POST payment for item ${itemId} — meta`);
   if (!meta || meta.wedding_id !== weddingId) return notFoundResponse("Budget item");
 
   // PRODUCT RULE: payments noi doar pe items planned sau confirmed
@@ -106,7 +122,7 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
   const validation = validateCreatePayment(bodyWithIds);
   if (!validation.valid) return validationErrorResponse(validation.errors);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from("payments")
     .insert(validation.data)
     .select()

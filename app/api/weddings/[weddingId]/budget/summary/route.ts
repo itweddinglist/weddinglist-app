@@ -8,19 +8,20 @@
 // indiferent de currency. has_mixed_currencies = true semnalează UI-ul să
 // afișeze un warning.
 //
-// Pattern: params → UUID check → auth → supabase → membership → query
+// Pattern: getServerAppContext → requireAuthenticatedContext → requireWeddingAccess → query
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import { calculateBudgetSummary } from "@/lib/budget/calculate-summary";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
@@ -35,16 +36,15 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   }
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse();
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   // Fetch budget_items
-  const { data: items, error: itemsError } = await supabase
+  const { data: items, error: itemsError } = await supabaseServer
     .from("budget_items")
     .select("estimated_amount, actual_amount, status, currency")
     .eq("wedding_id", weddingId);
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   }
 
   // Fetch payments
-  const { data: payments, error: paymentsError } = await supabase
+  const { data: payments, error: paymentsError } = await supabaseServer
     .from("payments")
     .select("amount")
     .eq("wedding_id", weddingId);

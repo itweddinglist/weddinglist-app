@@ -10,14 +10,16 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { getBudgetItemMeta } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateUpdateBudgetItem } from "@/lib/validation/budget-items";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   notFoundResponse,
   validationErrorResponse,
   errorResponse,
@@ -35,12 +37,14 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from("budget_items")
     .select("*")
     .eq("id", itemId)
@@ -61,12 +65,20 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
-  const meta = await getBudgetItemMeta(supabase, itemId);
+  const { data: meta, error: metaError } = await supabaseServer
+    .from("budget_items")
+    .select("wedding_id, status")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (metaError) return internalErrorResponse(metaError, `PATCH budget item ${itemId} — meta`);
   if (!meta || meta.wedding_id !== weddingId) return notFoundResponse("Budget item");
 
   let body: unknown;
@@ -79,7 +91,7 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
   const validation = validateUpdateBudgetItem(body, meta.status as BudgetItemStatus);
   if (!validation.valid) return validationErrorResponse(validation.errors);
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from("budget_items")
     .update({ ...validation.data, updated_at: new Date().toISOString() })
     .eq("id", itemId)
@@ -102,12 +114,20 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
-  const meta = await getBudgetItemMeta(supabase, itemId);
+  const { data: meta, error: metaError } = await supabaseServer
+    .from("budget_items")
+    .select("wedding_id, status")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (metaError) return internalErrorResponse(metaError, `DELETE budget item ${itemId} — meta`);
   if (!meta || meta.wedding_id !== weddingId) return notFoundResponse("Budget item");
 
   if (meta.status === "paid") {
@@ -119,7 +139,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
     ]);
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseServer
     .from("budget_items")
     .delete()
     .eq("id", itemId)
