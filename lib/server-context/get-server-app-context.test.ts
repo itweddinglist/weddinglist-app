@@ -10,7 +10,6 @@ import type { BootstrapResponse } from "@/app/lib/auth/fetch-wordpress-bootstrap
 // ── Hoist mocks so vi.mock() can reference them ──────────────────────────────
 
 const { mockWithCircuitBreaker } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockWithCircuitBreaker = vi.fn<() => Promise<CircuitBreakerResult<BootstrapResponse>>>();
   return { mockWithCircuitBreaker };
 });

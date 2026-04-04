@@ -41,13 +41,6 @@ function makeCtx(status: ServerAppContext["status"]): ServerAppContext {
   }
 }
 
-async function statusOf(ctx: ServerAppContext): Promise<number> {
-  const result = requireAuthenticatedContext(ctx);
-  if (result.ok) return 200;
-  const json = await result.response.json() as { success: boolean };
-  return result.response.status;
-}
-
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("requireAuthenticatedContext", () => {
