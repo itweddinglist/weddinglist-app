@@ -1,6 +1,6 @@
 // =============================================================================
 // app/export/page.tsx
-// Pagina Export & Import — Faza 8.1 + 8.2
+// Pagina Export & Import — Faza 8.1 + 8.2 + 8.3
 // =============================================================================
 
 "use client";
@@ -16,9 +16,13 @@ type ImportState = "idle" | "reading" | "previewing" | "importing" | "success" |
 export default function ExportPage() {
   const sessionState = useSession();
 
-  // ── Export state ───────────────────────────────────────────────────────────
+  // ── Export JSON state ──────────────────────────────────────────────────────
   const [jsonState, setJsonState] = useState<ExportState>("idle");
   const [jsonError, setJsonError] = useState<string | null>(null);
+
+  // ── Export PDF state ───────────────────────────────────────────────────────
+  const [pdfState, setPdfState] = useState<ExportState>("idle");
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // ── Import state ───────────────────────────────────────────────────────────
   const [importState, setImportState] = useState<ImportState>("idle");
@@ -70,6 +74,43 @@ export default function ExportPage() {
     }
   };
 
+  // ── Export PDF ─────────────────────────────────────────────────────────────
+
+  const handleExportPdf = async () => {
+    if (!weddingId) return;
+    setPdfState("loading");
+    setPdfError(null);
+
+    try {
+      const res = await fetch(`/api/export/pdf?wedding_id=${weddingId}`);
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setPdfError(json.error?.message ?? "Eroare la export PDF.");
+        setPdfState("error");
+        return;
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get("Content-Disposition") ?? "";
+      const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] ?? "weddinglist-export.pdf";
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setPdfState("success");
+      setTimeout(() => setPdfState("idle"), 3000);
+    } catch {
+      setPdfError("A apărut o eroare neașteptată.");
+      setPdfState("error");
+    }
+  };
+
   // ── Import — citire fișier ─────────────────────────────────────────────────
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +133,6 @@ export default function ExportPage() {
       const parsed = JSON.parse(text);
       setImportPayload(parsed);
 
-      // Preview
       const res = await fetch("/api/import/json?preview=true", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -212,6 +252,36 @@ export default function ExportPage() {
           </button>
         </div>
 
+        {/* Export PDF */}
+        <div style={styles.card}>
+          <div style={styles.cardIcon}>📄</div>
+          <h2 style={styles.cardTitle}>Export PDF</h2>
+          <p style={styles.cardDescription}>
+            Listă completă cu invitații per masă, meniuri și status RSVP.
+            Două pagini: plan de mese + lista invitați.
+          </p>
+          <div style={styles.cardMeta}>
+            <span style={styles.metaTag}>Plan mese</span>
+            <span style={styles.metaTag}>Invitați</span>
+            <span style={styles.metaTag}>RSVP</span>
+          </div>
+          {pdfError && <p style={styles.errorText}>{pdfError}</p>}
+          <button
+            onClick={handleExportPdf}
+            disabled={pdfState === "loading"}
+            style={{
+              ...styles.btn,
+              ...(pdfState === "loading" ? styles.btnDisabled : {}),
+              ...(pdfState === "success" ? styles.btnSuccess : {}),
+            }}
+          >
+            {pdfState === "loading" && "⏳ Se generează..."}
+            {pdfState === "success" && "✓ Descărcat"}
+            {pdfState === "error" && "Încearcă din nou"}
+            {pdfState === "idle" && "Descarcă PDF"}
+          </button>
+        </div>
+
         {/* Import JSON */}
         <div style={styles.card}>
           <div style={styles.cardIcon}>📥</div>
@@ -221,7 +291,6 @@ export default function ExportPage() {
             wedding nou — datele existente nu sunt afectate.
           </p>
 
-          {/* Idle */}
           {importState === "idle" && (
             <>
               <input
@@ -241,31 +310,21 @@ export default function ExportPage() {
             </>
           )}
 
-          {/* Reading */}
           {importState === "reading" && (
             <p style={styles.infoText}>⏳ Se citește fișierul...</p>
           )}
 
-          {/* Preview */}
           {importState === "previewing" && importPreview && (
             <div style={styles.preview}>
               <p style={styles.previewTitle}>📋 Sumar backup</p>
-              <p style={styles.previewItem}>
-                <strong>Nuntă:</strong> {importPreview.wedding_title}
-              </p>
+              <p style={styles.previewItem}><strong>Nuntă:</strong> {importPreview.wedding_title}</p>
               <p style={styles.previewItem}>
                 <strong>Exportat:</strong>{" "}
                 {new Date(importPreview.exported_at).toLocaleDateString("ro-RO")}
               </p>
-              <p style={styles.previewItem}>
-                <strong>Invitați:</strong> {importPreview.counts.guests}
-              </p>
-              <p style={styles.previewItem}>
-                <strong>Evenimente:</strong> {importPreview.counts.events}
-              </p>
-              <p style={styles.previewItem}>
-                <strong>Mese:</strong> {importPreview.counts.tables}
-              </p>
+              <p style={styles.previewItem}><strong>Invitați:</strong> {importPreview.counts.guests}</p>
+              <p style={styles.previewItem}><strong>Evenimente:</strong> {importPreview.counts.events}</p>
+              <p style={styles.previewItem}><strong>Mese:</strong> {importPreview.counts.tables}</p>
 
               {importPreview.warnings.length > 0 && (
                 <div style={styles.warnings}>
@@ -286,12 +345,10 @@ export default function ExportPage() {
             </div>
           )}
 
-          {/* Importing */}
           {importState === "importing" && (
             <p style={styles.infoText}>⏳ Se importă datele...</p>
           )}
 
-          {/* Success */}
           {importState === "success" && (
             <div>
               <p style={{ ...styles.infoText, color: "var(--color-success)" }}>
@@ -303,7 +360,6 @@ export default function ExportPage() {
             </div>
           )}
 
-          {/* Error */}
           {importState === "error" && (
             <div>
               <p style={styles.errorText}>{importError}</p>
@@ -323,19 +379,6 @@ export default function ExportPage() {
           </p>
           <button disabled style={{ ...styles.btn, ...styles.btnDisabled }}>
             Disponibil în Plan Mese
-          </button>
-        </div>
-
-        {/* PDF Export */}
-        <div style={{ ...styles.card, ...styles.cardDisabled }}>
-          <div style={styles.cardIcon}>📄</div>
-          <h2 style={styles.cardTitle}>Export PDF</h2>
-          <p style={styles.cardDescription}>
-            Listă completă cu invitații per masă, meniuri și status RSVP.
-            Disponibil în curând.
-          </p>
-          <button disabled style={{ ...styles.btn, ...styles.btnDisabled }}>
-            În curând
           </button>
         </div>
 
