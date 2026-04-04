@@ -6,7 +6,6 @@
  * Singleton lazy — instanțiat la primul apel, nu la import.
  */
 
-// eslint-disable-next-line prefer-const
 let _supabaseServer: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
@@ -33,4 +32,3 @@ export const supabaseServer: SupabaseClient = new Proxy({} as SupabaseClient, {
     return Reflect.get(getClient(), prop);
   },
 });
-
