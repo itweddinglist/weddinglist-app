@@ -5,6 +5,7 @@ export type DashboardStats = {
   wedding: {
     id: string
     title: string
+    event_date: string | null
   }
   stats: {
     guests_total: number
