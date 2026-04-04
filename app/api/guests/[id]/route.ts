@@ -5,14 +5,17 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { getGuestWeddingId } from "@/lib/authorization";
 import { validateUpdateGuest } from "@/lib/validation/guests";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   notFoundResponse,
   validationErrorResponse,
   errorResponse,
@@ -29,8 +32,9 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
 
   if (!isValidUuid(guestId)) return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -43,17 +47,19 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  // getGuestWeddingId goes through RLS — returns null if guest doesn't exist
-  // or user isn't a wedding member. 404 in both cases (no existence leak).
-  const weddingId = await getGuestWeddingId(supabase, guestId);
+  // wedding_id comes from DB — supabaseServer (service role) fetches it directly.
+  // 404 in both cases: guest doesn't exist OR belongs to another wedding (no existence leak).
+  const weddingId = await getGuestWeddingId(supabaseServer, guestId);
   if (!weddingId) return notFoundResponse("Guest");
+
+  // Verify the authenticated user is a member of this specific wedding
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return notFoundResponse("Guest");
 
   try {
     // Cross-wedding guard for guest_group_id
     if (input.guest_group_id !== undefined && input.guest_group_id !== null) {
-      const { data: group, error: groupError } = await supabase
+      const { data: group, error: groupError } = await supabaseServer
         .from("guest_groups")
         .select("id")
         .eq("id", input.guest_group_id)
@@ -81,7 +87,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
       (input.first_name !== undefined || input.last_name !== undefined) &&
       input.display_name === undefined
     ) {
-      const { data: current } = await supabase
+      const { data: current } = await supabaseServer
         .from("guests")
         .select("first_name, last_name, display_name")
         .eq("id", guestId)
@@ -98,7 +104,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
       }
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("guests")
       .update(updatePayload)
       .eq("id", guestId)
@@ -124,17 +130,21 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
   if (!isValidUuid(guestId)) return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const weddingId = await getGuestWeddingId(supabase, guestId);
+  // wedding_id comes from DB — supabaseServer (service role) fetches it directly.
+  const weddingId = await getGuestWeddingId(supabaseServer, guestId);
   if (!weddingId) return notFoundResponse("Guest");
+
+  // Verify the authenticated user is a member of this specific wedding
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return notFoundResponse("Guest");
 
   try {
     // FK CASCADE confirmed in schema: guest_events, seat_assignments → ON DELETE CASCADE
-    const { error } = await supabase.from("guests").delete().eq("id", guestId);
+    const { error } = await supabaseServer.from("guests").delete().eq("id", guestId);
 
     if (error) {
       if (error.code === "23503") {

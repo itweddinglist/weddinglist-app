@@ -1,25 +1,26 @@
-// =============================================================================
+﻿// =============================================================================
 // app/api/guests/import/route.ts
-// POST /api/guests/import — Import guests from CSV file
+// POST /api/guests/import â€” Import guests from CSV file
 //
 // Fixes applied:
 //   FIX 2: Two separate dedup sets (existingDbKeys vs seenCsvKeys)
 //   FIX 3: Row-by-row fallback on chunk insert failure
 //   FIX 4: Strict create_groups validation ("true"/"false"/"1"/"0" only)
-//   FIX 5: Group resolve failure → per-row error, not silent null
+//   FIX 5: Group resolve failure â†’ per-row error, not silent null
 //   FIX 6: Clear semantics: created + skipped + error rows = total
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
-import { isValidUuid } from "@/lib/sanitize";
+import { type SupabaseClient } from "@supabase/supabase-js";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { parseGuestsCsv } from "@/lib/csv/parse-guests";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
@@ -30,20 +31,19 @@ import type {
   ParsedGuestRow,
 } from "@/types/guest-import";
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const CHUNK_SIZE = 100;
 const VALID_CREATE_GROUPS = new Set(["true", "false", "1", "0"]);
 
-// ─── POST /api/guests/import ────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/guests/import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function POST(request: NextRequest): Promise<Response> {
   // 1. Authenticate
-  const auth = extractAuth(request);
-  if (!auth.authenticated) {
-    return authErrorResponse(auth.error.code, auth.error.message);
-  }
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   // 2. Parse multipart form data
   let formData: FormData;
@@ -59,16 +59,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   // 3. Extract and validate form fields
   const file = formData.get("file");
-  const weddingId = formData.get("wedding_id");
   const createGroupsRaw = formData.get("create_groups");
-
-  if (!weddingId || typeof weddingId !== "string" || !isValidUuid(weddingId)) {
-    return errorResponse(
-      400,
-      "INVALID_WEDDING_ID",
-      "A valid wedding_id is required."
-    );
-  }
 
   if (!file || !(file instanceof File)) {
     return errorResponse(
@@ -116,13 +107,11 @@ export async function POST(request: NextRequest): Promise<Response> {
     );
   }
 
-  // 4. Create client + authorize
-  const supabase = createAuthenticatedClient(auth.context.token);
+  // 4. Authorize â€” wedding_id comes from active context
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
 
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) {
-    return forbiddenResponse("You are not a member of this wedding.");
-  }
+  const weddingId = access.wedding_id;
 
   try {
     // 5. Read + parse CSV
@@ -147,7 +136,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // 6. Fetch existing guests for deduplication
-    const { data: existingGuests, error: existingError } = await supabase
+    const { data: existingGuests, error: existingError } = await supabaseServer
       .from("guests")
       .select("first_name, last_name")
       .eq("wedding_id", weddingId);
@@ -155,7 +144,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (existingError) {
       return internalErrorResponse(
         existingError,
-        "POST /api/guests/import — fetch existing"
+        "POST /api/guests/import â€” fetch existing"
       );
     }
 
@@ -177,14 +166,14 @@ export async function POST(request: NextRequest): Promise<Response> {
       const key = dedupKey(row.first_name, row.last_name);
 
       if (existingDbKeys.has(key)) {
-        // FIX 2: DB duplicate — distinct message
+        // FIX 2: DB duplicate â€” distinct message
         warnings.push({
           row: row._csvRow,
           message: `Skipped: guest "${row.display_name}" already exists in this wedding.`,
         });
         skippedCount++;
       } else if (seenCsvKeys.has(key)) {
-        // FIX 2: Intra-CSV duplicate — distinct message
+        // FIX 2: Intra-CSV duplicate â€” distinct message
         warnings.push({
           row: row._csvRow,
           message: `Skipped: duplicate of another row in this CSV.`,
@@ -197,7 +186,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // 8. Resolve guest groups
-    let groupMap = new Map<string, string>(); // group_name → group_id
+    let groupMap = new Map<string, string>(); // group_name â†’ group_id
 
     if (createGroups) {
       const groupNames = new Set(
@@ -207,11 +196,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
 
       if (groupNames.size > 0) {
-        groupMap = await resolveGroups(supabase, weddingId, groupNames);
+        groupMap = await resolveGroups(supabaseServer, weddingId, groupNames);
       }
     }
 
-    // FIX 5: Group resolution failure → per-row error
+    // FIX 5: Group resolution failure â†’ per-row error
     // Filter toInsert: rows with unresolvable groups become errors
     const readyToInsert: ParsedGuestRow[] = [];
 
@@ -261,7 +250,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       const chunk = insertItems.slice(i, i + CHUNK_SIZE);
       const payloads = chunk.map((item) => item.payload);
 
-      const { data: inserted, error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabaseServer
         .from("guests")
         .insert(payloads)
         .select("id");
@@ -270,14 +259,14 @@ export async function POST(request: NextRequest): Promise<Response> {
         // Whole chunk succeeded
         createdCount += inserted?.length ?? 0;
       } else {
-        // FIX 3: Chunk failed — retry each row individually
+        // FIX 3: Chunk failed â€” retry each row individually
         console.warn(
           `[Import] Chunk ${Math.floor(i / CHUNK_SIZE) + 1} failed, retrying row-by-row:`,
           insertError.message
         );
 
         for (const item of chunk) {
-          const { data: singleInsert, error: singleError } = await supabase
+          const { data: singleInsert, error: singleError } = await supabaseServer
             .from("guests")
             .insert(item.payload)
             .select("id")
@@ -311,12 +300,12 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Normalizes a string for deduplication:
  * lowercase + trim + NFD decomposition to strip diacritics.
- * "Ștefan" === "Stefan", "Andrei" === "Andreĭ" etc.
+ * "È˜tefan" === "Stefan", "Andrei" === "AndreÄ­" etc.
  * Important for Romanian names.
  */
 function normalizeForDedup(str: string): string {
@@ -338,11 +327,11 @@ function dedupKey(firstName: string, lastName: string | null): string {
  * Resolves group names to group IDs.
  * - Fetches existing groups for the wedding (case-insensitive match).
  * - Creates any groups that don't exist yet.
- * - Returns a map of group_name → group_id.
+ * - Returns a map of group_name â†’ group_id.
  *   Missing entries = groups that failed to create (FIX 5).
  */
 async function resolveGroups(
-  supabase: ReturnType<typeof createAuthenticatedClient>,
+  supabase: SupabaseClient,
   weddingId: string,
   groupNames: Set<string>
 ): Promise<Map<string, string>> {
@@ -356,7 +345,7 @@ async function resolveGroups(
 
   if (fetchError) {
     console.error("[Import] Failed to fetch groups:", fetchError.message);
-    // Return empty map — all group rows will become errors (FIX 5)
+    // Return empty map â€” all group rows will become errors (FIX 5)
     return result;
   }
 
@@ -398,7 +387,7 @@ async function resolveGroups(
 
     if (createError) {
       console.error("[Import] Failed to create groups:", createError.message);
-      // Don't add to result map — these groups will cause per-row errors (FIX 5)
+      // Don't add to result map â€” these groups will cause per-row errors (FIX 5)
     } else {
       for (const group of created ?? []) {
         result.set(group.name, group.id);
@@ -408,3 +397,4 @@ async function resolveGroups(
 
   return result;
 }
+
