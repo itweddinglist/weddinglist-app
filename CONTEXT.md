@@ -1564,3 +1564,23 @@ security.unauthorized_access
 
 ### Teste: 639/639 verzi
 ### Progres total: ~72% din produs complet
+
+## Update Apr 4, 2026 — Migrare Auth Completă
+
+### Migrare API routes la Server App Context Layer — COMPLETĂ
+- ✅ dashboard/stats — PR #86
+- ✅ guests (GET/POST/PUT/DELETE/import) — PR #88
+- ✅ budget (items/payments/summary) — PR #89
+- ✅ rsvp (dashboard/invitations/mark-sent/manual) — PR #90
+- ✅ export (json/pdf) + import (json) + account (delete) — PR #91
+- ✅ guest-events (GET/POST/PUT/DELETE/bulk) + seating (assignments/sync) — PR #92
+- ✅ Fix build errors: supabaseServer lazy singleton, WP_BASE_URL lazy validation — PR #93, #94
+- ✅ Audit: npm audit fix, react-window eliminat, eslint/ts-prune clean
+
+### extractAuth status
+- Deprecated pentru browser/internal routes
+- Zero utilizări în API routes
+- Rămâne în lib/auth.ts pentru cazuri speciale (webhooks, M2M)
+
+### Teste: 639/639 verzi
+### Progres total: ~75%
