@@ -5,25 +5,26 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import { generateRsvpToken, getTokenExpiresAt } from "@/lib/rsvp/token";
 import { sendRsvpInvitationEmail } from "@/lib/rsvp/send-invitation-email";
 import {
   successResponse,
-  authErrorResponse,
   validationErrorResponse,
   errorResponse,
   internalErrorResponse,
-  forbiddenResponse,
 } from "@/lib/api-response";
 
 export async function POST(request: NextRequest): Promise<Response> {
-  // ── Auth ───────────────────────────────────────────────────────────────────
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -39,31 +40,23 @@ export async function POST(request: NextRequest): Promise<Response> {
   const input = body as Record<string, unknown>;
 
   // ── Validare input ─────────────────────────────────────────────────────────
-  if (!isValidUuid(input.wedding_id)) {
-    return validationErrorResponse([
-      { field: "wedding_id", message: "A valid wedding_id (UUID) is required." },
-    ]);
-  }
-
   if (!isValidUuid(input.guest_id)) {
     return validationErrorResponse([
       { field: "guest_id", message: "A valid guest_id (UUID) is required." },
     ]);
   }
 
-  const weddingId = input.wedding_id as string;
   const guestId = input.guest_id as string;
   const deliveryChannel = input.delivery_channel as string | undefined;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
 
-  // ── Authorization ──────────────────────────────────────────────────────────
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse("You are not a member of this wedding.");
+  const weddingId = access.wedding_id;
 
   try {
     // ── Verifică că guest aparține wedding-ului ────────────────────────────
-    const { data: guest, error: guestError } = await supabase
+    const { data: guest, error: guestError } = await supabaseServer
       .from("guests")
       .select("id, first_name, last_name, display_name")
       .eq("id", guestId)
@@ -75,7 +68,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // ── Dezactivează invitațiile active existente pentru acest guest ────────
-    const { error: deactivateError } = await supabase
+    const { error: deactivateError } = await supabaseServer
       .from("rsvp_invitations")
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq("guest_id", guestId)
@@ -91,14 +84,14 @@ export async function POST(request: NextRequest): Promise<Response> {
     const expiresAt = getTokenExpiresAt();
 
     // ── Fetch wedding pentru email ─────────────────────────────────────────
-    const { data: wedding } = await supabase
+    const { data: wedding } = await supabaseServer
       .from("weddings")
       .select("title, event_date")
       .eq("id", weddingId)
       .single();
 
     // ── Inserează invitația ────────────────────────────────────────────────
-    const { data: invitation, error: insertError } = await supabase
+    const { data: invitation, error: insertError } = await supabaseServer
       .from("rsvp_invitations")
       .insert({
         wedding_id: weddingId,

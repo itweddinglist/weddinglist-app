@@ -1,47 +1,36 @@
 // =============================================================================
 // app/api/rsvp/dashboard/route.ts
-// GET /api/rsvp/dashboard?wedding_id=...
+// GET /api/rsvp/dashboard
 // Returnează stats + lista invitați cu status RSVP
 // Autentificat — doar cuplul poate accesa
 // Source of truth: rsvp_responses (răspuns) + rsvp_invitations (delivery)
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
-import { isValidUuid } from "@/lib/sanitize";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import {
   successResponse,
-  authErrorResponse,
-  validationErrorResponse,
-  errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
 
 export async function GET(request: NextRequest): Promise<Response> {
-  // ── Auth ───────────────────────────────────────────────────────────────────
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const { searchParams } = new URL(request.url);
-  const weddingId = searchParams.get("wedding_id");
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
 
-  if (!isValidUuid(weddingId)) {
-    return validationErrorResponse([
-      { field: "wedding_id", message: "A valid wedding_id (UUID) is required." },
-    ]);
-  }
-
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  // ── Authorization ──────────────────────────────────────────────────────────
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return errorResponse(403, "FORBIDDEN", "You are not a member of this wedding.");
+  const weddingId = access.wedding_id;
 
   try {
     // ── Fetch guests + guest_events ────────────────────────────────────────
-    const { data: guestEvents, error: geError } = await supabase
+    const { data: guestEvents, error: geError } = await supabaseServer
       .from("guest_events")
       .select(`
         id,
@@ -63,7 +52,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (geError) return internalErrorResponse(geError, "GET /api/rsvp/dashboard — guest_events");
 
     // ── Fetch rsvp_responses ───────────────────────────────────────────────
-    const { data: responses, error: respError } = await supabase
+    const { data: responses, error: respError } = await supabaseServer
       .from("rsvp_responses")
       .select("*")
       .eq("wedding_id", weddingId);
@@ -71,7 +60,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     if (respError) return internalErrorResponse(respError, "GET /api/rsvp/dashboard — responses");
 
     // ── Fetch rsvp_invitations ────────────────────────────────────────────
-    const { data: invitations, error: invError } = await supabase
+    const { data: invitations, error: invError } = await supabaseServer
       .from("rsvp_invitations")
       .select("id, guest_id, delivery_channel, delivery_status, opened_at, last_sent_at, is_active")
       .eq("wedding_id", weddingId)
