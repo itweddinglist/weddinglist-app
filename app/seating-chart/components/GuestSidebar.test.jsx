@@ -44,6 +44,8 @@ const defaultProps = {
   isDraggingGuest: false,
   setHoveredGuest: vi.fn(),
   setIsDraggingGuest: vi.fn(),
+  highlightGroupId: null,
+  setHighlightGroupId: vi.fn(),
   tables: [{ id: 1, name: "Masa 1" }],
 };
 
@@ -89,5 +91,17 @@ describe("GuestSidebar", () => {
   it("secțiunea Așezați apare când searchQuery activ și există invitați așezați", () => {
     render(<GuestSidebar {...defaultProps} searchQuery="maria" />);
     expect(screen.getByText("Așezați")).toBeTruthy();
+  });
+  it("hover pe grup → setHighlightGroupId apelat", () => {
+    const setHighlightGroupId = vi.fn();
+    render(
+      <GuestSidebar
+        {...defaultProps}
+        highlightGroupId={null}
+        setHighlightGroupId={setHighlightGroupId}
+      />
+    );
+    fireEvent.mouseEnter(screen.getByText("Familie Mireasă"));
+    expect(setHighlightGroupId).toHaveBeenCalledWith("Familie Mireasă");
   });
 });

@@ -15,6 +15,8 @@ import {
   UtensilsCrossed,
   RotateCcw,
   Download,
+  SquircleDashed,
+  GalleryThumbnails,
 } from "lucide-react";
 
 export default function CanvasToolbar({
@@ -135,19 +137,25 @@ export default function CanvasToolbar({
             style={btn}
             onClick={() => setModal({ type: "rect", seats: 10, name: getNextTableName() })}
           >
-            <Minus size={13} strokeWidth={1.8} /> Drept.
+            <RectangleHorizontal size={13} strokeWidth={1.6} /> Drept.
           </button>
           <button
             style={{ ...btn, color: "#C9907A", borderColor: "rgba(201,144,122,0.35)" }}
             onClick={() => setModal({ type: "prezidiu", seats: 8, name: "Prezidiu" })}
           >
-            <RectangleHorizontal size={13} strokeWidth={1.6} /> Prezidiu
+            <GalleryThumbnails size={13} strokeWidth={1.6} style={{ transform: "rotate(180deg)" }} /> Prezidiu
           </button>
           <button
             style={{ ...btn, color: "#48BB78", borderColor: "rgba(72,187,120,0.35)" }}
             onClick={() => setModal({ type: "bar", seats: 0, name: "Candy Bar" })}
           >
             <Wine size={13} strokeWidth={1.6} /> Bar
+          </button>
+          <button
+            style={{ ...btn, color: "#9DA3BC", borderColor: "rgba(157,163,188,0.35)" }}
+            onClick={() => setModal({ type: "bar", seats: 0, name: "Ring Dans", isRing: true })}
+          >
+            <SquircleDashed size={13} strokeWidth={1.6} /> Ring
           </button>
         </div>
       </div>
@@ -183,7 +191,7 @@ export default function CanvasToolbar({
             style={{
               ...iconBtn,
               ...(lockMode
-                ? { background: "#1E2340", color: "white", borderColor: "#1E2340" }
+                ? { background: "#1E2340", color: "white", border: "1px solid #1E2340" }
                 : {}),
             }}
             onClick={() => {

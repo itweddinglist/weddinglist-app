@@ -41,6 +41,7 @@ export function SkeletonCard({ height = "120px" }) {
         display: "flex",
         flexDirection: "column",
         gap: "12px",
+        minHeight: height,
       }}
     >
       <SkeletonBox width="40%" height="14px" />
