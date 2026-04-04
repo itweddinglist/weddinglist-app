@@ -5,14 +5,16 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { getGuestEventWeddingId } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateUpdateGuestEvent } from "@/lib/validation/guest-events";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   notFoundResponse,
   validationErrorResponse,
   errorResponse,
@@ -29,8 +31,9 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
 
   if (!isValidUuid(guestEventId)) return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -43,11 +46,18 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  // Look up the wedding_id for this guest-event record
+  const { data: ge, error: geLookupError } = await supabaseServer
+    .from("guest_events")
+    .select("wedding_id")
+    .eq("id", guestEventId)
+    .maybeSingle();
 
-  // RLS lookup — returns null if not found OR user not authorized (404 in both cases)
-  const weddingId = await getGuestEventWeddingId(supabase, guestEventId);
-  if (!weddingId) return notFoundResponse("Guest-event");
+  if (geLookupError) return internalErrorResponse(geLookupError, "PUT /api/guest-events/[id] — lookup");
+  if (!ge?.wedding_id) return notFoundResponse("Guest-event");
+
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id });
+  if (!access.ok) return access.response;
 
   try {
     const updatePayload: Record<string, unknown> = {};
@@ -55,7 +65,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
     if (input.meal_choice !== undefined) updatePayload.meal_choice = input.meal_choice;
     if (input.plus_one_label !== undefined) updatePayload.plus_one_label = input.plus_one_label;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("guest_events")
       .update(updatePayload)
       .eq("id", guestEventId)
@@ -81,16 +91,25 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
   if (!isValidUuid(guestEventId)) return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  // Look up the wedding_id for this guest-event record
+  const { data: ge, error: geLookupError } = await supabaseServer
+    .from("guest_events")
+    .select("wedding_id")
+    .eq("id", guestEventId)
+    .maybeSingle();
 
-  const weddingId = await getGuestEventWeddingId(supabase, guestEventId);
-  if (!weddingId) return notFoundResponse("Guest-event");
+  if (geLookupError) return internalErrorResponse(geLookupError, "DELETE /api/guest-events/[id] — lookup");
+  if (!ge?.wedding_id) return notFoundResponse("Guest-event");
+
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id });
+  if (!access.ok) return access.response;
 
   try {
-    const { error } = await supabase
+    const { error } = await supabaseServer
       .from("guest_events")
       .delete()
       .eq("id", guestEventId);

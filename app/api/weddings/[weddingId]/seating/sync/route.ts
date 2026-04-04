@@ -7,12 +7,15 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
@@ -39,8 +42,9 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
     return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   }
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: SeatingFullSyncRequest;
   try {
@@ -53,13 +57,14 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id is required.");
   }
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   try {
-    const { data, error } = await supabase.rpc("sync_seating_editor_state", {
-      p_wedding_id:  weddingId,
+    const { data, error } = await supabaseServer.rpc("sync_seating_editor_state", {
+      p_wedding_id:  access.wedding_id,
       p_event_id:    body.event_id,
-      p_caller_uid:  auth.context.userId,
+      p_caller_uid:  authResult.ctx.app_user_id,
       p_tables:      JSON.stringify(body.tables),
       p_assignments: JSON.stringify(body.assignments),
     });

@@ -5,15 +5,16 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateCreateGuestEvent } from "@/lib/validation/guest-events";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   validationErrorResponse,
   errorResponse,
   internalErrorResponse,
@@ -23,8 +24,9 @@ import type { GuestEventWithGuest } from "@/types/guest-events";
 // ─── GET /api/guest-events?wedding_id=X&event_id=Y ─────────────────────────
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   const weddingId = request.nextUrl.searchParams.get("wedding_id");
   if (!weddingId || !isValidUuid(weddingId)) {
@@ -37,19 +39,17 @@ export async function GET(request: NextRequest): Promise<Response> {
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id query parameter is required.");
   }
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse("You are not a member of this wedding.");
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   try {
     // guest_events joined with guest info for display
     // Keep focused: list guest_events for editing/display only.
     // Avoid adding more joins here — payload grows fast.
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("guest_events")
       .select(`*, guest:guests(id, first_name, last_name, display_name, is_vip, side)`)
-      .eq("wedding_id", weddingId)
+      .eq("wedding_id", access.wedding_id)
       .eq("event_id", eventId)
       .order("created_at", { ascending: true });
 
@@ -64,8 +64,9 @@ export async function GET(request: NextRequest): Promise<Response> {
 // ─── POST /api/guest-events ─────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -78,18 +79,16 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, input.wedding_id);
-  if (!isMember) return forbiddenResponse("You are not a member of this wedding.");
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id });
+  if (!access.ok) return access.response;
 
   try {
     // Verify event belongs to this wedding (cross-wedding guard)
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await supabaseServer
       .from("events")
       .select("id")
       .eq("id", input.event_id)
-      .eq("wedding_id", input.wedding_id)
+      .eq("wedding_id", access.wedding_id)
       .maybeSingle();
 
     if (eventError || !event) {
@@ -97,21 +96,21 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // Verify guest belongs to this wedding (cross-wedding guard)
-    const { data: guest, error: guestError } = await supabase
+    const { data: guest, error: guestError } = await supabaseServer
       .from("guests")
       .select("id")
       .eq("id", input.guest_id)
-      .eq("wedding_id", input.wedding_id)
+      .eq("wedding_id", access.wedding_id)
       .maybeSingle();
 
     if (guestError || !guest) {
       return errorResponse(400, "INVALID_GUEST", "Guest does not exist or belongs to a different wedding.");
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("guest_events")
       .insert({
-        wedding_id: input.wedding_id,
+        wedding_id: access.wedding_id,
         event_id: input.event_id,
         guest_id: input.guest_id,
         attendance_status: input.attendance_status,

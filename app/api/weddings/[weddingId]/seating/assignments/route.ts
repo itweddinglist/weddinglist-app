@@ -4,14 +4,15 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
@@ -26,21 +27,20 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
   }
 
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   const eventId = request.nextUrl.searchParams.get("event_id");
   if (!eventId || !isValidUuid(eventId)) {
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id query parameter is required.");
   }
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse();
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  if (!access.ok) return access.response;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("seat_assignments")
       .select(`
         guest_event_id,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
         guest_events!inner ( guest_id, event_id, wedding_id )
       `)
       .eq("guest_events.event_id", eventId)
-      .eq("guest_events.wedding_id", weddingId);
+      .eq("guest_events.wedding_id", access.wedding_id);
 
     if (error) return internalErrorResponse(error, "GET seating/assignments");
 

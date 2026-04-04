@@ -11,14 +11,15 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateBulkCreateGuestEvents } from "@/lib/validation/guest-events";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   validationErrorResponse,
   errorResponse,
   internalErrorResponse,
@@ -26,8 +27,9 @@ import {
 import type { BulkCreateResult } from "@/types/guest-events";
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -40,18 +42,16 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, input.wedding_id);
-  if (!isMember) return forbiddenResponse("You are not a member of this wedding.");
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id });
+  if (!access.ok) return access.response;
 
   try {
     // Verify event belongs to this wedding
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await supabaseServer
       .from("events")
       .select("id")
       .eq("id", input.event_id)
-      .eq("wedding_id", input.wedding_id)
+      .eq("wedding_id", access.wedding_id)
       .maybeSingle();
 
     if (eventError || !event) {
@@ -59,10 +59,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // Fetch all guests for this wedding
-    const { data: guests, error: guestsError } = await supabase
+    const { data: guests, error: guestsError } = await supabaseServer
       .from("guests")
       .select("id")
-      .eq("wedding_id", input.wedding_id);
+      .eq("wedding_id", access.wedding_id);
 
     if (guestsError) return internalErrorResponse(guestsError, "POST /api/guest-events/bulk — fetch guests");
 
@@ -74,11 +74,11 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // Fetch existing associations for this event
-    const { data: existing, error: existingError } = await supabase
+    const { data: existing, error: existingError } = await supabaseServer
       .from("guest_events")
       .select("guest_id")
       .eq("event_id", input.event_id)
-      .eq("wedding_id", input.wedding_id);
+      .eq("wedding_id", access.wedding_id);
 
     if (existingError) return internalErrorResponse(existingError, "POST /api/guest-events/bulk — fetch existing");
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const newRows = guests
       .filter((g) => !existingGuestIds.has(g.id))
       .map((g) => ({
-        wedding_id: input.wedding_id,
+        wedding_id: access.wedding_id,
         event_id: input.event_id,
         guest_id: g.id,
         attendance_status: input.attendance_status,
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // Upsert with ignoreDuplicates as safety net against race conditions
-    const { data: inserted, error: insertError } = await supabase
+    const { data: inserted, error: insertError } = await supabaseServer
       .from("guest_events")
       .upsert(newRows, { onConflict: "event_id,guest_id", ignoreDuplicates: true })
       .select("id");
