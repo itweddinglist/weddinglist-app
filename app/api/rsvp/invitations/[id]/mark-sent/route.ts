@@ -6,11 +6,13 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import {
   successResponse,
-  authErrorResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
@@ -23,8 +25,9 @@ export async function PATCH(
   request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   const { id } = await context.params;
 
@@ -42,12 +45,10 @@ export async function PATCH(
     return errorResponse(400, "INVALID_CHANNEL", "Invalid delivery channel.");
   }
 
-  const supabase = createAuthenticatedClient(auth.context.token);
-
   try {
     const now = new Date().toISOString();
 
-    const { error } = await supabase
+    const { error } = await supabaseServer
       .from("rsvp_invitations")
       .update({
         delivery_channel: deliveryChannel ?? null,

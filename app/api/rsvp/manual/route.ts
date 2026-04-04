@@ -6,12 +6,15 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
   validationErrorResponse,
   errorResponse,
   internalErrorResponse,
@@ -20,8 +23,9 @@ import {
 const VALID_STATUSES = ["accepted", "declined", "maybe"] as const;
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -47,21 +51,23 @@ export async function POST(request: NextRequest): Promise<Response> {
   const guestEventId = input.guest_event_id as string;
   const status = input.status as typeof VALID_STATUSES[number];
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
 
   try {
-    // Verifică că guest_event aparține unui wedding unde userul e membru
-    const { data: ge, error: geError } = await supabase
+    // Verifică că guest_event aparține wedding-ului activ
+    const { data: ge, error: geError } = await supabaseServer
       .from("guest_events")
       .select("id, wedding_id, event_id, guest_id")
       .eq("id", guestEventId)
+      .eq("wedding_id", access.wedding_id)
       .maybeSingle();
 
     if (geError) return internalErrorResponse(geError, "POST /api/rsvp/manual — lookup");
     if (!ge) return errorResponse(404, "NOT_FOUND", "Guest event not found.");
 
     // Upsert în rsvp_responses
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await supabaseServer
       .from("rsvp_responses")
       .upsert({
         wedding_id: ge.wedding_id,
