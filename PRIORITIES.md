@@ -420,3 +420,40 @@
 - JWT-ul nu e expus în client — fetch-urile dashboard merg fără Authorization header
 - Funcția copyLink ștearsă temporar din app/rsvp/page.tsx — re-adăugată când implementăm butonul "Copiază link"
 - Cod șters temporar trebuie documentat explicit cu motivul și când se re-adaugă
+## Update Apr 4, 2026
+
+### Roadmap — status actualizat Apr 4, 2026
+
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP | ✅ COMPLETĂ (7.1-7.8) |
+| Faza 8 Export & Compliance | ✅ COMPLETĂ (8.1-8.5) |
+| **Faza 9 Reliability & QA** | ⏳ **URMĂTOR** |
+| Faza 10 Power Features | ⏳ |
+
+### Teste: 588/588 verzi
+### Progres total: ~67%
+
+### Decizii Apr 4, 2026
+- Export JSON — token_hash RSVP exclus permanent
+- Import JSON — wedding nou ÎNTOTDEAUNA, niciodată merge
+- Export PDF — Roboto pentru diacritice RO, wrap={false} pe mese
+- GDPR delete — flow în 9 pași, sole owner blocat, best-effort email
+- Audit Trail — append-only ledger, service_role only, 12 acțiuni controlate
+
+### Adăugat în Before Launch (Apr 4)
+- Privacy Policy WordPress — actualizată cu Art. 17 și Art. 20 GDPR
+- Testare manuală Export JSON/PDF/Import înainte de launch
+
+### Cod șters temporar — de readăugat
+- Funcția copyLink din app/rsvp/page.tsx — re-adăugată când implementăm butonul "Copiază link"

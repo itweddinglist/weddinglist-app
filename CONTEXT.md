@@ -1351,3 +1351,102 @@ app/lib/
 
 ### Teste: 541/541 verzi (neschimbat)
 ### Progres total: ~60% din produs complet
+## Update Apr 4, 2026
+
+### Realizări sesiunea Apr 4, 2026
+- ✅ Faza 8.1 Export JSON — API, logică pură, UI (PR #72)
+- ✅ Faza 8.2 Import JSON — import cu ID Map complet, validare 3 straturi, preview, UI (PR #73)
+- ✅ Faza 8.3 Export PDF — @react-pdf/renderer, font Roboto diacritice, plan mese + lista invitați (PR #74)
+- ✅ Faza 8.4 GDPR — account deletion flow complet, settings page, email stub (PR #75)
+- ✅ Faza 8.5 Audit Trail — append-only ledger, wl_audit helper, integrat în toate routes (PR #76)
+- ✅ Teste: 588/588 verzi
+
+### PR-uri merged în develop (total 76 la Apr 4, 2026)
+- #72: feat(export): faza 8.1 - json export api, logic, tests, ui page
+- #73: feat(import): faza 8.2 - json import, validation, preview, ui
+- #74: feat(export): faza 8.3 - pdf export with diacritics support, seating plan, guest list
+- #75: feat(gdpr): faza 8.4 - account deletion flow
+- #76: feat(audit): faza 8.5 - audit trail
+
+### Fișiere noi adăugate
+- lib/export/json-export.ts + test — 15 teste
+- lib/export/pdf-export.tsx
+- lib/import/json-import.ts
+- lib/import/validate-import.ts + test — 19 teste
+- lib/audit/wl-audit.ts + test — 13 teste
+- lib/gdpr/send-deletion-email.ts
+- app/api/export/json/route.ts
+- app/api/export/pdf/route.ts
+- app/api/import/json/route.ts
+- app/api/account/route.ts
+- app/export/page.tsx
+- app/settings/page.tsx
+- supabase/migrations/20260404000001_audit_logs.sql
+
+### Decizii arhitecturale noi (Apr 4, 2026)
+
+#### Export JSON (8.1)
+- Contract: format, schema_version, exported_at, wedding_id, counts, data
+- Arrays mereu prezente (niciodată null)
+- Ordonare deterministă (sort_order, created_at, id)
+- token_hash RSVP exclus din export
+
+#### Import JSON (8.2)
+- Import creează ÎNTOTDEAUNA wedding nou — niciodată merge
+- ID Map complet pentru toate relațiile (13 entități)
+- Ordine strictă: wedding → events → guest_groups → guests → guest_events → tables → seats → seat_assignments → budget_items → payments → rsvp_invitations → rsvp_responses
+- Failure → wedding marcat draft cu import_error
+- Max 10MB, max 1000 guests, max 200 tables
+- Preview înainte de confirmare cu warnings
+
+#### Export PDF (8.3)
+- Font Roboto pentru diacritice românești (ț, ș, ă, î, â)
+- wrap={false} pe mese — nu se taie între pagini
+- Pagina 1: Header + Stats + Plan mese
+- Pagina 2: Listă invitați
+
+#### GDPR (8.4)
+- Flow: ownership check → deleting → dezactivare RSVP → revoke members → soft delete weddings → email → hard delete identity → hard delete user
+- Sole owner protection
+- Idempotency — blochează dublu delete
+- Email best-effort (nu blochează flow-ul)
+- status: active → deleting → [hard deleted] | deletion_failed
+
+#### Audit Trail (8.5)
+- Append-only ledger — zero acces direct din client
+- Scriere exclusiv prin service_role
+- actor_type: 'user' | 'system'
+- request_id pentru corelarea logurilor din același flow
+- Metadata whitelist: reason_code, filename, counts, route, channel, provider, status_context, requested_wedding_id
+- Best-effort but awaited (try/catch swallow controlat)
+- 12 acțiuni controlate
+
+### Acțiuni audit controlate
+```
+account.delete_requested, account.delete_completed, account.delete_failed
+export.json_completed, export.pdf_completed
+import.json_started, import.json_completed, import.json_failed
+auth.provision_started, auth.provision_completed, auth.provision_failed
+security.unauthorized_access
+```
+
+### Roadmap — status actualizat Apr 4, 2026
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP | ✅ COMPLETĂ (7.1-7.8) |
+| Faza 8 Export & Compliance | ✅ COMPLETĂ (8.1-8.5) |
+| **Faza 9 Reliability & QA** | ⏳ **URMĂTOR** |
+| Faza 10 Power Features | ⏳ |
+
+### Teste: 588/588 verzi
+### Progres total: ~67% din produs complet
