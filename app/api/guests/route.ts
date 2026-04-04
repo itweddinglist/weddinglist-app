@@ -1,48 +1,42 @@
 // =============================================================================
 // app/api/guests/route.ts
-// GET  /api/guests?wedding_id=X   — List guests for a wedding
-// POST /api/guests                — Create a new guest
+// GET  /api/guests   — List guests for the active wedding
+// POST /api/guests   — Create a new guest
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import { extractAuth } from "@/lib/auth";
-import { createAuthenticatedClient } from "@/lib/supabase-server";
-import { isWeddingMember } from "@/lib/authorization";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
+import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateCreateGuest } from "@/lib/validation/guests";
-import { isValidUuid } from "@/lib/sanitize";
 import {
   successResponse,
-  authErrorResponse,
-  forbiddenResponse,
   validationErrorResponse,
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
 import type { GuestWithRelations } from "@/types/guests";
 
-// ─── GET /api/guests?wedding_id=X ───────────────────────────────────────────
+// ─── GET /api/guests ─────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
-  const weddingId = request.nextUrl.searchParams.get("wedding_id");
-  if (!weddingId || !isValidUuid(weddingId)) {
-    return errorResponse(400, "INVALID_WEDDING_ID", "A valid wedding_id query parameter is required.");
-  }
-
-  const supabase = createAuthenticatedClient(auth.context.token);
-
-  const isMember = await isWeddingMember(supabase, weddingId);
-  if (!isMember) return forbiddenResponse("You are not a member of this wedding.");
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
 
   try {
     // Full list for MVP — pagination at Phase 4
     // guest_events included intentionally: seating chart needs attendance_status per event
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("guests")
       .select(`*, guest_group:guest_groups(id, name), guest_events(*)`)
-      .eq("wedding_id", weddingId)
+      .eq("wedding_id", access.wedding_id)
       .order("created_at", { ascending: true });
 
     if (error) return internalErrorResponse(error, "GET /api/guests");
@@ -53,11 +47,12 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 }
 
-// ─── POST /api/guests ───────────────────────────────────────────────────────
+// ─── POST /api/guests ────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const auth = extractAuth(request);
-  if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+  const ctx = await getServerAppContext(request);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) return authResult.response;
 
   let body: unknown;
   try {
@@ -70,19 +65,19 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const supabase = createAuthenticatedClient(auth.context.token);
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
 
-  const isMember = await isWeddingMember(supabase, input.wedding_id);
-  if (!isMember) return forbiddenResponse("You are not a member of this wedding.");
+  const weddingId = access.wedding_id;
 
   try {
     // Verify guest_group_id belongs to the same wedding (cross-wedding guard)
     if (input.guest_group_id) {
-      const { data: group, error: groupError } = await supabase
+      const { data: group, error: groupError } = await supabaseServer
         .from("guest_groups")
         .select("id")
         .eq("id", input.guest_group_id)
-        .eq("wedding_id", input.wedding_id)
+        .eq("wedding_id", weddingId)
         .maybeSingle();
 
       if (groupError || !group) {
@@ -95,10 +90,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     // 3.7 Data sanitation — already applied in validateCreateGuest via sanitizeName:
     //   trim, strip HTML, collapse spaces, max 100 chars
     const warnings: string[] = [];
-    const { data: duplicates } = await supabase
+    const { data: duplicates } = await supabaseServer
       .from("guests")
       .select("id")
-      .eq("wedding_id", input.wedding_id)
+      .eq("wedding_id", weddingId)
       .eq("first_name", input.first_name)
       .eq("last_name", input.last_name ?? "")
       .limit(1);
@@ -109,10 +104,10 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("guests")
       .insert({
-        wedding_id: input.wedding_id,
+        wedding_id: weddingId,
         first_name: input.first_name,
         last_name: input.last_name,
         display_name: input.display_name,
