@@ -1,7 +1,10 @@
-import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+﻿import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import AppShell from "./components/AppShell";
 import CookieConsent from "./components/CookieConsent";
+import { PostHogProvider } from "./lib/posthog/provider";
+import { Suspense } from "react";
+import { PostHogPageView } from "./lib/posthog/pageview";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
@@ -9,7 +12,6 @@ const cormorant = Cormorant_Garamond({
   weight: ["300", "400", "600"],
   style: ["normal", "italic"],
 });
-
 const dmSans = DM_Sans({
   variable: "--font-body",
   subsets: ["latin"],
@@ -28,8 +30,13 @@ export default function RootLayout({ children }) {
         className={`${cormorant.variable} ${dmSans.variable}`}
         suppressHydrationWarning
       >
-        <AppShell>{children}</AppShell>
-        <CookieConsent />
+        <PostHogProvider>
+          <Suspense fallback={null}>
+            <PostHogPageView />
+          </Suspense>
+          <AppShell>{children}</AppShell>
+          <CookieConsent />
+        </PostHogProvider>
       </body>
     </html>
   );
