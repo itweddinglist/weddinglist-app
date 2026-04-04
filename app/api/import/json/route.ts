@@ -10,6 +10,7 @@ import { extractAuth } from "@/lib/auth";
 import { createAuthenticatedClient } from "@/lib/supabase-server";
 import { validateImportPayload, buildImportPreview, MAX_FILE_SIZE_BYTES } from "@/lib/import/validate-import";
 import { importWeddingJson } from "@/lib/import/json-import";
+import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   successResponse,
   authErrorResponse,
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────
   const auth = extractAuth(request);
   if (!auth.authenticated) return authErrorResponse(auth.error.code, auth.error.message);
+
+  const requestId = crypto.randomUUID();
 
   // ── Content-Type check ─────────────────────────────────────────────────────
   const contentType = request.headers.get("content-type") ?? "";
@@ -50,25 +53,54 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const exportData = validation.data;
 
-  // ── Preview mode (GET cu ?preview=true simulat prin query param) ───────────
+  // ── Preview mode ───────────────────────────────────────────────────────────
   const { searchParams } = new URL(request.url);
   if (searchParams.get("preview") === "true") {
     const preview = buildImportPreview(exportData);
     return successResponse({ preview });
   }
 
+  // ── Audit: import started ──────────────────────────────────────────────────
+  await wl_audit("import.json_started", {
+    request_id: requestId,
+    actor_type: "user",
+    app_user_id: auth.context.userId,
+    metadata: {
+      counts: exportData.counts as unknown as Record<string, number>,
+    },
+  });
+
   // ── Import ─────────────────────────────────────────────────────────────────
   const supabase = createAuthenticatedClient(auth.context.token);
-
   const result = await importWeddingJson(supabase, exportData, auth.context.userId);
 
   if (!result.success) {
+    await wl_audit("import.json_failed", {
+      request_id: requestId,
+      actor_type: "user",
+      app_user_id: auth.context.userId,
+      metadata: {
+        reason_code: result.step ?? "unknown",
+      },
+    });
+
     return errorResponse(
       422,
       "IMPORT_FAILED",
       `Import eșuat la pasul "${result.step}": ${result.error}`
     );
   }
+
+  // ── Audit: import completed ────────────────────────────────────────────────
+  await wl_audit("import.json_completed", {
+    request_id: requestId,
+    actor_type: "user",
+    app_user_id: auth.context.userId,
+    wedding_id: result.new_wedding_id,
+    metadata: {
+      counts: result.counts,
+    },
+  });
 
   return successResponse({
     new_wedding_id: result.new_wedding_id,
