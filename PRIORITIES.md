@@ -469,3 +469,31 @@
 | 9.5 Recovery / rollback — cancel stale retries + snapshot hashing stabil | ✅ COMPLET — PR #80 |
 
 ### Progres total: ~70%
+
+## Update Apr 4, 2026 — Faza 10 + Auth Refactor
+
+### Realizări
+- ✅ Task Engine implementat — lib/task-engine.ts, 24 teste
+- ✅ Dashboard Selectors — buildTaskEngineContext din Supabase
+- ✅ Dashboard conectat la Task Engine cu event_date real
+- ✅ Feature flags activate (wpBridge, guests, budget, rsvp)
+- ✅ Server App Context Layer — refactor complet auth intern
+
+### Auth Layer — decizii locked
+- JWT client-side = eliminat din internal routes
+- extractAuth = deprecated pentru browser routes
+- getServerAppContext = entry point unic
+- Model: WP bootstrap → ServerAppContext → Supabase
+
+### Faza 10 — status curent
+- ✅ Task Engine
+- ✅ Dashboard Selectors
+- ✅ Dashboard conectat
+- ✅ Auth Layer Refactor + dashboard migrat
+- ⏳ Migrare API routes: guests, budget, rsvp, export
+- ⏳ Bulk seat group (10.1)
+- ⏳ Batch writes seating (10.15)
+- ⏳ Optimistic UI light (10.14)
+
+### Teste: 639/639 verzi
+### Progres total: ~72%

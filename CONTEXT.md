@@ -1489,3 +1489,78 @@ security.unauthorized_access
 
 ### Teste: 588/588 verzi
 ### Progres total: ~70% din produs complet
+
+## Update Apr 4, 2026 — Faza 10 + Auth Refactor
+
+### Realizări sesiunea Apr 4, 2026 (continuare)
+- ✅ Task Engine — lib/task-engine.ts, funcție pură generateTasks(), 8 reguli, 24 teste (PR #82)
+- ✅ Dashboard Selectors — lib/selectors/dashboard-selectors.ts, buildTaskEngineContext din Supabase (PR #83)
+- ✅ Dashboard conectat la Task Engine — page.tsx rescris, event_date din Supabase (PR #84)
+- ✅ Feature flags activate — wpBridgeEnabled, guestsEnabled, budgetEnabled, rsvpEnabled (PR #85)
+- ✅ Server App Context Layer — refactor complet auth intern, lib/server-context/ (PR #86)
+- ✅ Teste: 639/639 verzi
+
+### PR-uri merged în develop (continuare Apr 4, 2026)
+- #82: feat(dashboard): task engine - functie pura, 24 teste
+- #83: feat(dashboard): dashboard selectors - agregare date supabase pentru task engine
+- #84: feat(dashboard): conectare task engine in dashboard, event_date din supabase
+- #85: feat(auth): activeaza feature flags - wpbridge, guests, budget, rsvp
+- #86: feat(auth): server app context layer - refactor auth intern, migrare dashboard stats
+
+### Fișiere noi adăugate (Apr 4, 2026 — sesiunea 2)
+- lib/task-engine.ts + lib/task-engine.test.ts — 24 teste
+- lib/selectors/dashboard-selectors.ts
+- lib/server-context/types.ts
+- lib/server-context/cache.ts
+- lib/server-context/get-server-app-context.ts + test — 12 teste
+- lib/server-context/require-authenticated.ts + test — 5 teste
+- lib/server-context/require-wedding-access.ts + test — 10 teste
+- lib/server-context/index.ts
+
+### Fișiere modificate (Apr 4, 2026 — sesiunea 2)
+- app/dashboard/page.tsx — Task Engine conectat, event_date din Supabase
+- app/api/dashboard/stats/route.ts — migrat la Server App Context Layer
+- app/lib/auth/feature-flags.ts — wpBridgeEnabled: true, guestsEnabled: true, budgetEnabled: true, rsvpEnabled: true
+- types/dashboard.ts — adăugat event_date
+- vitest.config.js — adăugat alias @/*
+
+### Auth Layer Refactor — decizii locked (Apr 4, 2026)
+- JWT client-side eliminat complet din internal API routes
+- Model unic: WP bootstrap (server-side) → ServerAppContext → authorization → Supabase
+- extractAuth deprecated pentru browser/internal routes
+- getServerAppContext = entry point unic pentru auth
+- requireAuthenticatedContext + requireWeddingAccess = helperi standard
+- supabaseServer folosit DOAR după auth + authz
+- Cache L1 server-side 30s per cookie wordpress_logged_in_*
+- Dashboard = active-wedding-only (nu acceptă wedding_id din client)
+
+### Roadmap — status actualizat Apr 4, 2026
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat |
+| Faza 7 RSVP | ✅ COMPLETĂ (7.1-7.8) |
+| Faza 8 Export & Compliance | ✅ COMPLETĂ (8.1-8.5) |
+| Faza 9 Reliability & QA | ✅ COMPLETĂ |
+| **Faza 10 Power Features** | ⏳ **ÎN PROGRES** |
+
+### Faza 10 — status
+- ✅ Task Engine — generateTasks() funcție pură, 8 reguli
+- ✅ Dashboard Selectors — buildTaskEngineContext()
+- ✅ Dashboard conectat la Task Engine
+- ✅ Auth Layer Refactor — Server App Context Layer
+- ⏳ Migrare API routes rămase (guests, budget, rsvp, export)
+- ⏳ Bulk seat group (10.1)
+- ⏳ Batch writes seating (10.15)
+- ⏳ Optimistic UI light (10.14)
+
+### Teste: 639/639 verzi
+### Progres total: ~72% din produs complet
