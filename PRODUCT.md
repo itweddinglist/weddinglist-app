@@ -523,3 +523,29 @@ Dacă Voxel schimbă structura de date pentru Vendors, bridge-ul trebuie să fie
 - copyLink temporar șters din dashboard — re-adăugat când implementăm butonul "Copiază link"
 
 ### Progres total: ~67%
+## Update Apr 4, 2026 — Faza 9 completă
+
+### Roadmap — actualizat
+```
+1. Seating polish ✅
+2. Faza 0A — Foundation ✅
+3. Faza 0B — Auth & Data ✅
+4. Faza 2A — Seating Performance Foundation ✅
+5. Faza 3 — Guests Core ✅ (~85%)
+6. Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7. Faza 6 — Seating ↔ Guests Integration ✅
+8. Faza 2B — Seating Performance Validation ✅ parțial (2B.2, 2B.3)
+9. Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+10. UI Lista Invitați ✅ implementat — netestat vizual până la launch
+11. Faza 7 — RSVP ✅ COMPLETĂ (7.1-7.8)
+12. Faza 8 — Export & Compliance ✅ COMPLETĂ (8.1-8.5)
+13. Faza 9 — Reliability & QA ✅ COMPLETĂ
+14. Faza 10 — Power Features ⏳ URMĂTOR
+```
+
+### Realizări sesiunea Apr 4, 2026 (Faza 9)
+- ✅ Dashboard statistici reale — types/dashboard.ts + API endpoint + page rescrisă
+- ✅ Cancel stale retries + snapshot hashing stabil în useSeatingSync
+- ✅ Teste: 588/588 verzi
+
+### Progres total: ~70%

@@ -457,3 +457,15 @@
 
 ### Cod șters temporar — de readăugat
 - Funcția copyLink din app/rsvp/page.tsx — re-adăugată când implementăm butonul "Copiază link"
+## Update Apr 4, 2026 — Faza 9 completă
+
+### Faza 9 — STATUS FINAL ✅
+
+| Item | Status |
+|------|--------|
+| 9.1 Overview statistici nuntă (invitați, buget, RSVP) | ✅ COMPLET — PR #77 |
+| 9.3 Teste critice — import, export, provisioning, migration | ✅ ACOPERIT — 34 teste existente (json-export + json-import) |
+| 9.4 Logging critical flows — auth, hydration, RSVP | ✅ ACOPERIT — wl-audit.ts + 13 teste |
+| 9.5 Recovery / rollback — cancel stale retries + snapshot hashing stabil | ✅ COMPLET — PR #80 |
+
+### Progres total: ~70%

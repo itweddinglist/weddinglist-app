@@ -1450,3 +1450,42 @@ security.unauthorized_access
 
 ### Teste: 588/588 verzi
 ### Progres total: ~67% din produs complet
+## Update Apr 4, 2026 — Faza 9 completă
+
+### Realizări sesiunea Apr 4, 2026 (continuare)
+- ✅ Faza 9.1 Dashboard statistici reale — endpoint + types + page rescrisă (PR #77)
+- ✅ Faza 9.5 Cancel stale retries + snapshot hashing stabil în useSeatingSync (PR #80)
+- ✅ Teste: 588/588 verzi (neschimbat)
+
+### PR-uri merged în develop (total 80 la Apr 4, 2026)
+- #77: feat(dashboard): faza 9.1 - statistici reale din supabase
+- #80: fix(seating): faza 9.5 - cancel stale retries + snapshot hashing stabil
+
+### Fișiere noi adăugate (Faza 9)
+- types/dashboard.ts — contract locked DashboardStats
+- app/api/dashboard/stats/route.ts — GET endpoint cu 8 queries paralele
+- app/dashboard/page.tsx — rescris din page.js, date reale, skeleton loading, error/empty state
+
+### Fișiere modificate (Faza 9)
+- lib/seating/use-seating-sync.ts — retryTimerRef + stableSnapshotHash + cleanup complet
+
+### Roadmap — status actualizat Apr 4, 2026
+| Fază | Status |
+|------|--------|
+| Seating Chart | ✅ ~9.0/10 |
+| Faza 0A Foundation | ✅ |
+| Faza 0B Auth & Data | ✅ |
+| Faza 2A Seating Perf | ✅ |
+| Faza 3 Guests Core | ✅ ~85% |
+| Faza 5 Budget Core | ✅ 5.1, 5.2, 5.3 |
+| Faza 6 Seating ↔ Guests | ✅ |
+| Faza 2B Seating Perf Validation | ✅ parțial (2B.2, 2B.3) |
+| Faza 4 Vendors Mirror | ⏳ SĂRIT — blocat pe Voxel |
+| UI Lista Invitați | ✅ implementat — netestat vizual până la launch |
+| Faza 7 RSVP | ✅ COMPLETĂ (7.1-7.8) |
+| Faza 8 Export & Compliance | ✅ COMPLETĂ (8.1-8.5) |
+| **Faza 9 Reliability & QA** | ✅ **COMPLETĂ** |
+| Faza 10 Power Features | ⏳ URMĂTOR |
+
+### Teste: 588/588 verzi
+### Progres total: ~70% din produs complet
