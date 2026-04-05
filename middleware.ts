@@ -91,7 +91,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     const { success } = await limiter.limit(key);
 
     if (!success) {
-      console.log(
+      console.warn(
         JSON.stringify({
           event: "RATE_LIMIT_HIT",
           key_hash: await sha256hex(key),
@@ -112,7 +112,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     }
   } catch {
     // Fail-open — Redis indisponibil nu blochează utilizatorii legitimi
-    console.log(
+    console.error(
       JSON.stringify({
         event: "RATE_LIMIT_STORE_UNAVAILABLE",
         route: pathname,

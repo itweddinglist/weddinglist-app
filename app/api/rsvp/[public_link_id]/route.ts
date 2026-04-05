@@ -34,7 +34,7 @@ function getPublicClient() {
 
 // Log intern structurat — fără PII, fără token raw
 function logInternal(event: string, extra: Record<string, unknown>) {
-  console.log(JSON.stringify({ event, ...extra, timestamp: new Date().toISOString() }));
+  console.warn(JSON.stringify({ event, ...extra, timestamp: new Date().toISOString() }));
 }
 
 // ─── GET /api/rsvp/[public_link_id] ──────────────────────────────────────────
