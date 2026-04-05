@@ -63,6 +63,10 @@ export default function RsvpDashboard() {
   const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set());
   const [copyingLinks, setCopyingLinks] = useState<Set<string>>(new Set());
   const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
+  // Cache guestId → rawToken din sesiunea curentă.
+  // Token-ul raw nu e stocat în DB (doar SHA-256), deci nu poate fi recuperat
+  // după page refresh fără un nou POST.
+  const [generatedTokens, setGeneratedTokens] = useState<Map<string, string>>(new Map());
   const [manualOverride, setManualOverride] = useState<string | null>(null);
 
   const weddingId = sessionState.status === "authenticated" ? sessionState.activeWeddingId : null;
@@ -128,7 +132,13 @@ export default function RsvpDashboard() {
         body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
       });
       const json = await res.json();
-      if (json.success) await fetchData();
+      if (json.success) {
+        // Cacheăm token-ul pentru copyLink ulterior (fără request suplimentar)
+        if (json.data?.token) {
+          setGeneratedTokens((prev) => new Map(prev).set(guestId, json.data.token));
+        }
+        await fetchData();
+      }
     } finally {
       setGeneratingLinks((prev) => {
         const next = new Set(prev);
@@ -179,67 +189,83 @@ export default function RsvpDashboard() {
 
   const copyLink = async (guestId: string) => {
     if (!weddingId) return;
-    setCopyingLinks((prev) => new Set(prev).add(guestId));
-    try {
-      const res = await fetch("/api/rsvp/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
-      });
-      const json = await res.json();
-      if (!json.success || !json.data?.token) {
-        alert("Nu am putut genera link-ul RSVP.");
-        return;
-      }
 
-      const url = getPublicRsvpUrl(json.data.token);
+    // 1. Token disponibil în cache (generat în sesiunea curentă) → copiem fără request
+    const cachedToken = generatedTokens.get(guestId);
+    let tokenToCopy = cachedToken ?? null;
 
-      let copied = false;
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        try {
-          await navigator.clipboard.writeText(url);
-          copied = true;
-        } catch {
-          // fallback la textarea
+    if (!tokenToCopy) {
+      // 2. Token nu e în cache.
+      //    - Dacă invitația activă există: raw token-ul nu e stocat în DB (doar SHA-256),
+      //      deci e imposibil să-l recuperăm fără un nou request. Generăm un token nou
+      //      (POST dezactivează cel vechi automat). Aceasta e singura opțiune fără
+      //      schimbare de schemă DB sau de rută RSVP.
+      //    - Dacă invitația nu există: creăm una nouă.
+      setCopyingLinks((prev) => new Set(prev).add(guestId));
+      try {
+        const res = await fetch("/api/rsvp/invitations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
+        });
+        const json = await res.json();
+        if (!json.success || !json.data?.token) {
+          alert("Nu am putut genera link-ul RSVP.");
+          return;
         }
-      }
-      if (!copied) {
-        const ta = document.createElement("textarea");
-        ta.value = url;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        try {
-          document.execCommand("copy");
-          copied = true;
-        } finally {
-          document.body.removeChild(ta);
-        }
-      }
-
-      if (copied) {
+        tokenToCopy = json.data.token as string;
+        setGeneratedTokens((prev) => new Map(prev).set(guestId, tokenToCopy!));
         await fetchData();
-        setCopiedLinks((prev) => new Set(prev).add(guestId));
-        setTimeout(() => {
-          setCopiedLinks((prev) => {
-            const next = new Set(prev);
-            next.delete(guestId);
-            return next;
-          });
-        }, 2000);
-      } else {
-        alert("Nu am putut copia în clipboard.");
+      } catch {
+        alert("Eroare la generarea link-ului RSVP.");
+        return;
+      } finally {
+        setCopyingLinks((prev) => {
+          const next = new Set(prev);
+          next.delete(guestId);
+          return next;
+        });
       }
-    } catch {
-      alert("Eroare la generarea link-ului RSVP.");
-    } finally {
-      setCopyingLinks((prev) => {
-        const next = new Set(prev);
-        next.delete(guestId);
-        return next;
-      });
+    }
+
+    // 3. Copiem URL-ul în clipboard
+    const url = getPublicRsvpUrl(tokenToCopy);
+    let copied = false;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch {
+        // fallback la textarea
+      }
+    }
+    if (!copied) {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand("copy");
+        copied = true;
+      } finally {
+        document.body.removeChild(ta);
+      }
+    }
+
+    if (copied) {
+      setCopiedLinks((prev) => new Set(prev).add(guestId));
+      setTimeout(() => {
+        setCopiedLinks((prev) => {
+          const next = new Set(prev);
+          next.delete(guestId);
+          return next;
+        });
+      }, 2000);
+    } else {
+      alert("Nu am putut copia în clipboard.");
     }
   };
 
