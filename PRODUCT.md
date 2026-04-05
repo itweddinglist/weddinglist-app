@@ -595,3 +595,55 @@ Faza 10 — Power Features ⏳ ÎN PROGRES
 - Rulează la fiecare load dashboard
 
 ### Progres total: ~72%
+
+## Update Apr 5, 2026 — Faza 10 continuă + Before Launch polish
+
+### Roadmap — actualizat
+
+```
+1.  Seating polish ✅
+2.  Faza 0A — Foundation ✅
+3.  Faza 0B — Auth & Data ✅
+4.  Faza 2A — Seating Performance Foundation ✅
+5.  Faza 3 — Guests Core ✅ (~90%)
+6.  Faza 5 — Budget Core ✅ (5.1, 5.2, 5.3)
+7.  Faza 6 — Seating ↔ Guests Integration ✅
+8.  Faza 2B — Seating Performance Validation ✅ parțial (2B.2, 2B.3)
+9.  Faza 4 — Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+10. UI Lista Invitați ✅
+11. Faza 7 — RSVP ✅ COMPLETĂ (7.1-7.8)
+12. Faza 8 — Export & Compliance ✅ COMPLETĂ (8.1-8.5)
+13. Faza 9 — Reliability & QA ✅ COMPLETĂ
+14. Faza 10 — Power Features ✅ parțial
+    ✅ Task Engine, Dashboard Selectors, Server App Context Layer
+    ✅ Abuse protection RSVP (Upstash Redis rate limiting + honeypot)
+    ✅ Optimistic UI V2 (latest-wins, confirmedSnapshotRef, saveStatus: "unconfirmed")
+    ✅ Duplicate names warning UI (toast system, Import Report Panel, GuestRow highlight)
+    ✅ Seating ↔ RSVP Integration (declined guests filtering, isSeatingEligible, badge TableNode)
+    ✅ PostHog analytics EU (GDPR-safe, eu.i.posthog.com)
+    ✅ Next.js upgrade 16.2.2, Supabase lazy singleton refactor
+    ⏳ Tooltip "Eliberați locul?" pentru declined cu loc alocat → V2
+```
+
+### Realizări sesiunea Apr 5, 2026
+- ✅ Abuse protection RSVP — Upstash Redis (Frankfurt) sliding window 10req/min per IP, honeypot `_rsvp_confirm_extra_`, NanoID public_link_id (PR #93)
+- ✅ Optimistic mutations V2 — latest-wins, rollback on server error, confirmedSnapshotRef cu structuredClone, saveStatus: "unconfirmed" (PR #94)
+- ✅ Duplicate names warning UI — toast system, Import Report Panel, GuestRow highlight fadeOutYellow 2s, filtru duplicate client-side (PR #95)
+- ✅ Supabase lazy singleton — client și server, compatibil cu generated types viitor (PR #101)
+- ✅ Next.js upgrade 16.2.2 (PR #100)
+- ✅ PostHog EU analytics — eu.i.posthog.com, GDPR-safe (PR #102)
+- ✅ Seating ↔ RSVP Integration — isSeatingEligible selector, declined guests filtrate din unassigned + Magic Fill, badge roșu ✕ în TableNode (PR #103+)
+- ✅ Teste: 698/698 verzi
+
+### Decizii de produs noi (Apr 5, 2026)
+- isSeatingEligible = `attendance_status !== 'declined'` — guest fără guest_events = eligibil (lipsă date RSVP)
+- assignedCount în seating NU se schimbă la declined — reflectă realitatea fizică
+- Badge declined în TableNode: roșu ✕ la vzoom ≥ 0.5, 50% opacity pe guest
+- Tooltip "Eliberați locul?" pentru declined cu loc alocat = V2 (design pending)
+- `utils/seating-eligibility.js` = single source of truth pentru eligibilitate seating (shared între magicFill + useSeatingData fără circular dep)
+- Optimistic UI: `saveStatus: "unconfirmed"` state nou — UI persistă starea locală până la confirmare server
+- Toast system: max 3 stack, success 3s auto-dismiss, warning 8s + dismiss manual
+- Import Report Panel: inline above guest list, ≤10 items + expand, "Filtrează duplicatele" toggle client-side
+- PostHog EU: analytics GDPR-safe — eu.i.posthog.com, fără IP storage, cookieless mode posibil
+
+### Progres total: ~91%
