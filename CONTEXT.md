@@ -1584,3 +1584,160 @@ security.unauthorized_access
 
 ### Teste: 639/639 verzi
 ### Progres total: ~75%
+
+## Update Apr 5, 2026 — Faza 10 Power Features continuată + Integrări RSVP
+
+### PR-uri merged (9 PR-uri noi, develop → va merge în main)
+
+| PR | Titlu |
+|----|-------|
+| #100 | fix(deps): upgrade next.js la 16.2.2 |
+| #101 | refactor(supabase): lazy singleton pentru client și server |
+| #102 | feat(analytics): integrează posthog eu pentru product analytics |
+| #103 | feat(guests): optimistic mutations v2 — create, update, delete cu rollback și latest-wins |
+| #104 | feat(seating): confirmedSnapshotRef + saveStatus unconfirmed + retry/revert atomic |
+| #105 | feat(rsvp): public_link_id stabil pentru link-uri rsvp + buton copiază link |
+| #106 | feat(rsvp): abuse protection — rate limiting upstash, honeypot, generic errors |
+| #107 | feat(guest-list): duplicate names warning ui |
+| #108 | feat(seating): rsvp declined guests filtering v1.1 |
+
+### Realizări sesiunea Apr 5, 2026
+
+#### Infrastructură
+- ✅ Next.js upgadat la 16.2.2 — compatibilitate Supabase lazy clients
+- ✅ Supabase client + server refactorizat la lazy singleton — compatible cu generated types viitor
+- ✅ PostHog EU integrat în layout.js — `eu.i.posthog.com`, GDPR-safe, fără PII
+- ✅ NEXT_PUBLIC_APP_URL adăugat ca env var — folosit pentru link-uri RSVP absolute
+- ✅ Upstash Redis Frankfurt configurat — folosit de middleware rate limiting
+
+#### Guests Optimistic Mutations V2 (PR #103)
+- ✅ `lib/mutations/use-optimistic-guests.ts` — hook cu create/update/delete optimistic
+- ✅ Rollback automat la eroare server (latest-wins pe update concurrent)
+- ✅ Teste complete + integration tests
+
+#### Seating Sync Hardening (PR #104)
+- ✅ `confirmedSnapshotRef` cu `structuredClone` — immutable anchor în `useSeatingSync`
+- ✅ `saveStatus: "unconfirmed"` adăugat în state machine (saving → unconfirmed → saved/error)
+- ✅ Retry/revert atomic — la eroare, revert la snapshot confirmat
+- ✅ Cancel stale retries cu AbortController
+
+#### RSVP Public Link Architecture (PR #105)
+- ✅ `public_link_id` pe `rsvp_invitations` — NanoID 16 chars [0-9A-Za-z], UNIQUE, stabil
+- ✅ Migration `20260405000001_add_public_link_id_rsvp.sql` aplicată pe DEV
+- ✅ Ruta publică `/rsvp/[public_link_id]` — lookup după ID stabil, nu după hash
+- ✅ Token raw NICIODATĂ stocat în DB — doar SHA-256 pentru audit
+- ✅ Buton "Copiază link" în dashboard RSVP — instant, zero requests
+- ✅ Regenerare link cu confirmare — link anterior devine invalid
+- ✅ `lib/rsvp/public-link-id.ts` + `lib/rsvp/get-public-rsvp-url.ts` + teste
+
+#### RSVP Abuse Protection (PR #106)
+- ✅ `middleware.ts` — Upstash Redis sliding window rate limiting
+  - `/rsvp/[public_link_id]` — 20 req/min per IP
+  - `/api/rsvp/*` — 5 req/min per (IP + sha256(segment))
+- ✅ Honeypot anti-bot — câmp ascuns `_rsvp_confirm_extra_`, fake 200 la boți detectați
+- ✅ Generic 404 pentru toate link-urile invalide/expirate/revocate — cauza reală logată intern
+- ✅ `logInternal()` cu `console.warn` structurat — fără PII
+- ✅ Fail-open la Redis indisponibil — userii legitimi nu sunt blocați
+
+#### Duplicate Names Warning UI (PR #107)
+- ✅ `GuestFormModal`: `onSave({ guest, warnings? })` — transmite warnings la parent
+- ✅ `GuestImportModal`: `onImport({ imported, warnings? })` — fără done step blocker
+- ✅ Toast stack inline în `page.tsx` (success 3s auto, warning 8s + dismiss manual, max 3)
+- ✅ `WARNING_MAP` + `mapSingleGuestWarning` + `mapImportWarning` — mesaje în română
+- ✅ Import Report Panel inline deasupra listei — warnings duplicate, max 10 + expand
+- ✅ "Filtrează duplicatele" — client-side, zero request nou
+- ✅ `GuestRow`: `isHighlighted` prop + animație `fadeOutYellow` 2s
+- ✅ `highlightedGuestId` state în page.tsx, cleared după 3s
+
+#### Seating ↔ RSVP Declined Filtering V1.1 (PR #108)
+- ✅ `utils/seating-eligibility.js` — `isSeatingEligible(guest)` selector central
+  - `guest_events?.[0]?.attendance_status !== 'declined'`
+  - fără `guest_events` → eligible (no RSVP data yet)
+- ✅ `unassigned` useMemo filtrat prin `isSeatingEligible`
+- ✅ `filteredUnassigned` filtrat prin `isSeatingEligible`
+- ✅ Magic Fill ignoră declined (RSVP) — nu mai folosește câmpul vechi `status: "declinat"`
+- ✅ `guest.meta.isDeclined` adăugat în `guestsByTable` — hook pentru TableNode
+- ✅ `TableNode`: declined cu loc alocat → opacity 50% + badge roșu ✕ la vzoom ≥ 0.5
+- ✅ `assignedCount` neschimbat — realitate fizică, nu filtrată de RSVP
+- ✅ +10 teste noi: `isSeatingEligible`, unassigned filtering, assignedCount, magic fill
+
+### Decizii arhitecturale locked (Apr 5, 2026)
+
+#### RSVP Identity
+- `public_link_id` = identificator public stabil, opaque, NanoID 16 chars [0-9A-Za-z]
+- Token raw NICIODATĂ stocat în DB sau în client — SHA-256 doar pentru audit
+- Regenerare link = nouă intrare `public_link_id`, link anterior devine invalid instant
+- URL canonic RSVP: `${NEXT_PUBLIC_APP_URL}/rsvp/${public_link_id}`
+
+#### Rate Limiting
+- Upstash Redis Frankfurt — sliding window, fail-open
+- Middleware aplică DOAR pe `/rsvp/*` și `/api/rsvp/*` — restul aplicației neafectat
+- Identitate per request: `x-forwarded-for` → `x-real-ip` → fallback UA+lang hash
+- API bucket per `sha256(IP + segment)` — izolat per `public_link_id`
+
+#### Seating Eligibility
+- `isSeatingEligible(guest)` = selector central, single source of truth
+- Exportat din `useSeatingData.js`, definit în `utils/seating-eligibility.js`
+- Câmpul vechi `status: "declinat"` nu mai afectează eligibilitatea seating
+- Declined guests cu loc alocat rămân fizic pe masă — nu sunt eliminați automat
+
+#### Analytics
+- PostHog EU (eu.i.posthog.com) — fără PII direct, events anonime
+- `NEXT_PUBLIC_POSTHOG_KEY` + `NEXT_PUBLIC_POSTHOG_HOST` în .env + Vercel
+
+#### Pending pentru V2
+- Tooltip "Eliberați locul?" pentru declined cu loc alocat — după launch
+- Bulk seat group (10.1) — în curs
+- Resend email activat — blocat pe `RESEND_API_KEY` în Vercel
+
+### Schema DB — adăugat Apr 5, 2026
+- `rsvp_invitations.public_link_id` — varchar(24) NOT NULL UNIQUE, index pe coloană
+- `rsvp_delivery_status` enum: adăugat valoarea `'revoked'`
+
+### Fișiere noi adăugate
+- `app/lib/posthog/provider.tsx` — PostHog provider pentru layout
+- `app/lib/posthog/pageview.tsx` — pageview tracking automat
+- `lib/mutations/use-optimistic-guests.ts` — hook optimistic mutations
+- `lib/mutations/use-optimistic-guests.test.ts` — teste
+- `lib/rsvp/get-public-rsvp-url.ts` — builder URL RSVP cu env fallback
+- `lib/rsvp/get-public-rsvp-url.test.ts` — 5 teste
+- `lib/rsvp/public-link-id.ts` — `generatePublicLinkId()` NanoID
+- `lib/rsvp/public-link-id.test.ts` — 4 teste
+- `app/seating-chart/utils/seating-eligibility.js` — `isSeatingEligible()`
+- `middleware.ts` — rate limiting Upstash Edge middleware
+- `supabase/migrations/20260405000001_add_public_link_id_rsvp.sql`
+
+### Roadmap — actualizat Apr 5, 2026
+```
+Seating Chart ✅ ~9.0/10
+Faza 0A Foundation ✅
+Faza 0B Auth & Data ✅
+Faza 2A Seating Perf ✅
+Faza 3 Guests Core ✅ ~85%
+Faza 5 Budget Core ✅ (5.1, 5.2, 5.3)
+Faza 6 Seating ↔ Guests Integration ✅
+Faza 2B Seating Perf Validation ✅ parțial (2B.2, 2B.3)
+Faza 4 Vendors Mirror ⏳ SĂRIT — blocat pe Voxel
+UI Lista Invitați ✅
+Faza 7 RSVP ✅ COMPLETĂ (7.1-7.8)
+Faza 8 Export & Compliance ✅ COMPLETĂ (8.1-8.5)
+Faza 9 Reliability & QA ✅ COMPLETĂ
+Faza 10 Power Features ⏳ ÎN PROGRES
+  ✅ Task Engine — generateTasks() funcție pură, 8 reguli
+  ✅ Dashboard Selectors — buildTaskEngineContext()
+  ✅ Auth Layer Refactor — Server App Context Layer
+  ✅ PostHog EU integrat
+  ✅ Guests Optimistic Mutations V2
+  ✅ Seating Sync Hardening (confirmedSnapshotRef + atomic revert)
+  ✅ RSVP public_link_id + copy link
+  ✅ RSVP Abuse Protection (Upstash, honeypot)
+  ✅ Duplicate Names Warning UI
+  ✅ Seating ↔ RSVP Declined Filtering V1.1
+  ⏳ Bulk seat group (10.1)
+  ⏳ Resend email activat (blocat pe RESEND_API_KEY)
+  ⏳ Before Launch checklist
+  ⏳ Docs legale
+```
+
+### Teste: 698/698 verzi
+### Progres total: ~91%

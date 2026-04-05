@@ -72,7 +72,7 @@
 | 16 | Backup ownership — cine verifică, unde e documentat | Mică | Mare | |
 | 17 | Cost guardrails — storage per wedding, email caps, export caps | Medie | Mare | Monthly review cadence |
 | 18 | Rate limiting export PNG | Mică | Mare | |
-| 19 | Abuse protection RSVP — rate limiting pe IP, token brute-force protection | Medie | Critic | Cineva poate trimite 10.000 RSVP-uri false. Vercel middleware pe ruta RSVP |
+| 19 | ✅ Abuse protection RSVP — rate limiting pe IP, token brute-force protection | Medie | Critic | Implementat Apr 5: Upstash Redis (Frankfurt) sliding window 10req/min per IP, honeypot `_rsvp_confirm_extra_`, fake 200 la bot |
 | 20 | Secrets rotation playbook | Mică | Mare | |
 | 21 | Audit log minim (delete account, export data, migration retry) | Medie | Mare | |
 | 22 | Accessibility minimum — keyboard basics, focus states, contrast WCAG AA | Medie | Mare | Pointer target size, focus clarity |
@@ -92,7 +92,7 @@
 | 36 | Read-only fallback — dacă Supabase e degradat, ce mai merge | Medie | Critic | Utilizatorii trebuie să poată măcar vizualiza datele |
 | 37 | Manual operating mode — ce faci dacă RSVP are probleme în ziua nunții | Mică | Critic | Produs event-based = zero toleranță în ziua evenimentului |
 | 38 | Offline Export PDF/Image pentru ziua nunții — safety net pentru locații fără semnal | Medie | Critic | Export PNG există, extinde-l. Planner-ul trebuie să lucreze fără cloud |
-| 39 | Optimistic UI — update local imediat + rollback la eroare server | Medie | Critic | Latența Supabase pe mobil 500ms-1s. Aplicația trebuie să pară nativă |
+| 39 | ✅ Optimistic UI — update local imediat + rollback la eroare server | Medie | Critic | Implementat Apr 5: latest-wins, rollback on server error, confirmedSnapshotRef cu structuredClone, saveStatus: "unconfirmed" |
 | 40 | Impersonation Tool — admin read-only view pe datele unui user pentru debug suport | Medie | Mare | Fără asta faci debug pe orbește prin WhatsApp |
 | 41 | WP Sync Hook — dacă userul schimbă emailul în WP, se actualizează și în app_users | Medie | Mare | |
 | 42 | Large Assets Guard — limită 2MB pentru orice upload din prima zi | Mică | Mare | Altfel costurile de storage explodează |
@@ -101,11 +101,14 @@
 | 45 | Safe debug strategy în producție — flags, temporary logs, no secret leakage | Mică | Mare | |
 | 46 | Rate limiting /api/guests/import — max 5 imports/min per user (Vercel middleware) | Mică | Mare | Adăugat Mar 28 |
 | 47 | Export GET /api/guests/export — format identic cu import pentru round-trip | Mică | Mare | Adăugat Mar 28 |
-| 48 | Duplicate names warning în UI Guests | Mică | Mare | API bifat (3.5), UI lipsă |
+| 48 | ✅ Duplicate names warning în UI Guests | Mică | Mare | Implementat Apr 5: toast system (success 3s, warning 8s + dismiss, max 3 stack), Import Report Panel, GuestRow highlight fadeOutYellow 2s, filtru duplicate client-side |
 | 49 | Circuit breaker Maintenance mode — dacă WP bridge e jos, app continuă | Medie | Mare | Adăugat Mar 29 |
 | 50 | RESEND_API_KEY configurat în Vercel | Mică | Critic | **Blocker pentru Faza 7.4** — neconfigurat la Mar 31 |
 | 51 | wpBridgeEnabled: true în feature-flags.ts la launch | Mică | Critic | Acum e false pentru dev local — schimbă înainte de launch |
 | 52 | Migrații aplicate pe Supabase PROD la launch | Mică | Critic | Toate migrațiile din develop aplicate pe PROD |
+| 53 | ✅ UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN configurate în Vercel | Mică | Critic | Necesar pentru rate limiting RSVP — configurat Apr 5 |
+| 54 | ✅ NEXT_PUBLIC_APP_URL configurat în Vercel | Mică | Critic | Folosit pentru RSVP link construction — configurat Apr 5 |
+| 55 | Tooltip "Eliberați locul?" pentru invitați declined cu loc alocat → V2 | Mică | Medie | Design pending: declined guest ocupă loc fizic, tooltip propune eliberare manuală |
 
 ---
 
@@ -161,9 +164,9 @@
 | 46 | Supabase generated types — elimină cast-urile as GuestWithRelations | Mică | Medie | Adăugat Mar 28 |
 | 47 | POST /api/guest-events tranzacțional — RPC pentru 3 queries → 1 | Medie | Medie | Adăugat Mar 28 |
 | 48 | Bulk import → RPC pentru 1000+ guests | Medie | Medie | Adăugat Mar 28 |
-| 49 | Optimistic UI pattern pe Guests + Budget (fără Zustand/React Query) | Medie | Mare | Adăugat Mar 29 |
-| 50 | Snapshot hashing stabil în useSeatingSync (nu JSON.stringify pe obiecte mari) | Mică | Mare | Adăugat din audit Mar 31 |
-| 51 | Cancel stale retries / backpressure în useSeatingSync | Mică | Mare | Adăugat din audit Mar 31 |
+| 49 | ✅ Optimistic UI pattern pe Guests + Budget (fără Zustand/React Query) | Medie | Mare | Implementat Apr 5: latest-wins cu confirmedSnapshotRef |
+| 50 | ✅ Snapshot hashing stabil în useSeatingSync (nu JSON.stringify pe obiecte mari) | Mică | Mare | Implementat Apr 5 |
+| 51 | ✅ Cancel stale retries / backpressure în useSeatingSync | Mică | Mare | Implementat Apr 5 |
 | 52 | Maintenance mode UX când WP bridge e jos — nu guest illusion | Medie | Mare | Adăugat din audit Mar 31 |
 | 53 | Extrage page.js shell în componente mici | Medie | Medie | Adăugat din audit Mar 31 |
 | 54 | Metrics pentru sync latency și conflict rate | Medie | Mare | Adăugat din audit Mar 31 |
