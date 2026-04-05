@@ -1,4 +1,6 @@
 // utils/magicFill.js — Magic Fill V1.5
+import { isSeatingEligible } from './seating-eligibility.js';
+
 const DEFAULT_MAX_ITERATIONS = 10000;
 const DEFAULT_MAX_TIME_MS = 500;
 
@@ -29,7 +31,7 @@ export function calculateMagicFillWithLimits(guests, tables, opts = {}) {
   const eligibleGuests = [];
   for (const g of guests || []) {
     if (g.tableId !== null && g.tableId !== undefined) continue;
-    if (g.status === "declinat") continue;
+    if (!isSeatingEligible(g)) continue;
     if (g.grup && g.grup.toLowerCase() === "prezidiu") {
       prezidiuSkipped++;
       continue;

@@ -11,6 +11,9 @@ import {
 } from "../utils/geometry.js";
 import { loadStorageState, saveStorageState } from "../utils/storage.js";
 import { calculateMagicFill } from "../utils/magicFill.js";
+import { isSeatingEligible } from "../utils/seating-eligibility.js";
+
+export { isSeatingEligible };
 
 // ── SPAWN ─────────────────────────────────────────────────────────────────────
 
@@ -191,7 +194,10 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     guests.forEach((g) => {
       if (g.tableId != null) {
         if (!map[g.tableId]) map[g.tableId] = [];
-        map[g.tableId].push(g);
+        map[g.tableId].push({
+          ...g,
+          meta: { isDeclined: g.guest_events?.[0]?.attendance_status === 'declined' },
+        });
       }
     });
     return map;
@@ -203,7 +209,10 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   const realTables = useMemo(() => tables.filter((t) => t.type !== "bar" && !t.isRing), [tables]);
   const totalSeats = useMemo(() => realTables.reduce((s, t) => s + t.seats, 0), [realTables]);
   const assignedCount = useMemo(() => guests.filter((g) => g.tableId != null).length, [guests]);
-  const unassigned = useMemo(() => guests.filter((g) => g.tableId == null), [guests]);
+  const unassigned = useMemo(
+    () => guests.filter((g) => g.tableId == null && isSeatingEligible(g)),
+    [guests]
+  );
   const progress = guests.length > 0 ? (assignedCount / guests.length) * 100 : 0;
 
   const menuStats = useMemo(
@@ -296,7 +305,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   // ── MAGIC FILL ──
   const magicFill = useCallback(() => {
     const anyUnassigned = guestsRef.current.some(
-      (g) => g.tableId === null && g.status !== "declinat" &&
+      (g) => g.tableId === null && isSeatingEligible(g) &&
         !(g.grup && g.grup.toLowerCase() === "prezidiu")
     );
 
@@ -487,10 +496,12 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
 
   // ── FILTERED UNASSIGNED ──
   const filteredUnassigned = useCallback((searchQuery) => {
-    if (!searchQuery) return guests.filter((g) => g.tableId == null);
+    const base = guests.filter((g) => g.tableId == null && isSeatingEligible(g));
+    if (!searchQuery) return base;
     const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return guests.filter((g) => g.tableId == null &&
-      `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q));
+    return base.filter((g) =>
+      `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
+    );
   }, [guests]);
 
   // ── REVERT TO SNAPSHOT ────────────────────────────────────────────────────

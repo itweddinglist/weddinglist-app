@@ -399,9 +399,12 @@ function TableNodeImpl({
         {vzoom >= 0.4 && seatPositions.map((pos, idx) => {
           const guest = assignedGuests[idx];
           const gc = guest ? getGroupColor(guest.grup) : "#48BB78";
-          if (guest)
+          if (guest) {
+            const isDeclinedGuest = guest.meta?.isDeclined ?? false;
+            const highlightDimmed = highlightGuestId != null && assignedGuests.some(g => g.id === highlightGuestId) && highlightGuestId !== guest.id;
+            const guestOpacity = (highlightDimmed ? 0.25 : 1) * (isDeclinedGuest ? 0.5 : 1);
             return (
-              <g key={idx} style={{ cursor: "pointer", opacity: highlightGuestId != null && assignedGuests.some(g => g.id === highlightGuestId) && highlightGuestId !== guest.id ? 0.25 : 1 }}
+              <g key={idx} style={{ cursor: "pointer", opacity: guestOpacity }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setHoveredGuest(null);
@@ -431,9 +434,21 @@ function TableNodeImpl({
                   </text>
                 )}
                 {vzoom >= 0.5 && !isDraggingThisTable && (
-                  <circle cx={pos.x + 10} cy={pos.y - 10} r="4"
-                    fill={guest.status === "confirmat" ? "#48BB78" : "#ECC94B"}
-                    stroke="white" strokeWidth="1.2" style={{ pointerEvents: "none" }} />
+                  isDeclinedGuest ? (
+                    <>
+                      <circle cx={pos.x + 10} cy={pos.y - 10} r="6"
+                        fill="#E53E3E" stroke="white" strokeWidth="1.2"
+                        style={{ pointerEvents: "none" }} />
+                      <text x={pos.x + 10} y={pos.y - 7} textAnchor="middle"
+                        fill="white" fontSize="7" fontWeight="700"
+                        fontFamily="DM Sans,sans-serif"
+                        style={{ pointerEvents: "none" }}>✕</text>
+                    </>
+                  ) : (
+                    <circle cx={pos.x + 10} cy={pos.y - 10} r="4"
+                      fill={guest.status === "confirmat" ? "#48BB78" : "#ECC94B"}
+                      stroke="white" strokeWidth="1.2" style={{ pointerEvents: "none" }} />
+                  )
                 )}
                 {highlightGuestId === guest.id && (
                   <circle cx={pos.x} cy={pos.y} r="19" fill="none" stroke="#C9907A"
@@ -451,6 +466,7 @@ function TableNodeImpl({
                   style={{ pointerEvents: "all", cursor: "pointer" }} />
               </g>
             );
+          }
           if (assignedGuests.length === 0 && vzoom < 0.5) return null;
           return (
             <g key={`empty-${idx}`}>
