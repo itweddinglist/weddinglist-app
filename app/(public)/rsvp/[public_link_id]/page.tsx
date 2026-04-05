@@ -1,5 +1,5 @@
 // =============================================================================
-// app/(public)/rsvp/[token]/page.tsx
+// app/(public)/rsvp/[public_link_id]/page.tsx
 // Pagina publică RSVP — fără auth, fără sidebar
 // Invitatul confirmă participarea printr-un link personalizat
 // =============================================================================
@@ -25,9 +25,9 @@ interface EventAnswer {
 export default function RsvpPage({
   params,
 }: {
-  params: Promise<{ token: string }>;
+  params: Promise<{ public_link_id: string }>;
 }) {
-  const [token, setToken] = useState<string | null>(null);
+  const [publicLinkId, setPublicLinkId] = useState<string | null>(null);
   const [pageState, setPageState] = useState<PageState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [pageData, setPageData] = useState<RsvpPageData | null>(null);
@@ -37,14 +37,14 @@ export default function RsvpPage({
 
   // ── Resolve params ─────────────────────────────────────────────────────────
   useEffect(() => {
-    params.then((p) => setToken(p.token));
+    params.then((p) => setPublicLinkId(p.public_link_id));
   }, [params]);
 
   // ── Fetch invitation data ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!token) return;
+    if (!publicLinkId) return;
 
-    fetch(`/api/rsvp/${token}`)
+    fetch(`/api/rsvp/${publicLinkId}`)
       .then((res) => res.json())
       .then((json) => {
         if (!json.success) {
@@ -75,7 +75,7 @@ export default function RsvpPage({
         setErrorMessage(t.page.error_generic);
         setPageState("error");
       });
-  }, [token]);
+  }, [publicLinkId]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -98,7 +98,7 @@ export default function RsvpPage({
         note: a.note || null,
       }));
 
-      const res = await fetch(`/api/rsvp/${token}`, {
+      const res = await fetch(`/api/rsvp/${publicLinkId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ responses }),

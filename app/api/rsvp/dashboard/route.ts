@@ -62,7 +62,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // ── Fetch rsvp_invitations ────────────────────────────────────────────
     const { data: invitations, error: invError } = await supabaseServer
       .from("rsvp_invitations")
-      .select("id, guest_id, delivery_channel, delivery_status, opened_at, last_sent_at, is_active")
+      .select("id, guest_id, delivery_channel, delivery_status, opened_at, last_sent_at, is_active, public_link_id")
       .eq("wedding_id", weddingId)
       .eq("is_active", true);
 
@@ -97,6 +97,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         rsvp_source: response?.rsvp_source ?? null,
         // Din rsvp_invitations
         invitation_id: invitation?.id ?? null,
+        public_link_id: invitation?.public_link_id ?? null,
         delivery_channel: invitation?.delivery_channel ?? null,
         delivery_status: invitation?.delivery_status ?? null,
         opened_at: invitation?.opened_at ?? null,

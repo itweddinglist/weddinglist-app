@@ -13,6 +13,7 @@ import {
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import { generateRsvpToken, getTokenExpiresAt } from "@/lib/rsvp/token";
+import { generatePublicLinkId } from "@/lib/rsvp/public-link-id";
 import { sendRsvpInvitationEmail } from "@/lib/rsvp/send-invitation-email";
 import {
   successResponse,
@@ -67,10 +68,14 @@ export async function POST(request: NextRequest): Promise<Response> {
       return errorResponse(404, "GUEST_NOT_FOUND", "Guest not found in this wedding.");
     }
 
-    // ── Dezactivează invitațiile active existente pentru acest guest ────────
+    // ── Dezactivează invitațiile active existente — status → revoked ────────
     const { error: deactivateError } = await supabaseServer
       .from("rsvp_invitations")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({
+        is_active: false,
+        delivery_status: "revoked",
+        updated_at: new Date().toISOString(),
+      })
       .eq("guest_id", guestId)
       .eq("wedding_id", weddingId)
       .eq("is_active", true);
@@ -79,8 +84,9 @@ export async function POST(request: NextRequest): Promise<Response> {
       return internalErrorResponse(deactivateError, "POST /api/rsvp/invitations — deactivate");
     }
 
-    // ── Generează token nou ────────────────────────────────────────────────
+    // ── Generează token + public_link_id ──────────────────────────────────
     const { raw, hash } = generateRsvpToken();
+    const publicLinkId = generatePublicLinkId();
     const expiresAt = getTokenExpiresAt();
 
     // ── Fetch wedding pentru email ─────────────────────────────────────────
@@ -97,6 +103,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         wedding_id: weddingId,
         guest_id: guestId,
         token_hash: hash,
+        public_link_id: publicLinkId,
         delivery_channel: deliveryChannel ?? null,
         delivery_status: "ready",
         is_active: true,
@@ -121,7 +128,8 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     return successResponse({
       invitation_id: invitation.id,
-      token: raw, // tokenul raw — pentru link manual / QR
+      public_link_id: publicLinkId,
+      token: raw, // tokenul raw — pentru email / QR legacy
       expires_at: expiresAt.toISOString(),
       email_sent: emailResult.sent,
     }, 201);

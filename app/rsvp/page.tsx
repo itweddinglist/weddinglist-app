@@ -29,6 +29,7 @@ interface RsvpGuestRow {
   responded_at: string | null;
   rsvp_source: "guest_link" | "couple_manual" | "import" | null;
   invitation_id: string | null;
+  public_link_id: string | null;
   delivery_channel: string | null;
   delivery_status: string | null;
   opened_at: string | null;
@@ -61,12 +62,10 @@ export default function RsvpDashboard() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set());
-  const [copyingLinks, setCopyingLinks] = useState<Set<string>>(new Set());
   const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
-  // Cache guestId → rawToken din sesiunea curentă.
-  // Token-ul raw nu e stocat în DB (doar SHA-256), deci nu poate fi recuperat
-  // după page refresh fără un nou POST.
-  const [generatedTokens, setGeneratedTokens] = useState<Map<string, string>>(new Map());
+  const [regeneratingLinks, setRegeneratingLinks] = useState<Set<string>>(new Set());
+  // Dialog confirmare pentru "Regenerează link" — conține guestId-ul în curs
+  const [regenConfirmGuestId, setRegenConfirmGuestId] = useState<string | null>(null);
   const [manualOverride, setManualOverride] = useState<string | null>(null);
 
   const weddingId = sessionState.status === "authenticated" ? sessionState.activeWeddingId : null;
@@ -132,13 +131,7 @@ export default function RsvpDashboard() {
         body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
       });
       const json = await res.json();
-      if (json.success) {
-        // Cacheăm token-ul pentru copyLink ulterior (fără request suplimentar)
-        if (json.data?.token) {
-          setGeneratedTokens((prev) => new Map(prev).set(guestId, json.data.token));
-        }
-        await fetchData();
-      }
+      if (json.success) await fetchData();
     } finally {
       setGeneratingLinks((prev) => {
         const next = new Set(prev);
@@ -187,50 +180,13 @@ export default function RsvpDashboard() {
     }
   };
 
-  const copyLink = async (guestId: string) => {
-    if (!weddingId) return;
+  // Copiere instantă — folosește public_link_id din datele încărcate, ZERO requesturi noi.
+  const copyLink = async (publicLinkId: string | null, guestId: string) => {
+    if (!publicLinkId) return;
 
-    // 1. Token disponibil în cache (generat în sesiunea curentă) → copiem fără request
-    const cachedToken = generatedTokens.get(guestId);
-    let tokenToCopy = cachedToken ?? null;
-
-    if (!tokenToCopy) {
-      // 2. Token nu e în cache.
-      //    - Dacă invitația activă există: raw token-ul nu e stocat în DB (doar SHA-256),
-      //      deci e imposibil să-l recuperăm fără un nou request. Generăm un token nou
-      //      (POST dezactivează cel vechi automat). Aceasta e singura opțiune fără
-      //      schimbare de schemă DB sau de rută RSVP.
-      //    - Dacă invitația nu există: creăm una nouă.
-      setCopyingLinks((prev) => new Set(prev).add(guestId));
-      try {
-        const res = await fetch("/api/rsvp/invitations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
-        });
-        const json = await res.json();
-        if (!json.success || !json.data?.token) {
-          alert("Nu am putut genera link-ul RSVP.");
-          return;
-        }
-        tokenToCopy = json.data.token as string;
-        setGeneratedTokens((prev) => new Map(prev).set(guestId, tokenToCopy!));
-        await fetchData();
-      } catch {
-        alert("Eroare la generarea link-ului RSVP.");
-        return;
-      } finally {
-        setCopyingLinks((prev) => {
-          const next = new Set(prev);
-          next.delete(guestId);
-          return next;
-        });
-      }
-    }
-
-    // 3. Copiem URL-ul în clipboard
-    const url = getPublicRsvpUrl(tokenToCopy);
+    const url = getPublicRsvpUrl(publicLinkId);
     let copied = false;
+
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       try {
         await navigator.clipboard.writeText(url);
@@ -266,6 +222,28 @@ export default function RsvpDashboard() {
       }, 2000);
     } else {
       alert("Nu am putut copia în clipboard.");
+    }
+  };
+
+  // Regenerare explicită — invalidează link-ul anterior, creează unul nou cu public_link_id nou.
+  const regenerateLink = async (guestId: string) => {
+    if (!weddingId) return;
+    setRegenConfirmGuestId(null);
+    setRegeneratingLinks((prev) => new Set(prev).add(guestId));
+    try {
+      const res = await fetch("/api/rsvp/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
+      });
+      const json = await res.json();
+      if (json.success) await fetchData();
+    } finally {
+      setRegeneratingLinks((prev) => {
+        const next = new Set(prev);
+        next.delete(guestId);
+        return next;
+      });
     }
   };
 
@@ -379,10 +357,11 @@ export default function RsvpDashboard() {
             onGenerate={() => generateLink(g.guest_id)}
             onWhatsApp={(invToken) => sendWhatsApp(g, invToken, g.invitation_id!)}
             onManual={(status) => manualOverrideStatus(g.guest_event_id, status)}
-            onCopyLink={() => copyLink(g.guest_id)}
+            onCopyLink={() => copyLink(g.public_link_id, g.guest_id)}
+            onRegenerate={() => setRegenConfirmGuestId(g.guest_id)}
             isGenerating={generatingLinks.has(g.guest_id)}
-            isCopyingLink={copyingLinks.has(g.guest_id)}
             isCopiedLink={copiedLinks.has(g.guest_id)}
+            isRegenerating={regeneratingLinks.has(g.guest_id)}
             manualOpen={manualOverride === g.guest_event_id}
             onToggleManual={() =>
               setManualOverride(
@@ -392,6 +371,31 @@ export default function RsvpDashboard() {
           />
         ))}
       </div>
+
+      {/* Dialog confirmare regenerare link */}
+      {regenConfirmGuestId && (
+        <div style={styles.dialogOverlay}>
+          <div style={styles.dialog}>
+            <p style={styles.dialogText}>
+              Link-ul anterior va deveni invalid. Continui?
+            </p>
+            <div style={styles.dialogActions}>
+              <button
+                onClick={() => regenerateLink(regenConfirmGuestId)}
+                style={styles.dialogConfirmBtn}
+              >
+                Regenerează
+              </button>
+              <button
+                onClick={() => setRegenConfirmGuestId(null)}
+                style={styles.dialogCancelBtn}
+              >
+                Anulează
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -431,9 +435,10 @@ function GuestRow({
   onWhatsApp,
   onManual,
   onCopyLink,
+  onRegenerate,
   isGenerating,
-  isCopyingLink,
   isCopiedLink,
+  isRegenerating,
   manualOpen,
   onToggleManual,
 }: {
@@ -442,9 +447,10 @@ function GuestRow({
   onWhatsApp: (token: string) => void;
   onManual: (status: "accepted" | "declined" | "maybe") => void;
   onCopyLink: () => void;
+  onRegenerate: () => void;
   isGenerating: boolean;
-  isCopyingLink: boolean;
   isCopiedLink: boolean;
+  isRegenerating: boolean;
   manualOpen: boolean;
   onToggleManual: () => void;
 }) {
@@ -488,13 +494,25 @@ function GuestRow({
           </button>
         )}
 
-        <button
-          onClick={onCopyLink}
-          disabled={isCopyingLink || isCopiedLink}
-          style={isCopiedLink ? styles.copiedLinkBtn : styles.copyLinkBtn}
-        >
-          {isCopyingLink ? "..." : isCopiedLink ? "Copiat!" : "Copiază link"}
-        </button>
+        {hasInvitation && (
+          <>
+            <button
+              onClick={onCopyLink}
+              disabled={isCopiedLink}
+              style={isCopiedLink ? styles.copiedLinkBtn : styles.copyLinkBtn}
+            >
+              {isCopiedLink ? "Copiat!" : "Copiază link"}
+            </button>
+
+            <button
+              onClick={onRegenerate}
+              disabled={isRegenerating}
+              style={styles.regenBtn}
+            >
+              {isRegenerating ? "..." : "Regenerează link"}
+            </button>
+          </>
+        )}
 
         <button onClick={onToggleManual} style={styles.secondaryActionBtn}>
           Manual
@@ -571,6 +589,13 @@ const styles: Record<string, React.CSSProperties> = {
   secondaryActionBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "white", color: "var(--color-text-muted)", border: "1px solid var(--color-border)", fontSize: "0.78rem", cursor: "pointer" },
   copyLinkBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "white", color: "var(--color-accent)", border: "1px solid var(--color-accent)", fontSize: "0.78rem", cursor: "pointer" },
   copiedLinkBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "rgba(72,187,120,0.12)", color: "var(--color-success)", border: "1px solid var(--color-success)", fontSize: "0.78rem", cursor: "default" },
+  regenBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "white", color: "var(--color-text-muted)", border: "1px solid var(--color-border)", fontSize: "0.78rem", cursor: "pointer" },
+  dialogOverlay: { position: "fixed" as const, inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 },
+  dialog: { background: "white", borderRadius: "16px", padding: "1.75rem 2rem", maxWidth: "360px", width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.18)" },
+  dialogText: { fontSize: "0.95rem", color: "var(--color-text)", margin: "0 0 1.25rem", lineHeight: 1.5 },
+  dialogActions: { display: "flex", gap: "0.75rem", justifyContent: "flex-end" },
+  dialogConfirmBtn: { padding: "0.5rem 1.1rem", borderRadius: "999px", background: "var(--color-danger)", color: "white", border: "none", fontSize: "0.85rem", cursor: "pointer", fontWeight: 500 },
+  dialogCancelBtn: { padding: "0.5rem 1.1rem", borderRadius: "999px", background: "white", color: "var(--color-text-muted)", border: "1px solid var(--color-border)", fontSize: "0.85rem", cursor: "pointer" },
   manualMenu: { display: "flex", gap: "0.4rem", flexWrap: "wrap" },
   manualBtn: { padding: "0.3rem 0.7rem", borderRadius: "999px", background: "var(--color-accent-soft)", color: "var(--color-accent)", border: "1px solid var(--color-accent)", fontSize: "0.75rem", cursor: "pointer" },
   emptyState: { textAlign: "center", padding: "4rem 2rem" },
