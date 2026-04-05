@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "@/app/lib/auth/session/use-session";
 import { getTranslations } from "@/lib/rsvp/rsvp-translations";
+import { getPublicRsvpUrl } from "@/lib/rsvp/get-public-rsvp-url";
 
 const t = getTranslations("ro");
 
@@ -60,6 +61,8 @@ export default function RsvpDashboard() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [generatingLinks, setGeneratingLinks] = useState<Set<string>>(new Set());
+  const [copyingLinks, setCopyingLinks] = useState<Set<string>>(new Set());
+  const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
   const [manualOverride, setManualOverride] = useState<string | null>(null);
 
   const weddingId = sessionState.status === "authenticated" ? sessionState.activeWeddingId : null;
@@ -174,6 +177,72 @@ export default function RsvpDashboard() {
     }
   };
 
+  const copyLink = async (guestId: string) => {
+    if (!weddingId) return;
+    setCopyingLinks((prev) => new Set(prev).add(guestId));
+    try {
+      const res = await fetch("/api/rsvp/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wedding_id: weddingId, guest_id: guestId }),
+      });
+      const json = await res.json();
+      if (!json.success || !json.data?.token) {
+        alert("Nu am putut genera link-ul RSVP.");
+        return;
+      }
+
+      const url = getPublicRsvpUrl(json.data.token);
+
+      let copied = false;
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        try {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        } catch {
+          // fallback la textarea
+        }
+      }
+      if (!copied) {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          document.execCommand("copy");
+          copied = true;
+        } finally {
+          document.body.removeChild(ta);
+        }
+      }
+
+      if (copied) {
+        await fetchData();
+        setCopiedLinks((prev) => new Set(prev).add(guestId));
+        setTimeout(() => {
+          setCopiedLinks((prev) => {
+            const next = new Set(prev);
+            next.delete(guestId);
+            return next;
+          });
+        }, 2000);
+      } else {
+        alert("Nu am putut copia în clipboard.");
+      }
+    } catch {
+      alert("Eroare la generarea link-ului RSVP.");
+    } finally {
+      setCopyingLinks((prev) => {
+        const next = new Set(prev);
+        next.delete(guestId);
+        return next;
+      });
+    }
+  };
+
   const exportCsv = () => {
     const rows = filtered.map((g) => [
       g.display_name,
@@ -284,7 +353,10 @@ export default function RsvpDashboard() {
             onGenerate={() => generateLink(g.guest_id)}
             onWhatsApp={(invToken) => sendWhatsApp(g, invToken, g.invitation_id!)}
             onManual={(status) => manualOverrideStatus(g.guest_event_id, status)}
+            onCopyLink={() => copyLink(g.guest_id)}
             isGenerating={generatingLinks.has(g.guest_id)}
+            isCopyingLink={copyingLinks.has(g.guest_id)}
+            isCopiedLink={copiedLinks.has(g.guest_id)}
             manualOpen={manualOverride === g.guest_event_id}
             onToggleManual={() =>
               setManualOverride(
@@ -332,7 +404,10 @@ function GuestRow({
   onGenerate,
   onWhatsApp,
   onManual,
+  onCopyLink,
   isGenerating,
+  isCopyingLink,
+  isCopiedLink,
   manualOpen,
   onToggleManual,
 }: {
@@ -340,7 +415,10 @@ function GuestRow({
   onGenerate: () => void;
   onWhatsApp: (token: string) => void;
   onManual: (status: "accepted" | "declined" | "maybe") => void;
+  onCopyLink: () => void;
   isGenerating: boolean;
+  isCopyingLink: boolean;
+  isCopiedLink: boolean;
   manualOpen: boolean;
   onToggleManual: () => void;
 }) {
@@ -383,6 +461,14 @@ function GuestRow({
             WhatsApp
           </button>
         )}
+
+        <button
+          onClick={onCopyLink}
+          disabled={isCopyingLink || isCopiedLink}
+          style={isCopiedLink ? styles.copiedLinkBtn : styles.copyLinkBtn}
+        >
+          {isCopyingLink ? "..." : isCopiedLink ? "Copiat!" : "Copiază link"}
+        </button>
 
         <button onClick={onToggleManual} style={styles.secondaryActionBtn}>
           Manual
@@ -457,6 +543,8 @@ const styles: Record<string, React.CSSProperties> = {
   actionBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "var(--color-accent)", color: "white", border: "none", fontSize: "0.78rem", cursor: "pointer" },
   whatsappBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "#25D366", color: "white", border: "none", fontSize: "0.78rem", cursor: "pointer" },
   secondaryActionBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "white", color: "var(--color-text-muted)", border: "1px solid var(--color-border)", fontSize: "0.78rem", cursor: "pointer" },
+  copyLinkBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "white", color: "var(--color-accent)", border: "1px solid var(--color-accent)", fontSize: "0.78rem", cursor: "pointer" },
+  copiedLinkBtn: { padding: "0.4rem 0.85rem", borderRadius: "999px", background: "rgba(72,187,120,0.12)", color: "var(--color-success)", border: "1px solid var(--color-success)", fontSize: "0.78rem", cursor: "default" },
   manualMenu: { display: "flex", gap: "0.4rem", flexWrap: "wrap" },
   manualBtn: { padding: "0.3rem 0.7rem", borderRadius: "999px", background: "var(--color-accent-soft)", color: "var(--color-accent)", border: "1px solid var(--color-accent)", fontSize: "0.75rem", cursor: "pointer" },
   emptyState: { textAlign: "center", padding: "4rem 2rem" },
