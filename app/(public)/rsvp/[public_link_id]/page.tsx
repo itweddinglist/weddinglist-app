@@ -34,6 +34,8 @@ export default function RsvpPage({
   const [answers, setAnswers] = useState<Record<string, EventAnswer>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Honey pot — invizibil pentru oameni, completat de boți
+  const [_rsvpConfirmExtra, setRsvpConfirmExtra] = useState("");
 
   // ── Resolve params ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function RsvpPage({
       const res = await fetch(`/api/rsvp/${publicLinkId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ responses }),
+        body: JSON.stringify({ responses, _rsvp_confirm_extra_: _rsvpConfirmExtra }),
       });
 
       const json = await res.json();
@@ -286,6 +288,18 @@ export default function RsvpPage({
             />
           </div>
         )}
+
+        {/* Honey pot — invizibil pentru utilizatori, completat de boți */}
+        <input
+          type="text"
+          name="_rsvp_confirm_extra_"
+          value={_rsvpConfirmExtra}
+          onChange={(e) => setRsvpConfirmExtra(e.target.value)}
+          tabIndex={-1}
+          aria-hidden="true"
+          autoComplete="off"
+          style={{ position: "fixed", opacity: 0, top: 0, left: 0, height: 0, width: 0, pointerEvents: "none" }}
+        />
 
         {/* Submit error */}
         {submitError && (
