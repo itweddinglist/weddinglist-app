@@ -11,6 +11,7 @@ interface Props {
   guest: GuestWithRelations;
   onEdit: (guest: GuestWithRelations) => void;
   onDelete: (id: string) => void;
+  isHighlighted?: boolean;
 }
 
 const SIDE_LABELS: Record<string, string> = {
@@ -20,7 +21,7 @@ const SIDE_LABELS: Record<string, string> = {
   other: "Altele",
 };
 
-export default function GuestRow({ guest, onEdit, onDelete }: Props) {
+export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Props) {
   const status = guest.guest_events?.[0]?.attendance_status ?? null;
   const initials = `${guest.first_name[0]}${guest.last_name?.[0] ?? ""}`.toUpperCase();
 
@@ -35,12 +36,15 @@ export default function GuestRow({ guest, onEdit, onDelete }: Props) {
   return (
     <tr
       className="group transition-colors"
-      style={{ borderBottom: "1px solid var(--cream-line)" }}
+      style={{
+        borderBottom: "1px solid var(--cream-line)",
+        ...(isHighlighted && { animation: "fadeOutYellow 2s ease-out forwards" }),
+      }}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = "rgba(201,144,122,0.04)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.background = isHighlighted ? "" : "transparent";
       }}
     >
       {/* Nume */}

@@ -11,9 +11,10 @@ interface Props {
   isLoading: boolean;
   onEdit: (guest: GuestWithRelations) => void;
   onDelete: (id: string) => void;
+  highlightedGuestId?: string | null;
 }
 
-export default function GuestTable({ guests, isLoading, onEdit, onDelete }: Props) {
+export default function GuestTable({ guests, isLoading, onEdit, onDelete, highlightedGuestId }: Props) {
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -122,6 +123,7 @@ export default function GuestTable({ guests, isLoading, onEdit, onDelete }: Prop
               guest={guest}
               onEdit={onEdit}
               onDelete={onDelete}
+              isHighlighted={!!highlightedGuestId && guest.id === highlightedGuestId}
             />
           ))}
         </tbody>

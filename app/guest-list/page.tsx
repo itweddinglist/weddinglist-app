@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { X, AlertTriangle } from "lucide-react";
 import { resolveSession } from "@/app/lib/auth/session/session-bridge";
 import GuestListHeader from "./components/GuestListHeader";
 import GuestFilters from "./components/GuestFilters";
@@ -14,6 +15,126 @@ import GuestTable from "./components/GuestTable";
 import GuestFormModal from "./components/GuestFormModal";
 import GuestImportModal from "./components/GuestImportModal";
 import type { GuestWithRelations } from "@/types/guests";
+import type { ImportRowWarning } from "@/types/guest-import";
+
+// ─── Toast system ──────────────────────────────────────────────────────────────
+
+type ToastType = "success" | "warning";
+
+interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  autoDismissMs?: number;
+}
+
+// ─── Warning helpers ───────────────────────────────────────────────────────────
+
+const WARNING_MAP: Record<string, string> = {
+  duplicate: "Există deja un invitat cu același nume în lista ta.",
+};
+
+function mapSingleGuestWarning(message: string): string | null {
+  if (message.includes("already exists")) return WARNING_MAP.duplicate;
+  return null;
+}
+
+function mapImportWarning(message: string): string | null {
+  if (message.includes("already exists")) return "Există deja un invitat cu acest nume.";
+  if (message.includes("duplicate of another row")) return "Duplicat în fișierul CSV.";
+  if (message.includes("Group") && message.includes("ignored")) return null;
+  return null;
+}
+
+// ─── Import report state ───────────────────────────────────────────────────────
+
+interface ImportReport {
+  imported: number;
+  relevantWarnings: Array<{ row: number; message: string; mapped: string }>;
+}
+
+// ─── Toast component ───────────────────────────────────────────────────────────
+
+function ToastStack({
+  toasts,
+  onDismiss,
+}: {
+  toasts: Toast[];
+  onDismiss: (id: string) => void;
+}) {
+  if (toasts.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: "1.5rem",
+        right: "1.5rem",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.5rem",
+        maxWidth: "360px",
+      }}
+    >
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "0.75rem",
+            padding: "0.75rem 1rem",
+            borderRadius: "10px",
+            background:
+              t.type === "success"
+                ? "rgba(72,187,120,0.12)"
+                : "rgba(236,201,75,0.15)",
+            border: `1px solid ${t.type === "success" ? "var(--green)" : "var(--yellow)"}`,
+            boxShadow: "0 4px 16px rgba(19,23,46,0.1)",
+            animation: "fadeUp 0.2s ease-out",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "1rem",
+              lineHeight: 1,
+              marginTop: "0.05rem",
+              flexShrink: 0,
+            }}
+          >
+            {t.type === "success" ? "✓" : "⚠"}
+          </span>
+          <p
+            style={{
+              flex: 1,
+              fontSize: "0.85rem",
+              color: t.type === "success" ? "var(--green)" : "#92700a",
+              lineHeight: 1.4,
+            }}
+          >
+            {t.message}
+          </p>
+          {t.type === "warning" && (
+            <button
+              onClick={() => onDismiss(t.id)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--muted)",
+                padding: "0",
+                flexShrink: 0,
+              }}
+            >
+              <X size={14} strokeWidth={1.8} />
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function GuestListPage() {
   const [guests, setGuests] = useState<GuestWithRelations[]>([]);
@@ -27,10 +148,64 @@ export default function GuestListPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterSide, setFilterSide] = useState<string>("all");
   const [filterGroup, setFilterGroup] = useState<string>("all");
+  const [filterDuplicates, setFilterDuplicates] = useState(false);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<GuestWithRelations | null>(null);
+
+  // ── Toasts ─────────────────────────────────────────────────────────────────
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const addToast = useCallback((type: ToastType, message: string, autoDismissMs?: number) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setToasts((prev) => {
+      const next = [...prev, { id, type, message, autoDismissMs }];
+      return next.slice(-3);
+    });
+    if (autoDismissMs) {
+      const timer = setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+        toastTimers.current.delete(id);
+      }, autoDismissMs);
+      toastTimers.current.set(id, timer);
+    }
+    return id;
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    const timer = toastTimers.current.get(id);
+    if (timer) { clearTimeout(timer); toastTimers.current.delete(id); }
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    const timers = toastTimers.current;
+    return () => { timers.forEach(clearTimeout); };
+  }, []);
+
+  // ── Guest highlight ────────────────────────────────────────────────────────
+  const [highlightedGuestId, setHighlightedGuestId] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const highlightGuest = useCallback((guestId: string) => {
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    setHighlightedGuestId(guestId);
+    highlightTimer.current = setTimeout(() => {
+      setHighlightedGuestId(null);
+      highlightTimer.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (highlightTimer.current) clearTimeout(highlightTimer.current); };
+  }, []);
+
+  // ── Import report panel ────────────────────────────────────────────────────
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const [importReportExpanded, setImportReportExpanded] = useState(false);
 
   // ── Session ────────────────────────────────────────────────────────────────
 
@@ -90,7 +265,23 @@ export default function GuestListPage() {
 
   // ── Filtrare locală ────────────────────────────────────────────────────────
 
+  // Build set of duplicate display names from current import report warnings
+  const duplicateDisplayNames = importReport
+    ? new Set(
+        importReport.relevantWarnings
+          .map((w) => {
+            const m = w.message.match(/guest "(.+)" already exists/);
+            return m ? m[1] : null;
+          })
+          .filter((n): n is string => n !== null)
+      )
+    : null;
+
   const filteredGuests = guests.filter((g) => {
+    if (filterDuplicates && duplicateDisplayNames) {
+      if (!duplicateDisplayNames.has(g.display_name)) return false;
+    }
+
     if (search) {
       const q = search.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const name = `${g.first_name} ${g.last_name ?? ""} ${g.display_name}`
@@ -140,16 +331,51 @@ export default function GuestListPage() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleGuestSaved = useCallback(() => {
-    setIsAddModalOpen(false);
-    setEditingGuest(null);
-    fetchGuests();
-  }, [fetchGuests]);
+  const handleGuestSaved = useCallback(
+    ({ guest, warnings }: { guest: GuestWithRelations; warnings?: string[] }) => {
+      setIsAddModalOpen(false);
+      setEditingGuest(null);
+      fetchGuests().then(() => {
+        highlightGuest(guest.id);
+      });
 
-  const handleImportDone = useCallback(() => {
-    setIsImportModalOpen(false);
-    fetchGuests();
-  }, [fetchGuests]);
+      addToast("success", "Invitat salvat", 3000);
+
+      const mappedWarnings = (warnings ?? [])
+        .map(mapSingleGuestWarning)
+        .filter((w): w is string => w !== null);
+
+      if (mappedWarnings.length > 0) {
+        setTimeout(() => {
+          addToast("warning", mappedWarnings[0], 8000);
+        }, 300);
+      }
+    },
+    [fetchGuests, highlightGuest, addToast]
+  );
+
+  const handleImportDone = useCallback(
+    ({ imported, warnings }: { imported: number; warnings?: ImportRowWarning[] }) => {
+      setIsImportModalOpen(false);
+      fetchGuests();
+
+      addToast("success", `${imported} invitați importați cu succes`, 3000);
+
+      const relevant = (warnings ?? [])
+        .map((w) => {
+          const mapped = mapImportWarning(w.message);
+          return mapped ? { ...w, mapped } : null;
+        })
+        .filter((w): w is { row: number; message: string; mapped: string } => w !== null);
+
+      if (relevant.length > 0) {
+        setImportReport({ imported, relevantWarnings: relevant });
+        setImportReportExpanded(false);
+        setFilterDuplicates(false);
+      }
+    },
+    [fetchGuests, addToast]
+  );
 
   const handleEdit = useCallback((guest: GuestWithRelations) => {
     setEditingGuest(guest);
@@ -233,6 +459,83 @@ export default function GuestListPage() {
           groups={groups}
         />
 
+        {/* Import Report Panel */}
+        {importReport && (
+          <div
+            className="mt-6 rounded-xl"
+            style={{
+              background: "rgba(236,201,75,0.08)",
+              border: "1px solid rgba(236,201,75,0.4)",
+            }}
+          >
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={15} strokeWidth={1.8} style={{ color: "var(--yellow)", flexShrink: 0 }} />
+                <span className="text-sm font-medium" style={{ color: "var(--navy)" }}>
+                  Import finalizat — {importReport.imported} invitați importați
+                </span>
+              </div>
+              <button
+                onClick={() => { setImportReport(null); setFilterDuplicates(false); }}
+                className="p-1 rounded"
+                style={{ color: "var(--muted)" }}
+              >
+                <X size={14} strokeWidth={1.8} />
+              </button>
+            </div>
+
+            <div
+              className="px-4 pb-3"
+              style={{ borderTop: "1px solid rgba(236,201,75,0.3)" }}
+            >
+              <p className="text-sm mt-2" style={{ color: "#92700a" }}>
+                ⚠ {importReport.relevantWarnings.length} duplicate detectate
+              </p>
+
+              <div className="mt-2 space-y-1">
+                {(importReportExpanded
+                  ? importReport.relevantWarnings
+                  : importReport.relevantWarnings.slice(0, 10)
+                ).map((w, i) => (
+                  <p key={i} className="text-xs" style={{ color: "var(--muted)" }}>
+                    Rând {w.row}: {w.mapped}
+                  </p>
+                ))}
+                {!importReportExpanded && importReport.relevantWarnings.length > 10 && (
+                  <button
+                    onClick={() => setImportReportExpanded(true)}
+                    className="text-xs"
+                    style={{ color: "var(--rose)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  >
+                    + {importReport.relevantWarnings.length - 10} mai multe
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={() => { setImportReport(null); setFilterDuplicates(false); }}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium"
+                  style={{ border: "1px solid var(--cream-line)", color: "var(--muted)" }}
+                >
+                  Închide
+                </button>
+                <button
+                  onClick={() => setFilterDuplicates((v) => !v)}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium"
+                  style={{
+                    background: filterDuplicates ? "var(--yellow)" : "transparent",
+                    border: "1px solid var(--yellow)",
+                    color: filterDuplicates ? "white" : "#92700a",
+                  }}
+                >
+                  {filterDuplicates ? "Afișează toți" : "Filtrează duplicatele"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error ? (
           <div
             className="mt-6 rounded-xl p-6 text-center"
@@ -253,6 +556,7 @@ export default function GuestListPage() {
             isLoading={isLoading}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            highlightedGuestId={highlightedGuestId}
           />
         )}
       </div>
@@ -273,11 +577,13 @@ export default function GuestListPage() {
 
       {isImportModalOpen && token && (
         <GuestImportModal
-          onDone={handleImportDone}
+          onImport={handleImportDone}
           onClose={() => setIsImportModalOpen(false)}
           devToken={token}
         />
       )}
+
+      <ToastStack toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 }
