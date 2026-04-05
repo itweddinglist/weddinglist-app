@@ -96,9 +96,12 @@ describe("T5 — Prezidiu case-insensitive", () => {
 // ── Test 6: Status declinat exclus ───────────────────────────────────────────
 
 describe("T6 — status declinat exclus", () => {
-  it("invitat declinat nu apare în assignments", () => {
+  it("invitat declinat (RSVP) nu apare în assignments", () => {
     const tables = [makeTable(1, 8)];
-    const guests = [makeGuest(1, "Grup A"), { ...makeGuest(2, "Grup A"), status: "declinat" }];
+    const guests = [
+      makeGuest(1, "Grup A"),
+      { ...makeGuest(2, "Grup A"), guest_events: [{ attendance_status: "declined" }] },
+    ];
     const res = calculateMagicFill(guests, tables);
     expect(res.assignments[1]).toBe(1);
     expect(res.assignments[2]).toBeUndefined();

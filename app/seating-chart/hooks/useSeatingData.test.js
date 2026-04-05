@@ -3,7 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import { INITIAL_GUESTS, buildTemplate } from "../utils/geometry.js";
 import { loadStorageState } from "../utils/storage.js";
 import { calculateMagicFill } from "../utils/magicFill.js";
-import { useSeatingData } from "./useSeatingData.js";
+import { useSeatingData, isSeatingEligible } from "./useSeatingData.js";
 
 vi.mock("../utils/storage.js", () => ({
   loadStorageState: vi.fn(() => ({ data: {}, ok: true, source: "default" })),
@@ -804,5 +804,171 @@ describe("useSeatingData — getGuestTableId", () => {
   it("guest inexistent → null", () => {
     const { result } = renderData();
     expect(result.current.getGuestTableId(9999)).toBeNull();
+  });
+});
+
+// ── Test 15 — isSeatingEligible ───────────────────────────────────────────────
+
+describe("isSeatingEligible", () => {
+  it("declined via guest_events → false", () => {
+    const g = { guest_events: [{ attendance_status: "declined" }] };
+    expect(isSeatingEligible(g)).toBe(false);
+  });
+
+  it("attending via guest_events → true", () => {
+    const g = { guest_events: [{ attendance_status: "attending" }] };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+
+  it("pending via guest_events → true", () => {
+    const g = { guest_events: [{ attendance_status: "pending" }] };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+
+  it("invited via guest_events → true", () => {
+    const g = { guest_events: [{ attendance_status: "invited" }] };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+
+  it("null attendance_status → true", () => {
+    const g = { guest_events: [{ attendance_status: null }] };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+
+  it("guest_events gol [] → true", () => {
+    const g = { guest_events: [] };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+
+  it("fără guest_events → true", () => {
+    const g = { prenume: "Ion", nume: "Popescu" };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+
+  it("status='declinat' (câmp vechi) fără guest_events → true (nu e exclus de noua logică)", () => {
+    const g = { status: "declinat" };
+    expect(isSeatingEligible(g)).toBe(true);
+  });
+});
+
+// ── Test 16 — unassigned filtrare RSVP declined ───────────────────────────────
+
+function makeGuest(overrides) {
+  return { id: 99, prenume: "Test", nume: "Test", grup: "", status: "", meniu: "Standard", tableId: null, ...overrides };
+}
+
+describe("useSeatingData — unassigned filtrare RSVP", () => {
+  it("declined fără loc → nu apare în unassigned", () => {
+    const declinedGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "declined" }] });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [declinedGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.unassigned.find((g) => g.id === 99)).toBeUndefined();
+  });
+
+  it("declined cu loc alocat → nu apare în unassigned", () => {
+    const declinedWithSeat = makeGuest({ id: 99, tableId: 3, guest_events: [{ attendance_status: "declined" }] });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [declinedWithSeat], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.unassigned.find((g) => g.id === 99)).toBeUndefined();
+  });
+
+  it("pending fără loc → apare în unassigned", () => {
+    const pendingGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "pending" }] });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [pendingGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
+  });
+
+  it("attending fără loc → apare în unassigned", () => {
+    const attendingGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "attending" }] });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [attendingGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
+  });
+
+  it("null attendance_status → apare în unassigned", () => {
+    const nullStatusGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: null }] });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [nullStatusGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
+  });
+
+  it("fără guest_events → apare în unassigned", () => {
+    const noEventsGuest = makeGuest({ id: 99, tableId: null });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [noEventsGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
+  });
+});
+
+// ── Test 17 — assignedCount nu se schimbă pentru declined cu loc ──────────────
+
+describe("useSeatingData — assignedCount include declined cu loc", () => {
+  it("declined cu loc → assignedCount îl numără (realitate fizică)", () => {
+    const declinedWithSeat = makeGuest({ id: 99, tableId: 3, guest_events: [{ attendance_status: "declined" }] });
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [declinedWithSeat], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    expect(result.current.assignedCount).toBe(1);
+  });
+});
+
+// ── Test 18 — Magic Fill ignoră declined ─────────────────────────────────────
+
+describe("useSeatingData — Magic Fill ignoră declined", () => {
+  it("singurul guest neatribuit e declined → magicFill ok:false", () => {
+    const declinedGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "declined" }] });
+    const allOthersAssigned = INITIAL_GUESTS.map((g) => ({ ...g, tableId: 3 }));
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [...allOthersAssigned, declinedGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    let res;
+    act(() => { res = result.current.magicFill(); });
+    expect(res.ok).toBe(false);
+    expect(res.effects[0].payload.toastType).toBe("yellow");
+  });
+
+  it("guest declined + guest eligible neatribuit → magicFill apelat (eligible merge)", () => {
+    calculateMagicFill.mockReturnValueOnce({
+      assignments: { 1: 3 },
+      assignmentsCount: 1,
+      skippedGuests: [],
+      prezidiuSkipped: 0,
+      skippedGroups: [],
+      limitReached: false,
+    });
+    const declinedGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "declined" }] });
+    // guest id:1 rămâne neatribuit (eligible)
+    loadStorageState.mockReturnValueOnce({
+      data: { guests: [...INITIAL_GUESTS, declinedGuest], tables: buildTemplate(), nextId: 10 },
+      ok: true, source: "storage",
+    });
+    const { result } = renderData();
+    let res;
+    act(() => { res = result.current.magicFill(); });
+    expect(res.ok).toBe(true);
+    expect(calculateMagicFill).toHaveBeenCalled();
   });
 });
