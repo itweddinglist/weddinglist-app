@@ -1,13 +1,14 @@
 // =============================================================================
-// app/api/rsvp/[token]/route.ts
-// GET  /api/rsvp/[token] — Validează token, returnează date pentru pagina publică
-// POST /api/rsvp/[token] — Submit răspuns RSVP
+// app/api/rsvp/[public_link_id]/route.ts
+// GET  /api/rsvp/[public_link_id] — Validează invitația, returnează date publice
+// POST /api/rsvp/[public_link_id] — Submit răspuns RSVP
 // Rute PUBLICE — fără auth, fără sesiune
+// Lookup după public_link_id (stabil, opaque) nu după token_hash.
 // =============================================================================
 
 import { type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { hashToken, validateTokenState } from "@/lib/rsvp/token";
+import { validateTokenState } from "@/lib/rsvp/token";
 import { validateRsvpSubmission } from "@/lib/rsvp/validate-rsvp-submission";
 import {
   successResponse,
@@ -17,10 +18,9 @@ import {
 } from "@/lib/api-response";
 import type { RsvpPageData } from "@/types/rsvp";
 
-type RouteContext = { params: Promise<{ token: string }> };
+type RouteContext = { params: Promise<{ public_link_id: string }> };
 
 // Client Supabase cu anon key — RLS protejează datele
-// Politica publică permite citire doar pe token_hash valid
 function getPublicClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -29,39 +29,39 @@ function getPublicClient() {
   });
 }
 
-// ─── GET /api/rsvp/[token] ────────────────────────────────────────────────────
+// ─── GET /api/rsvp/[public_link_id] ──────────────────────────────────────────
 
 export async function GET(
   _request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
-  const { token: rawToken } = await context.params;
+  const { public_link_id: publicLinkId } = await context.params;
 
-  if (!rawToken || rawToken.length < 10) {
-    return errorResponse(400, "INVALID_TOKEN", "Token invalid.");
+  if (!publicLinkId || publicLinkId.length < 8) {
+    return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
   }
 
-  const tokenHash = hashToken(rawToken);
   const supabase = getPublicClient();
 
   try {
-    // ── Lookup invitație după token_hash ───────────────────────────────────
+    // ── Lookup invitație după public_link_id ───────────────────────────────
     const { data: invitation, error: invError } = await supabase
       .from("rsvp_invitations")
       .select(`
         id, wedding_id, guest_id, is_active,
         expires_at, responded_at, opened_at
       `)
-      .eq("token_hash", tokenHash)
+      .eq("public_link_id", publicLinkId)
       .maybeSingle();
 
-    if (invError) return internalErrorResponse(invError, "GET /api/rsvp/[token]");
+    if (invError) return internalErrorResponse(invError, "GET /api/rsvp/[public_link_id]");
 
+    // 404 generic — fără detalii despre motivul invalidității
     if (!invitation) {
-      return errorResponse(404, "TOKEN_NOT_FOUND", "Linkul de invitație nu este valid.");
+      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
     }
 
-    // ── Validare stare token ───────────────────────────────────────────────
+    // ── Validare stare invitație ───────────────────────────────────────────
     const tokenState = validateTokenState({
       is_active: invitation.is_active,
       responded_at: invitation.responded_at,
@@ -69,11 +69,7 @@ export async function GET(
     });
 
     if (!tokenState.valid) {
-      const code = tokenState.reason === "expired" ? "TOKEN_EXPIRED" : "TOKEN_INACTIVE";
-      const message = tokenState.reason === "expired"
-        ? "Linkul de invitație a expirat."
-        : "Linkul de invitație nu mai este activ.";
-      return errorResponse(410, code, message);
+      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
     }
 
     // ── Marchează opened_at dacă e primul acces ────────────────────────────
@@ -92,10 +88,10 @@ export async function GET(
       .single();
 
     if (guestError || !guest) {
-      return errorResponse(404, "GUEST_NOT_FOUND", "Invitatul nu a fost găsit.");
+      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
     }
 
-    // ── Fetch guest_events (evenimentele la care e invitat) ────────────────
+    // ── Fetch guest_events ─────────────────────────────────────────────────
     const { data: guestEvents, error: eventsError } = await supabase
       .from("guest_events")
       .select(`
@@ -108,7 +104,7 @@ export async function GET(
       .eq("guest_id", invitation.guest_id)
       .eq("wedding_id", invitation.wedding_id);
 
-    if (eventsError) return internalErrorResponse(eventsError, "GET /api/rsvp/[token] events");
+    if (eventsError) return internalErrorResponse(eventsError, "GET /api/rsvp/[public_link_id] events");
 
     // ── Fetch răspunsuri existente ─────────────────────────────────────────
     const { data: existingResponses } = await supabase
@@ -150,23 +146,22 @@ export async function GET(
     return successResponse(pageData);
 
   } catch (err) {
-    return internalErrorResponse(err, "GET /api/rsvp/[token]");
+    return internalErrorResponse(err, "GET /api/rsvp/[public_link_id]");
   }
 }
 
-// ─── POST /api/rsvp/[token] ───────────────────────────────────────────────────
+// ─── POST /api/rsvp/[public_link_id] ─────────────────────────────────────────
 
 export async function POST(
   request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
-  const { token: rawToken } = await context.params;
+  const { public_link_id: publicLinkId } = await context.params;
 
-  if (!rawToken || rawToken.length < 10) {
-    return errorResponse(400, "INVALID_TOKEN", "Token invalid.");
+  if (!publicLinkId || publicLinkId.length < 8) {
+    return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
   }
 
-  const tokenHash = hashToken(rawToken);
   const supabase = getPublicClient();
 
   let body: unknown;
@@ -186,16 +181,16 @@ export async function POST(
     const { data: invitation, error: invError } = await supabase
       .from("rsvp_invitations")
       .select("id, wedding_id, guest_id, is_active, expires_at, responded_at")
-      .eq("token_hash", tokenHash)
+      .eq("public_link_id", publicLinkId)
       .maybeSingle();
 
-    if (invError) return internalErrorResponse(invError, "POST /api/rsvp/[token]");
+    if (invError) return internalErrorResponse(invError, "POST /api/rsvp/[public_link_id]");
 
     if (!invitation) {
-      return errorResponse(404, "TOKEN_NOT_FOUND", "Linkul de invitație nu este valid.");
+      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
     }
 
-    // ── Validare stare token ───────────────────────────────────────────────
+    // ── Validare stare invitație ───────────────────────────────────────────
     const tokenState = validateTokenState({
       is_active: invitation.is_active,
       responded_at: invitation.responded_at,
@@ -203,11 +198,7 @@ export async function POST(
     });
 
     if (!tokenState.valid) {
-      const code = tokenState.reason === "expired" ? "TOKEN_EXPIRED" : "TOKEN_INACTIVE";
-      const message = tokenState.reason === "expired"
-        ? "Linkul de invitație a expirat."
-        : "Linkul de invitație nu mai este activ.";
-      return errorResponse(410, code, message);
+      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
     }
 
     // ── Verifică că guest_event_id aparține acestui guest ─────────────────
@@ -217,7 +208,7 @@ export async function POST(
       .eq("guest_id", invitation.guest_id)
       .eq("wedding_id", invitation.wedding_id);
 
-    if (eventsError) return internalErrorResponse(eventsError, "POST /api/rsvp/[token] events");
+    if (eventsError) return internalErrorResponse(eventsError, "POST /api/rsvp/[public_link_id] events");
 
     const validEventIds = new Set((validEvents ?? []).map((e: any) => e.id));
 
@@ -236,7 +227,7 @@ export async function POST(
     const upsertData = responses.map((r) => ({
       wedding_id: invitation.wedding_id,
       event_id: validEvents?.find((e: any) => e.id === r.guest_event_id)
-        ? r.guest_event_id // placeholder — vom face join
+        ? r.guest_event_id
         : r.guest_event_id,
       invitation_id: invitation.id,
       guest_event_id: r.guest_event_id,
@@ -253,7 +244,7 @@ export async function POST(
       .upsert(upsertData, { onConflict: "guest_event_id" });
 
     if (upsertError) {
-      return internalErrorResponse(upsertError, "POST /api/rsvp/[token] upsert");
+      return internalErrorResponse(upsertError, "POST /api/rsvp/[public_link_id] upsert");
     }
 
     // ── Marchează invitația ca responded ──────────────────────────────────
@@ -272,6 +263,6 @@ export async function POST(
     });
 
   } catch (err) {
-    return internalErrorResponse(err, "POST /api/rsvp/[token]");
+    return internalErrorResponse(err, "POST /api/rsvp/[public_link_id]");
   }
 }
