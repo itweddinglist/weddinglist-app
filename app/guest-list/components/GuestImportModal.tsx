@@ -7,17 +7,17 @@
 
 import { useState, useRef } from "react";
 import { X, Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
-import type { ImportResult } from "@/types/guest-import";
+import type { ImportResult, ImportRowWarning } from "@/types/guest-import";
 
 interface Props {
-  onDone: () => void;
+  onImport: (result: { imported: number; warnings?: ImportRowWarning[] }) => void;
   onClose: () => void;
   devToken: string;
 }
 
 type Step = "upload" | "importing" | "done";
 
-export default function GuestImportModal({ onDone, onClose, devToken }: Props) {
+export default function GuestImportModal({ onImport, onClose, devToken }: Props) {
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -63,8 +63,10 @@ export default function GuestImportModal({ onDone, onClose, devToken }: Props) {
       }
 
       const json = await res.json();
-      setResult(json.data);
+      const importResult: ImportResult = json.data;
+      setResult(importResult);
       setStep("done");
+      onImport({ imported: importResult.created, warnings: importResult.warnings });
     } catch (err: any) {
       setError(err.message ?? "Eroare necunoscută.");
       setStep("upload");
@@ -298,11 +300,11 @@ export default function GuestImportModal({ onDone, onClose, devToken }: Props) {
 
           {step === "done" && result && result.created > 0 && (
             <button
-              onClick={onDone}
+              onClick={onClose}
               className="px-5 py-2 rounded-full text-sm font-medium"
               style={{ background: "var(--rose)", color: "white" }}
             >
-              Vezi invitații →
+              Finalizat →
             </button>
           )}
         </div>

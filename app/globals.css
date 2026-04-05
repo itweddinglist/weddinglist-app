@@ -33,6 +33,15 @@ body {
   overflow: hidden; /* ← adaugă această linie */
 }
 
+@keyframes fadeOutYellow {
+  0% {
+    background: rgba(236, 201, 75, 0.25);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

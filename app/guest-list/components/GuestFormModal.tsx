@@ -18,7 +18,7 @@ interface Props {
   guest: GuestWithRelations | null;
   groups: Group[];
   weddingId: string;
-  onSave: () => void;
+  onSave: (result: { guest: GuestWithRelations; warnings?: string[] }) => void;
   onClose: () => void;
   devToken: string;
 }
@@ -138,12 +138,13 @@ export default function GuestFormModal({
         });
       }
 
+      const json = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message ?? "Eroare la salvare.");
+        throw new Error(json?.error?.message ?? "Eroare la salvare.");
       }
 
-      onSave();
+      onSave({ guest: json.data as GuestWithRelations, warnings: json.warnings });
     } catch (err: any) {
       setError(err.message ?? "Eroare necunoscută.");
     } finally {
