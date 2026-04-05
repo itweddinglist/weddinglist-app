@@ -20,6 +20,9 @@ import type { RsvpPageData } from "@/types/rsvp";
 
 type RouteContext = { params: Promise<{ public_link_id: string }> };
 
+// Mesaj generic expus utilizatorilor — nu dezvăluie cauza reală
+const GENERIC_404_MSG = "Acest link de invitație nu este valid sau a expirat.";
+
 // Client Supabase cu anon key — RLS protejează datele
 function getPublicClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -29,6 +32,11 @@ function getPublicClient() {
   });
 }
 
+// Log intern structurat — fără PII, fără token raw
+function logInternal(event: string, extra: Record<string, unknown>) {
+  console.warn(JSON.stringify({ event, ...extra, timestamp: new Date().toISOString() }));
+}
+
 // ─── GET /api/rsvp/[public_link_id] ──────────────────────────────────────────
 
 export async function GET(
@@ -36,15 +44,16 @@ export async function GET(
   context: RouteContext
 ): Promise<Response> {
   const { public_link_id: publicLinkId } = await context.params;
+  const route = `/api/rsvp/${publicLinkId}`;
 
   if (!publicLinkId || publicLinkId.length < 8) {
-    return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+    logInternal("RSVP_LINK_INVALID", { reason: "param_too_short", route });
+    return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
   }
 
   const supabase = getPublicClient();
 
   try {
-    // ── Lookup invitație după public_link_id ───────────────────────────────
     const { data: invitation, error: invError } = await supabase
       .from("rsvp_invitations")
       .select(`
@@ -54,14 +63,13 @@ export async function GET(
       .eq("public_link_id", publicLinkId)
       .maybeSingle();
 
-    if (invError) return internalErrorResponse(invError, "GET /api/rsvp/[public_link_id]");
+    if (invError) return internalErrorResponse(invError, `GET ${route}`);
 
-    // 404 generic — fără detalii despre motivul invalidității
     if (!invitation) {
-      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+      logInternal("RSVP_LINK_INVALID", { reason: "not_found", route });
+      return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
     }
 
-    // ── Validare stare invitație ───────────────────────────────────────────
     const tokenState = validateTokenState({
       is_active: invitation.is_active,
       responded_at: invitation.responded_at,
@@ -69,10 +77,11 @@ export async function GET(
     });
 
     if (!tokenState.valid) {
-      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+      logInternal("RSVP_LINK_INVALID", { reason: tokenState.reason, route });
+      return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
     }
 
-    // ── Marchează opened_at dacă e primul acces ────────────────────────────
+    // Marchează opened_at la primul acces
     if (!invitation.opened_at) {
       await supabase
         .from("rsvp_invitations")
@@ -80,7 +89,6 @@ export async function GET(
         .eq("id", invitation.id);
     }
 
-    // ── Fetch guest ────────────────────────────────────────────────────────
     const { data: guest, error: guestError } = await supabase
       .from("guests")
       .select("id, first_name, last_name, display_name")
@@ -88,10 +96,10 @@ export async function GET(
       .single();
 
     if (guestError || !guest) {
-      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+      logInternal("RSVP_LINK_INVALID", { reason: "guest_not_found", route });
+      return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
     }
 
-    // ── Fetch guest_events ─────────────────────────────────────────────────
     const { data: guestEvents, error: eventsError } = await supabase
       .from("guest_events")
       .select(`
@@ -104,15 +112,13 @@ export async function GET(
       .eq("guest_id", invitation.guest_id)
       .eq("wedding_id", invitation.wedding_id);
 
-    if (eventsError) return internalErrorResponse(eventsError, "GET /api/rsvp/[public_link_id] events");
+    if (eventsError) return internalErrorResponse(eventsError, `GET ${route} events`);
 
-    // ── Fetch răspunsuri existente ─────────────────────────────────────────
     const { data: existingResponses } = await supabase
       .from("rsvp_responses")
       .select("*")
       .eq("invitation_id", invitation.id);
 
-    // ── Build response ─────────────────────────────────────────────────────
     const events = (guestEvents ?? []).map((ge: any) => {
       const existing = (existingResponses ?? []).find(
         (r: any) => r.guest_event_id === ge.id
@@ -146,7 +152,7 @@ export async function GET(
     return successResponse(pageData);
 
   } catch (err) {
-    return internalErrorResponse(err, "GET /api/rsvp/[public_link_id]");
+    return internalErrorResponse(err, `GET ${route}`);
   }
 }
 
@@ -157,9 +163,11 @@ export async function POST(
   context: RouteContext
 ): Promise<Response> {
   const { public_link_id: publicLinkId } = await context.params;
+  const route = `/api/rsvp/${publicLinkId}`;
 
   if (!publicLinkId || publicLinkId.length < 8) {
-    return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+    logInternal("RSVP_LINK_INVALID", { reason: "param_too_short", route });
+    return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
   }
 
   const supabase = getPublicClient();
@@ -171,26 +179,35 @@ export async function POST(
     return errorResponse(400, "INVALID_JSON", "Request body must be valid JSON.");
   }
 
+  // ── Honey pot check ────────────────────────────────────────────────────────
+  // Câmpul _rsvp_confirm_extra_ trebuie să fie gol pentru utilizatori reali.
+  // Boții care completează automat toate câmpurile vor popula acest câmp.
+  const bodyObj = body as Record<string, unknown>;
+  if (bodyObj._rsvp_confirm_extra_) {
+    logInternal("HONEYPOT_HIT", { route });
+    // Fake success — nu revelăm botului că a fost detectat
+    return successResponse({ success: true, responses_saved: 0, invitation_id: null });
+  }
+
   // ── Validare input ─────────────────────────────────────────────────────────
   const validation = validateRsvpSubmission(body);
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const { responses } = validation.data;
 
   try {
-    // ── Lookup invitație ───────────────────────────────────────────────────
     const { data: invitation, error: invError } = await supabase
       .from("rsvp_invitations")
       .select("id, wedding_id, guest_id, is_active, expires_at, responded_at")
       .eq("public_link_id", publicLinkId)
       .maybeSingle();
 
-    if (invError) return internalErrorResponse(invError, "POST /api/rsvp/[public_link_id]");
+    if (invError) return internalErrorResponse(invError, `POST ${route}`);
 
     if (!invitation) {
-      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+      logInternal("RSVP_LINK_INVALID", { reason: "not_found", route });
+      return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
     }
 
-    // ── Validare stare invitație ───────────────────────────────────────────
     const tokenState = validateTokenState({
       is_active: invitation.is_active,
       responded_at: invitation.responded_at,
@@ -198,17 +215,17 @@ export async function POST(
     });
 
     if (!tokenState.valid) {
-      return errorResponse(404, "NOT_FOUND", "Linkul de invitație nu este valid.");
+      logInternal("RSVP_LINK_INVALID", { reason: tokenState.reason, route });
+      return errorResponse(404, "NOT_FOUND", GENERIC_404_MSG);
     }
 
-    // ── Verifică că guest_event_id aparține acestui guest ─────────────────
     const { data: validEvents, error: eventsError } = await supabase
       .from("guest_events")
       .select("id")
       .eq("guest_id", invitation.guest_id)
       .eq("wedding_id", invitation.wedding_id);
 
-    if (eventsError) return internalErrorResponse(eventsError, "POST /api/rsvp/[public_link_id] events");
+    if (eventsError) return internalErrorResponse(eventsError, `POST ${route} events`);
 
     const validEventIds = new Set((validEvents ?? []).map((e: any) => e.id));
 
@@ -222,7 +239,6 @@ export async function POST(
       }
     }
 
-    // ── Upsert răspunsuri ──────────────────────────────────────────────────
     const now = new Date().toISOString();
     const upsertData = responses.map((r) => ({
       wedding_id: invitation.wedding_id,
@@ -244,16 +260,12 @@ export async function POST(
       .upsert(upsertData, { onConflict: "guest_event_id" });
 
     if (upsertError) {
-      return internalErrorResponse(upsertError, "POST /api/rsvp/[public_link_id] upsert");
+      return internalErrorResponse(upsertError, `POST ${route} upsert`);
     }
 
-    // ── Marchează invitația ca responded ──────────────────────────────────
     await supabase
       .from("rsvp_invitations")
-      .update({
-        responded_at: now,
-        updated_at: now,
-      })
+      .update({ responded_at: now, updated_at: now })
       .eq("id", invitation.id);
 
     return successResponse({
@@ -263,6 +275,6 @@ export async function POST(
     });
 
   } catch (err) {
-    return internalErrorResponse(err, "POST /api/rsvp/[public_link_id]");
+    return internalErrorResponse(err, `POST ${route}`);
   }
 }
