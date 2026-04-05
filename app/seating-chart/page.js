@@ -46,7 +46,15 @@ function isTableVisible(t, cam, canvasW, canvasH) {
   );
 }
 
-function SeatingChartInner({ initialGuests, onSeatingStateChanged }) {
+function SeatingChartInner({
+  initialGuests,
+  onSeatingStateChanged,
+  syncSaveStatus,
+  confirmedAt,
+  confirmedSnapshot,
+  onRetry,
+  onRevertConfirmed,
+}) {
   // ── Layer 1: Camera ──
   const {
     cam,
@@ -66,20 +74,10 @@ function SeatingChartInner({ initialGuests, onSeatingStateChanged }) {
     focusPoint,
   } = useCamera();
 
-  // ── Save status (UI local — izolat de canvas) ──
-  const [saveStatus, setSaveStatus] = useState("idle");
+  // ── Save status — vine din useSeatingSync (API sync) ──
   const [isOffline, setIsOffline] = useState(
     typeof navigator !== "undefined" ? !navigator.onLine : false
   );
-  const savedTimerRef = useRef(null);
-
-  const handleSaveStatusChange = useCallback((newStatus) => {
-    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    setSaveStatus(newStatus);
-    if (newStatus === "saved") {
-      savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
-    }
-  }, []);
 
   useEffect(() => {
     const onOnline  = () => setIsOffline(false);
@@ -92,13 +90,19 @@ function SeatingChartInner({ initialGuests, onSeatingStateChanged }) {
     };
   }, []);
 
+  // ── beforeunload — activ DOAR când syncSaveStatus === "unconfirmed" ──
   useEffect(() => {
-    return () => { if (savedTimerRef.current) clearTimeout(savedTimerRef.current); };
-  }, []);
+    if (syncSaveStatus !== "unconfirmed") return;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [syncSaveStatus]);
 
   // ── Layer 2: Data ──
   const data = useSeatingData(cam, camRef, canvasWRef, canvasHRef, {
-    onSaveStatusChange: handleSaveStatusChange,
     initialGuests,
     onSeatingStateChanged,
   });
@@ -690,7 +694,29 @@ function SeatingChartInner({ initialGuests, onSeatingStateChanged }) {
           </div>
         </div>
       )}
-      <SaveIndicator status={saveStatus} isOffline={isOffline} />
+      <SaveIndicator status={syncSaveStatus} isOffline={isOffline} />
+      {syncSaveStatus === "unconfirmed" && (
+        <UnconfirmedBanner
+          confirmedAt={confirmedAt}
+          hasSnapshot={!!confirmedSnapshot}
+          onRetry={onRetry}
+          onRevert={() => {
+            const ora = confirmedAt
+              ? new Date(confirmedAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })
+              : "necunoscută";
+            ui.setConfirmDialog({
+              title: "Revenire la starea salvată",
+              sub: `Vei pierde modificările nesalvate. Revenim la starea salvată la ${ora}. Continui?`,
+              onOk: () => {
+                if (confirmedSnapshot) {
+                  data.revertToSnapshot(confirmedSnapshot);
+                }
+                onRevertConfirmed();
+              },
+            });
+          }}
+        />
+      )}
       <FpsCounter />
     </>
   );
@@ -745,7 +771,17 @@ function ModalCreate({ modal, setModal, createTable }) {
 // =============================================================================
 
 function SeatingChartWrapperInner({ weddingId, eventId }) {
-  const { initialGuests, isLoading, error, onSeatingStateChanged } = useSeatingSync({
+  const {
+    initialGuests,
+    isLoading,
+    error,
+    onSeatingStateChanged,
+    saveStatus,
+    confirmedAt,
+    confirmedSnapshot,
+    retry,
+    confirmRevert,
+  } = useSeatingSync({
     weddingId,
     eventId,
     supabase: supabaseClient,
@@ -764,6 +800,11 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
     <SeatingChartInner
       initialGuests={initialGuests}
       onSeatingStateChanged={onSeatingStateChanged}
+      syncSaveStatus={saveStatus}
+      confirmedAt={confirmedAt}
+      confirmedSnapshot={confirmedSnapshot}
+      onRetry={retry}
+      onRevertConfirmed={confirmRevert}
     />
   );
 }
@@ -864,6 +905,83 @@ function ProvisioningErrorState({ error }) {
         {error || "Încearcă din nou sau contactează suportul dacă problema persistă."}
       </p>
       <ForceResyncButton />
+    </div>
+  );
+}
+
+// =============================================================================
+// UnconfirmedBanner — banner persistent roșu când sync a eșuat definitiv
+// NU blochează editorul. Butoane: Reîncearcă / Revenire.
+// =============================================================================
+
+function UnconfirmedBanner({ confirmedAt, hasSnapshot, onRetry, onRevert }) {
+  const ora = confirmedAt
+    ? new Date(confirmedAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        background: "rgba(229,62,62,0.95)",
+        color: "#fff",
+        padding: "0.6rem 1.2rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "1rem",
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: "0.78rem",
+        fontWeight: 500,
+        backdropFilter: "blur(4px)",
+        boxShadow: "0 2px 12px rgba(229,62,62,0.4)",
+      }}
+    >
+      <span style={{ flex: 1 }}>
+        ⚠ Modificările nu au putut fi salvate pe server.
+        {ora && <span style={{ opacity: 0.85, marginLeft: 6 }}>Ultima salvare confirmată: {ora}</span>}
+      </span>
+      <button
+        onClick={onRetry}
+        style={{
+          padding: "0.3rem 0.9rem",
+          borderRadius: 6,
+          border: "1px solid rgba(255,255,255,0.5)",
+          background: "transparent",
+          color: "#fff",
+          fontFamily: "inherit",
+          fontSize: "0.72rem",
+          fontWeight: 600,
+          cursor: "pointer",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+        }}
+      >
+        Reîncearcă
+      </button>
+      {hasSnapshot && (
+        <button
+          onClick={onRevert}
+          style={{
+            padding: "0.3rem 0.9rem",
+            borderRadius: 6,
+            border: "none",
+            background: "rgba(255,255,255,0.2)",
+            color: "#fff",
+            fontFamily: "inherit",
+            fontSize: "0.72rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          }}
+        >
+          Revenire
+        </button>
+      )}
     </div>
   );
 }

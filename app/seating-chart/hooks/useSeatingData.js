@@ -493,6 +493,14 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
       `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q));
   }, [guests]);
 
+  // ── REVERT TO SNAPSHOT ────────────────────────────────────────────────────
+  // Restaurare atomică: setTables + setGuests cu tableId-urile din snapshot.
+  // Apelat de page.js la confirmare dialog "Revenire".
+  const revertToSnapshot = useCallback(({ tables: snapTables, guests: snapGuests }) => {
+    setTables(structuredClone(snapTables));
+    setGuests(structuredClone(snapGuests));
+  }, []);
+
   return {
     // State
     guests,
@@ -533,6 +541,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     rotateTable,
     saveEdit,
     resetPlan,
+    revertToSnapshot,
 
     // Helper
     getGuestTableId: (guestId) => {
