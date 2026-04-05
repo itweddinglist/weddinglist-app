@@ -239,10 +239,14 @@ export function useOptimisticGuests(
       editRollbackRef.current.set(id, oldGuest);
 
       // Instant optimistic update
+      // Strip undefined/null display_name from input to avoid overwriting the
+      // computed non-nullable field from GuestRow with an invalid value.
+      const { display_name, ...restInput } = input;
+      const mergedInput = display_name != null ? { ...restInput, display_name } : restInput;
       setGuests((prev) =>
         prev.map((g) =>
           g.id === id
-            ? { ...g, ...input, updated_at: new Date().toISOString() }
+            ? { ...g, ...mergedInput, updated_at: new Date().toISOString() }
             : g
         )
       );
