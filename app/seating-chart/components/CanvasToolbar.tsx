@@ -18,6 +18,26 @@ import {
   SquircleDashed,
   GalleryThumbnails,
 } from "lucide-react";
+import type { CSSProperties } from "react";
+import type { SeatingTable } from "@/types/seating";
+
+interface CanvasToolbarProps {
+  vzoom: number
+  zoomBy: (delta: number) => void
+  fitToScreen: (tables: SeatingTable[]) => void
+  tables: SeatingTable[]
+  lockMode: boolean
+  setLockMode: (updater: boolean | ((prev: boolean) => boolean)) => void
+  showToast: (message: string, type?: string) => void
+  magicFill: () => void
+  undo: () => void
+  setShowCatering: (value: boolean) => void
+  setConfirmDialog: (dialog: { title: string; sub?: string; onOk: () => void } | null) => void
+  resetPlan: () => void
+  setModal: (config: Record<string, unknown> | null) => void
+  getNextTableName: () => string
+  onExport?: () => void
+}
 
 export default function CanvasToolbar({
   vzoom,
@@ -35,7 +55,7 @@ export default function CanvasToolbar({
   setModal,
   getNextTableName,
   onExport,
-}) {
+}: CanvasToolbarProps) {
   const btn = {
     display: "inline-flex",
     alignItems: "center",
@@ -92,7 +112,7 @@ export default function CanvasToolbar({
     margin: "0 4px",
   };
 
-  const group = {
+  const group: CSSProperties = {
     display: "flex",
     flexDirection: "column",
     gap: "4px",
