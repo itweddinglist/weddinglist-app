@@ -1,8 +1,54 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
+import type { MutableRefObject } from "react";
 import { GRID, PLAN_W, PLAN_H, getTableDims } from "../utils/geometry.js";
+import type { SeatingTable, CameraState, Point } from "@/types/seating";
 
 const PAN_PAD = 1000;
+
+interface DraggingTable {
+  id: number
+  ox: number
+  oy: number
+  dw: number
+  dh: number
+}
+
+interface PanState {
+  sx: number
+  sy: number
+  vx0: number
+  vy0: number
+}
+
+interface DragPreview {
+  tableId: number
+  x: number
+  y: number
+}
+
+interface UseTableInteractionsProps {
+  tables: SeatingTable[]
+  setTables: (updater: SeatingTable[] | ((prev: SeatingTable[]) => SeatingTable[])) => void
+  selectedTableId: number | null
+  lockMode: boolean
+  undo: () => void
+  saveAction: () => void
+  setModal: (config: Record<string, unknown> | null) => void
+  setEditPanel: (panel: { tableId: number } | null) => void
+  setConfirmDialog: (dialog: Record<string, unknown> | null) => void
+  setClickedSeat: (seat: { tableId: number; seatIndex: number } | null) => void
+  setShowCatering: (value: boolean) => void
+  setSelectedTableId: (id: number | null) => void
+  setHoveredGuest: (guest: number | null) => void
+  setIsDraggingGuest: (value: boolean) => void
+  camRef: MutableRefObject<CameraState>
+  canvasWRef: MutableRefObject<number>
+  canvasHRef: MutableRefObject<number>
+  screenToSVG: (clientX: number, clientY: number) => Point | null
+  dispatchCam: (action: { type: string; [key: string]: unknown }) => void
+  notifyDrag?: (() => void) | null
+}
 
 export function useTableInteractions({
   tables,
@@ -25,19 +71,19 @@ export function useTableInteractions({
   screenToSVG,
   dispatchCam,
   notifyDrag = null,
-}) {
-  const draggingTableRef = useRef(null);
-  const panningRef = useRef(null);
-  const spaceDownRef = useRef(false);
-  const hoveredGuestClearedRef = useRef(false);
-  const dragPreviewRef = useRef(null);
+}: UseTableInteractionsProps) {
+  const draggingTableRef = useRef<DraggingTable | null>(null);
+  const panningRef = useRef<PanState | null>(null);
+  const spaceDownRef = useRef<boolean>(false);
+  const hoveredGuestClearedRef = useRef<boolean>(false);
+  const dragPreviewRef = useRef<DragPreview | null>(null);
 
   useEffect(() => {
-    const down = (e) => {
+    const down = (e: KeyboardEvent) => {
       if (
         e.code === "Space" &&
-        !["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName) &&
-        !e.target.isContentEditable
+        !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName) &&
+        !(e.target as HTMLElement).isContentEditable
       ) {
         spaceDownRef.current = true;
         e.preventDefault();
@@ -67,14 +113,14 @@ export function useTableInteractions({
               x: Math.max(
                 0,
                 Math.min(
-                  PLAN_W - d.w,
+                  PLAN_W - (d.w as number),
                   e.key === "ArrowLeft" ? t.x - step : e.key === "ArrowRight" ? t.x + step : t.x
                 )
               ),
               y: Math.max(
                 0,
                 Math.min(
-                  PLAN_H - d.h,
+                  PLAN_H - (d.h as number),
                   e.key === "ArrowUp" ? t.y - step : e.key === "ArrowDown" ? t.y + step : t.y
                 )
               ),
@@ -83,7 +129,7 @@ export function useTableInteractions({
         );
       }
     };
-    const up = (e) => {
+    const up = (e: KeyboardEvent) => {
       if (e.code === "Space") spaceDownRef.current = false;
     };
     window.addEventListener("keydown", down);
@@ -95,8 +141,8 @@ export function useTableInteractions({
   }, [undo, selectedTableId, saveAction, setTables, setModal, setEditPanel, setConfirmDialog, setClickedSeat, setShowCatering, setSelectedTableId]);
 
   useEffect(() => {
-    const rafRef = { current: null };
-    const move = (e) => {
+    const rafRef: { current: number | null } = { current: null };
+    const move = (e: MouseEvent) => {
       if ((draggingTableRef.current || panningRef.current) && !hoveredGuestClearedRef.current) {
         hoveredGuestClearedRef.current = true;
         setHoveredGuest(null);
@@ -172,7 +218,7 @@ export function useTableInteractions({
   }, [screenToSVG, lockMode, dispatchCam]);
 
   const handleSvgMouseDown = useCallback(
-    (e) => {
+    (e: { button: number; clientX: number; clientY: number; preventDefault: () => void }) => {
       if (e.button === 1 || spaceDownRef.current) {
         e.preventDefault();
         panningRef.current = {
