@@ -1,5 +1,6 @@
 import { buildTemplate, INITIAL_GUESTS } from "./geometry.js";
 import { clampCam, getInitialCam } from "./camera.js";
+import type { SeatingGuest, SeatingTable, CameraState } from "@/types/seating";
 
 // Browser-only. Consumă doar din
 // useEffect sau client components.
@@ -12,7 +13,7 @@ export const STORAGE_KEY = "wedding_seating_v14";
 
 // Cheile vechi din v13.1: v2-v11 (v4 lipsea din v13.1 — păstrăm lista identică)
 // Plus v12 și v13 adăugate explicit în v14 pentru cleanup complet
-export const LEGACY_STORAGE_KEYS = [
+export const LEGACY_STORAGE_KEYS: string[] = [
   "wedding_seating_v2",
   "wedding_seating_v3",
   "wedding_seating_v5",
@@ -27,11 +28,37 @@ export const LEGACY_STORAGE_KEYS = [
   "wedding_seating_v13",
 ];
 
+// ── TIPURI INTERNE ────────────────────────────────────────────────────────────
+
+interface StorageData {
+  guests: SeatingGuest[]
+  tables: SeatingTable[]
+  nextId: number
+  cam: CameraState
+}
+
+interface CleanupResult {
+  removed: string[]
+  failed: string[]
+}
+
+interface LoadStorageResult {
+  ok: true
+  source: "default" | "storage"
+  data: StorageData
+  cleanup: CleanupResult
+}
+
+interface SaveStorageResult {
+  ok: boolean
+  error: unknown
+}
+
 // ── CLEANUP ───────────────────────────────────────────────────────────────────
 
-export function cleanupLegacyStorage() {
-  const removed = [];
-  const failed = [];
+export function cleanupLegacyStorage(): CleanupResult {
+  const removed: string[] = [];
+  const failed: string[] = [];
   for (const key of LEGACY_STORAGE_KEYS) {
     try {
       localStorage.removeItem(key);
@@ -45,11 +72,13 @@ export function cleanupLegacyStorage() {
 
 // ── VALIDARE INTERNĂ ──────────────────────────────────────────────────────────
 
-function isNumeric(val) {
+// TODO: isNumeric primește any — boundary cu localStorage (date neparsate din JSON)
+function isNumeric(val: any): boolean {
   return typeof val === "number" || (typeof val === "string" && !isNaN(Number(val)));
 }
 
-function isValidTable(t) {
+// TODO: isValidTable primește any — boundary cu localStorage (date neparsate din JSON)
+function isValidTable(t: any): boolean {
   return (
     t !== null &&
     typeof t === "object" &&
@@ -63,7 +92,8 @@ function isValidTable(t) {
   );
 }
 
-function isValidGuest(g) {
+// TODO: isValidGuest primește any — boundary cu localStorage (date neparsate din JSON)
+function isValidGuest(g: any): boolean {
   return (
     g !== null &&
     typeof g === "object" &&
@@ -78,7 +108,8 @@ function isValidGuest(g) {
 
 // ── SANITIZARE ────────────────────────────────────────────────────────────────
 
-export function sanitizeLoadedTables(tables) {
+// TODO: tables: any — boundary cu localStorage; output este SeatingTable[] validat
+export function sanitizeLoadedTables(tables: any): SeatingTable[] {
   if (!Array.isArray(tables)) return buildTemplate();
   const valid = tables.filter(isValidTable).map((t) => ({
     ...t,
@@ -92,7 +123,8 @@ export function sanitizeLoadedTables(tables) {
   return valid;
 }
 
-export function sanitizeLoadedGuests(guests, tables) {
+// TODO: guests: any — boundary cu localStorage; output este SeatingGuest[] validat
+export function sanitizeLoadedGuests(guests: any, tables: SeatingTable[]): SeatingGuest[] {
   if (!Array.isArray(guests)) return INITIAL_GUESTS.map((g) => ({ ...g }));
   const tableIds = new Set(tables.map((t) => Number(t.id)));
   const valid = guests.filter(isValidGuest).map((g) => ({
@@ -104,13 +136,15 @@ export function sanitizeLoadedGuests(guests, tables) {
   return valid;
 }
 
-export function sanitizeLoadedNextId(nextId, tables) {
+// TODO: nextId: any — boundary cu localStorage; output este number validat
+export function sanitizeLoadedNextId(nextId: any, tables: SeatingTable[]): number {
   const maxTableId = tables.reduce((max, t) => Math.max(max, t.id), 0);
   if (typeof nextId === "number" && nextId > maxTableId) return nextId;
   return maxTableId + 1;
 }
 
-export function sanitizeLoadedCam(cam, canvasW, canvasH) {
+// TODO: cam: any — boundary cu localStorage; output este CameraState validat
+export function sanitizeLoadedCam(cam: any, canvasW: number, canvasH: number): CameraState {
   // Bugul v13.1: camera era restaurată cu canvasW:1200, canvasH:700 hardcodat.
   // În v14: folosim dimensiunile reale ale canvas-ului.
   if (
@@ -127,7 +161,7 @@ export function sanitizeLoadedCam(cam, canvasW, canvasH) {
 
 // ── DEFAULT STATE ─────────────────────────────────────────────────────────────
 
-export function buildDefaultStorageState(canvasW, canvasH) {
+export function buildDefaultStorageState(canvasW: number, canvasH: number): StorageData {
   const tables = buildTemplate();
   return {
     guests: INITIAL_GUESTS.map((g) => ({ ...g })),
@@ -139,12 +173,12 @@ export function buildDefaultStorageState(canvasW, canvasH) {
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────
 
-export function loadStorageState(canvasW, canvasH) {
+export function loadStorageState(canvasW: number, canvasH: number): LoadStorageResult {
   // Pas 1: cleanup chei vechi
   const cleanup = cleanupLegacyStorage();
 
   // Pas 2: încearcă să citească din storage
-  let raw = null;
+  let raw: string | null = null;
   try {
     raw = localStorage.getItem(STORAGE_KEY);
   } catch (e) {
@@ -167,7 +201,8 @@ export function loadStorageState(canvasW, canvasH) {
   }
 
   // Pas 4: încearcă JSON.parse
-  let parsed = null;
+  // TODO: parsed este any — boundary cu localStorage (JSON.parse returnează any)
+  let parsed: any = null;
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
@@ -201,7 +236,7 @@ export function loadStorageState(canvasW, canvasH) {
 
 // ── SAVE ──────────────────────────────────────────────────────────────────────
 
-export function saveStorageState({ guests, tables, nextId, cam }) {
+export function saveStorageState({ guests, tables, nextId, cam }: StorageData): SaveStorageResult {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ guests, tables, nextId, cam }));
     return { ok: true, error: null };
