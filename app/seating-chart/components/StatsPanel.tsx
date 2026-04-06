@@ -1,5 +1,15 @@
 "use client";
 import React from "react";
+import type { SeatingGuest } from "@/types/seating";
+
+interface StatsPanelProps {
+  showStats: boolean
+  setShowStats: (value: boolean) => void
+  guests: SeatingGuest[]
+  assignedCount: number
+  unassigned: SeatingGuest[]
+  menuStats: Record<string, number>
+}
 
 function StatsPanel({
   showStats,
@@ -8,7 +18,7 @@ function StatsPanel({
   assignedCount,
   unassigned,
   menuStats,
-}) {
+}: StatsPanelProps) {
   if (!showStats)
     return (
       <button className="stats-toggle" onClick={() => setShowStats(true)}>
