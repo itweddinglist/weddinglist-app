@@ -1,3 +1,5 @@
+import type { SeatingTable, SeatingGuest, TableType, Point } from '@/types/seating'
+
 // ── CONSTANTE ──
 export const GRID = 20;
 export const PLAN_W = 10500;
@@ -7,7 +9,7 @@ export const PLAN_CY = PLAN_H / 2; // 5250
 export const RING_W = 300;
 export const RING_H = 200;
 
-export const LIMITS = {
+export const LIMITS: Record<TableType, { min: number; max: number; def: number }> = {
   round:    { min: 4, max: 16, def: 8  },
   square:   { min: 4, max: 12, def: 4  },
   rect:     { min: 4, max: 20, def: 10 },
@@ -15,7 +17,7 @@ export const LIMITS = {
   bar:      { min: 0, max: 0,  def: 0  },
 };
 
-export const TYPE_LABELS = {
+export const TYPE_LABELS: Record<TableType, string> = {
   round:    'Rotundă',
   square:   'Pătrată',
   rect:     'Dreptunghiulară',
@@ -23,12 +25,12 @@ export const TYPE_LABELS = {
   bar:      'Bar / Decor',
 };
 
-export const GROUP_COLORS = [
+export const GROUP_COLORS: string[] = [
   '#C4896F','#5DAF82','#8B72C8','#D4B85A','#E87AAF',
   '#5B8FBE','#E07878','#62B87E','#D4965A','#9B7EC8',
 ];
 
-export const INITIAL_GUESTS = [
+export const INITIAL_GUESTS: SeatingGuest[] = [
   { id:1,  prenume:'Ion',    nume:'Popescu',    grup:'Familie Mireasă', status:'confirmat',    meniu:'Standard',    tableId:null },
   { id:2,  prenume:'Maria',  nume:'Ionescu',    grup:'Familie Mireasă', status:'confirmat',    meniu:'Vegetarian',  tableId:null },
   { id:3,  prenume:'Elena',  nume:'Constantin', grup:'Familie Mireasă', status:'in_asteptare', meniu:'Standard',    tableId:null },
@@ -43,19 +45,34 @@ export const INITIAL_GUESTS = [
   { id:12, prenume:'Dan',    nume:'Cristea',    grup:'Colegi',          status:'confirmat',    meniu:'Standard',    tableId:null },
 ];
 
-export const ALL_GROUPS = [...new Set(INITIAL_GUESTS.map(g => g.grup))];
+export const ALL_GROUPS: string[] = [...new Set(INITIAL_GUESTS.map(g => g.grup))];
 
-export function getGroupColor(grup) {
+export function getGroupColor(grup: string): string {
   const idx = ALL_GROUPS.indexOf(grup);
-  if (idx !== -1) return GROUP_COLORS[idx % GROUP_COLORS.length];
+  if (idx !== -1) return GROUP_COLORS[idx % GROUP_COLORS.length] as string;
   let hash = 0;
   for (let i = 0; i < grup.length; i++) {
     hash = grup.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
+  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length] as string;
 }
 
-export function getTableDims(t) {
+// Dimensiunile returnate variază în funcție de tipul mesei.
+// Câmpurile opționale sunt prezente doar pentru tipul corespunzător.
+export interface TableDims {
+  w: number
+  h: number
+  tw?: number
+  th?: number
+  cx?: number
+  cy?: number
+  r?: number
+  seatR?: number
+  s?: number
+  pad?: number
+}
+
+export function getTableDims(t: Pick<SeatingTable, 'type' | 'seats' | 'isRing'>): TableDims {
   // Ring dans: dreptunghi mare decorativ
   if (t.isRing) return {w:RING_W, h:RING_H, tw:RING_W-20, th:RING_H-20};
   if (t.type==='round') { const r=Math.max(55,t.seats*8); return {w:(r+90)*2,h:(r+90)*2,cx:r+90,cy:r+90,r,seatR:r+6}; }
@@ -65,17 +82,19 @@ export function getTableDims(t) {
   const cols=Math.ceil(t.seats/2),w=Math.max(210,cols*36+60); return {w:w+50,h:120,tw:w,th:52};
 }
 
-export function getSeatPositions(t) {
+export function getSeatPositions(t: Pick<SeatingTable, 'type' | 'seats' | 'isRing'>): Point[] {
   if (t.type==='bar'||t.isRing) return [];
   const d=getTableDims(t);
-  const seats=[];
+  const seats: Point[]=[];
   if (t.type==='round') {
     for (let i=0;i<t.seats;i++) {
       const a=(i/t.seats)*2*Math.PI-Math.PI/2;
-      seats.push({x:d.cx+d.seatR*Math.cos(a),y:d.cy+d.seatR*Math.sin(a)});
+      // cx și seatR sunt garantate pentru type==='round'
+      seats.push({x:(d.cx as number)+(d.seatR as number)*Math.cos(a),y:(d.cy as number)+(d.seatR as number)*Math.sin(a)});
     }
   } else if (t.type === "square") {
-    const { s, pad } = d;
+    // s și pad sunt garantate pentru type==='square'
+    const { s, pad } = d as { s: number; pad: number; w: number; h: number };
     // Distribuție echilibrată pe 4 laturi: rest se adaugă pe primele laturi
     const base = Math.floor(t.seats / 4);
     const extra = t.seats % 4;
@@ -99,12 +118,14 @@ export function getSeatPositions(t) {
     for (let i = counts[3] - 1; i >= 0; i--) seats.push({ x: pad - 8, y: pad + stepL * i + stepL / 2 });
     return seats;
   } else if (t.type==='prezidiu') {
-    const {tw,th}=d,step=tw/t.seats;
+    // tw și th sunt garantate pentru type==='prezidiu'
+    const {tw}=d as {tw:number;th:number},step=tw/t.seats;
     for(let i=0;i<t.seats;i++) {
       seats.push({x:25+step*i+step/2,y:20-8});
     }
   } else {
-    const {tw,th}=d,cols=Math.ceil(t.seats/2),step=tw/cols;
+    // rect: tw și th sunt garantate pentru tipul default
+    const {tw,th}=d as {tw:number;th:number},cols=Math.ceil(t.seats/2),step=tw/cols;
     for(let i=0;i<cols&&seats.length<t.seats;i++) {
       seats.push({x:25+step*i+step/2,y:20-8});
       if(seats.length<t.seats) seats.push({x:25+step*i+step/2,y:20+th+8});
@@ -113,7 +134,7 @@ export function getSeatPositions(t) {
   return seats;
 }
 
-export function getSeatFillColor(occupied, total) {
+export function getSeatFillColor(occupied: number, total: number): string {
   if (total===0) return '#9DA3BC';
   if (occupied >= total) return '#E53E3E';
   return '#48BB78';
@@ -123,7 +144,7 @@ export function getSeatFillColor(occupied, total) {
 // Ring dans: centrul planului
 // Prezidiu: deasupra ringului
 // Masa 1: stanga, Masa 2: dreapta, Masa 3: jos
-export function buildTemplate() {
+export function buildTemplate(): SeatingTable[] {
   // Distante calculate exact:
   // - Mese rotunde: 1 grid (20px) de la scaun pana la ring
   // - Prezidiu: 2 griduri (40px) de la scaun pana la ring
@@ -172,23 +193,23 @@ export function buildTemplate() {
   ];
 }
 
-export function generateCateringText(tables, guests) {
+export function generateCateringText(tables: SeatingTable[], guests: SeatingGuest[]): string {
   const real=tables.filter(t=>t.type!=='bar'&&!t.isRing);
   let txt='🍽️ LISTĂ CATERING\n'+'='.repeat(32)+'\n\n';
   real.forEach(t=>{
     const tg=guests.filter(g=>g.tableId===t.id);
-    const mc=tg.reduce((a,g)=>{a[g.meniu]=(a[g.meniu]||0)+1;return a;},{});
+    const mc=tg.reduce<Record<string,number>>((a,g)=>{a[g.meniu]=(a[g.meniu]||0)+1;return a;},{});
     txt+=`${t.name.toUpperCase()} (${tg.length}/${t.seats})\n`;
     Object.entries(mc).forEach(([m,c])=>{txt+=`  • ${c}x ${m}\n`;});
     if(!tg.length) txt+=`  • (masă goală)\n`;
     txt+='\n';
   });
-  const total=guests.reduce((a,g)=>{if(g.tableId)a[g.meniu]=(a[g.meniu]||0)+1;return a;},{});
+  const total=guests.reduce<Record<string,number>>((a,g)=>{if(g.tableId)a[g.meniu]=(a[g.meniu]||0)+1;return a;},{});
   txt+='='.repeat(32)+'\nTOTAL COMENZI:\n';
   Object.entries(total).forEach(([m,c])=>{txt+=`  • ${c}x ${m}\n`;});
   return txt;
 }
 
-export function snapToGrid(val, grid) {
+export function snapToGrid(val: number, grid: number): number {
   return Math.round(val / grid) * grid;
 }
