@@ -1,11 +1,17 @@
 import { PLAN_W, PLAN_H, PLAN_CX, PLAN_CY } from "./geometry.js";
+import type { CameraState } from "@/types/seating";
 
 export const ZOOM_MIN = 0.15;
 export const ZOOM_MAX = 3;
 export const ZOOM_DEFAULT = 0.8;
 export const PAN_PAD = 1000;
 
-export function clampCam(vx, vy, z, canvasW, canvasH) {
+type CameraAction =
+  | { type: "CAM_SET"; vx: number; vy: number; z: number; canvasW?: number; canvasH?: number }
+  | { type: "CAM_PAN_BY"; dxWorld: number; dyWorld: number; canvasW?: number; canvasH?: number }
+  | { type: "CAM_ZOOM_AT_NORM"; factor: number; nx: number; ny: number; canvasW?: number; canvasH?: number }
+
+export function clampCam(vx: number, vy: number, z: number, canvasW: number, canvasH: number): CameraState {
   const vw = canvasW / z;
   const vh = canvasH / z;
   return {
@@ -15,7 +21,7 @@ export function clampCam(vx, vy, z, canvasW, canvasH) {
   };
 }
 
-export function camReducer(state, action) {
+export function camReducer(state: CameraState, action: CameraAction): CameraState {
   const { canvasW = 1200, canvasH = 700 } = action;
   switch (action.type) {
     case "CAM_SET": {
@@ -49,7 +55,7 @@ export function camReducer(state, action) {
   }
 }
 
-export function getInitialCam(canvasW = 1200, canvasH = 700) {
+export function getInitialCam(canvasW = 1200, canvasH = 700): CameraState {
   return {
     vx: PLAN_CX - canvasW / ZOOM_DEFAULT / 2,
     vy: PLAN_CY - canvasH / ZOOM_DEFAULT / 2,
