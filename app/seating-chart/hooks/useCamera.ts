@@ -100,10 +100,12 @@ export function useCamera() {
 
       if (e.ctrlKey) {
         // Ctrl+Scroll = zoom ancorat pe cursor
-        acc.lastNx = (e.clientX - rect.left) / rect.width;
-        acc.lastNy = (e.clientY - rect.top) / rect.height;
-        acc.lastCW = rect.width;
-        acc.lastCH = rect.height;
+        if (acc.rafId === null) {
+          acc.lastNx = (e.clientX - rect.left) / rect.width;
+          acc.lastNy = (e.clientY - rect.top) / rect.height;
+          acc.lastCW = rect.width;
+          acc.lastCH = rect.height;
+        }
         acc.sumZoomExp += -e.deltaY * base * 0.0018;
 
         if (acc.rafId !== null) return;
