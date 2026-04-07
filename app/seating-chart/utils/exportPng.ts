@@ -1,6 +1,21 @@
 import { Canvg } from "canvg";
+import type { SeatingTable } from "@/types/seating";
 
-async function fetchFontsAsBase64() {
+interface BoundingBox {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+interface ExportToPngOptions {
+  svgEl: SVGSVGElement
+  tables: SeatingTable[]
+  getTableDims: (t: Pick<SeatingTable, "type" | "seats" | "isRing">) => { w: number; h: number }
+  mode?: "fit" | "a4"
+}
+
+async function fetchFontsAsBase64(): Promise<string> {
   try {
     const cssRes = await fetch(
       "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&display=swap"
@@ -23,7 +38,10 @@ async function fetchFontsAsBase64() {
   }
 }
 
-function getBoundingBox(tables, getTableDims) {
+function getBoundingBox(
+  tables: SeatingTable[],
+  getTableDims: (t: Pick<SeatingTable, "type" | "seats" | "isRing">) => { w: number; h: number }
+): BoundingBox {
   if (!tables || tables.length === 0) return { x: 0, y: 0, w: 1200, h: 800 };
   let minX = Infinity,
     minY = Infinity,
@@ -40,10 +58,12 @@ function getBoundingBox(tables, getTableDims) {
   return { x: minX - PAD, y: minY - PAD, w: maxX - minX + PAD * 2, h: maxY - minY + PAD * 2 };
 }
 
-export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" }) {
+export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" }: ExportToPngOptions): Promise<Blob | null> {
   const bbox = getBoundingBox(tables, getTableDims);
 
-  let canvasW, canvasH, viewBox;
+  let canvasW: number;
+  let canvasH: number;
+  let viewBox: string;
 
   if (mode === "fit") {
     const scale = 2;
@@ -61,13 +81,15 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" })
     const offsetX = bbox.x - (vbW - bbox.w) / 2;
     const offsetY = bbox.y - (vbH - bbox.h) / 2;
     viewBox = `${offsetX} ${offsetY} ${vbW} ${vbH}`;
+    void scaledW; void scaledH;
   }
 
   const fontCSS = await fetchFontsAsBase64();
 
-  const svgClone = svgEl.cloneNode(true);
-  svgClone.setAttribute("width", canvasW);
-  svgClone.setAttribute("height", canvasH);
+  // TODO: cloneNode returns Node — safe to cast since svgEl is SVGSVGElement
+  const svgClone = svgEl.cloneNode(true) as SVGSVGElement;
+  svgClone.setAttribute("width", String(canvasW));
+  svgClone.setAttribute("height", String(canvasH));
   svgClone.setAttribute("viewBox", viewBox);
 
   // Scoatem grid-ul
@@ -90,7 +112,8 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" })
   const canvas = document.createElement("canvas");
   canvas.width = canvasW;
   canvas.height = canvasH;
-  const ctx = canvas.getContext("2d");
+  // TODO: getContext("2d") can technically return null, but never does for a newly created canvas
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   // Fundal alb explicit pe canvas
   ctx.fillStyle = "#FAF7F2";
@@ -99,7 +122,7 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" })
   try {
     const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0);
@@ -117,7 +140,7 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" })
     await v.render();
   }
 
-  return new Promise((resolve) => {
+  return new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/png");
   });
 }
