@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { getGroupColor } from "../utils/geometry.js";
+import { getGroupColor } from "../utils/geometry.ts";
 import type { SeatingGuest, SeatingTable } from "@/types/seating";
 
 const GUEST_ROW_HEIGHT = 38; // px per rând — fix, consistent cu CSS

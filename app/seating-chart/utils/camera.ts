@@ -1,4 +1,4 @@
-import { PLAN_W, PLAN_H, PLAN_CX, PLAN_CY } from "./geometry.js";
+import { PLAN_W, PLAN_H, PLAN_CX, PLAN_CY } from "./geometry.ts";
 import type { CameraState } from "@/types/seating";
 
 export const ZOOM_MIN = 0.15;

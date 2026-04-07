@@ -5,7 +5,7 @@ import {
   getSeatPositions,
   getSeatFillColor,
   getGroupColor,
-} from "../utils/geometry.js";
+} from "../utils/geometry.ts";
 import type { SeatingGuest, SeatingTable } from "@/types/seating";
 
 // Galben washed pentru mese noi nemutate

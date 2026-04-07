@@ -1,5 +1,5 @@
 // utils/magicFill.ts — Magic Fill V1.5
-import { isSeatingEligible } from './seating-eligibility.js';
+import { isSeatingEligible } from './seating-eligibility.ts';
 import type { SeatingGuest, SeatingTable } from '@/types/seating';
 
 const DEFAULT_MAX_ITERATIONS = 10000;

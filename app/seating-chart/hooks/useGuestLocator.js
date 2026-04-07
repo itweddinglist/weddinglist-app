@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
-import { getTableDims } from "../utils/geometry.js";
+import { getTableDims } from "../utils/geometry.ts";
 
 export function useGuestLocator({ tables, getGuestTableId, focusPoint }) {
   const [highlightGuestId, setHighlightGuestId] = useState(null);

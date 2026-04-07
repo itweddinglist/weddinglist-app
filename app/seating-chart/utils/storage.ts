@@ -1,5 +1,5 @@
-import { buildTemplate, INITIAL_GUESTS } from "./geometry.js";
-import { clampCam, getInitialCam } from "./camera.js";
+import { buildTemplate, INITIAL_GUESTS } from "./geometry.ts";
+import { clampCam, getInitialCam } from "./camera.ts";
 import type { SeatingGuest, SeatingTable, CameraState } from "@/types/seating";
 
 // Browser-only. Consumă doar din

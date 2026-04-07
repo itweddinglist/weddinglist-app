@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useCallback } from "react";
 import type { MutableRefObject } from "react";
-import { GRID, PLAN_W, PLAN_H, getTableDims } from "../utils/geometry.js";
+import { GRID, PLAN_W, PLAN_H, getTableDims } from "../utils/geometry.ts";
 import type { SeatingTable, CameraState, Point } from "@/types/seating";
 
 const PAN_PAD = 1000;

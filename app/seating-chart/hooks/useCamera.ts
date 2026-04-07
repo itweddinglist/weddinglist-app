@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
-import { camReducer, getInitialCam, ZOOM_DEFAULT, ZOOM_MIN, ZOOM_MAX } from "../utils/camera.js";
-import { loadStorageState } from "../utils/storage.js";
-import { PLAN_CX, PLAN_CY, getTableDims } from "../utils/geometry.js";
+import { camReducer, getInitialCam, ZOOM_DEFAULT, ZOOM_MIN, ZOOM_MAX } from "../utils/camera.ts";
+import { loadStorageState } from "../utils/storage.ts";
+import { PLAN_CX, PLAN_CY, getTableDims } from "../utils/geometry.ts";
 import type { SeatingTable, Point } from "@/types/seating";
 
 // Tipul acumulatorului pentru wheel events (rafId este number | null)

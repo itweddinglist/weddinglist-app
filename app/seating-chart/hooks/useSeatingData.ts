@@ -9,10 +9,10 @@ import {
   buildTemplate,
   getTableDims,
   getGroupColor,
-} from "../utils/geometry.js";
-import { loadStorageState, saveStorageState } from "../utils/storage.js";
-import { calculateMagicFill } from "../utils/magicFill.js";
-import { isSeatingEligible } from "../utils/seating-eligibility.js";
+} from "../utils/geometry.ts";
+import { loadStorageState, saveStorageState } from "../utils/storage.ts";
+import { calculateMagicFill } from "../utils/magicFill.ts";
+import { isSeatingEligible } from "../utils/seating-eligibility.ts";
 import type { SeatingGuest, SeatingTable, CameraState, TableType, SeatingSnapshot, ChangeReason } from "@/types/seating";
 
 export { isSeatingEligible };
