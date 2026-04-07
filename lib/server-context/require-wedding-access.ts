@@ -53,7 +53,7 @@ export async function requireWeddingAccess({
     .from("wedding_members")
     .select("role")
     .eq("wedding_id", weddingId)
-    .eq("user_id", ctx.app_user_id)
+    .eq("app_user_id", ctx.app_user_id)
     .maybeSingle();
 
   if (error) {
