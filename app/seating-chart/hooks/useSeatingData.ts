@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import type { MutableRefObject } from "react";
 import {
   PLAN_W,
   PLAN_H,
@@ -8,38 +9,113 @@ import {
   buildTemplate,
   getTableDims,
   getGroupColor,
-} from "../utils/geometry.js";
-import { loadStorageState, saveStorageState } from "../utils/storage.js";
-import { calculateMagicFill } from "../utils/magicFill.js";
-import { isSeatingEligible } from "../utils/seating-eligibility.js";
+} from "../utils/geometry.ts";
+import { loadStorageState, saveStorageState } from "../utils/storage.ts";
+import { calculateMagicFill } from "../utils/magicFill.ts";
+import { isSeatingEligible } from "../utils/seating-eligibility.ts";
+import type { SeatingGuest, SeatingTable, CameraState, TableType, SeatingSnapshot, ChangeReason } from "@/types/seating";
 
 export { isSeatingEligible };
 
+// ── LOCAL TYPES ───────────────────────────────────────────────────────────────
+
+type SaveStatus = "saving" | "saved" | "error"
+
+type SeatingGuestWithMeta = SeatingGuest & { meta: { isDeclined: boolean } }
+
+interface HistoryEntry {
+  guests: SeatingGuest[]
+  tables: SeatingTable[]
+}
+
+interface TableSnapshot {
+  id: number
+  name: string
+  type: TableType
+  seats: number
+  x: number
+  y: number
+  rotation: number
+  isRing: boolean
+}
+
+interface Snapshot {
+  assignments: Record<string, number | null>
+  tables: TableSnapshot[]
+}
+
+interface SeatingStateChangedData {
+  reason: ChangeReason
+  assignments: Record<string, number | null>
+  tables: TableSnapshot[]
+}
+
+interface UseSeatingDataOptions {
+  onSaveStatusChange?: ((status: SaveStatus) => void) | null
+  initialGuests?: SeatingGuest[] | null
+  onSeatingStateChanged?: ((data: SeatingStateChangedData) => void) | null
+}
+
+type SeatingEffect =
+  | { type: "SHOW_TOAST"; payload: { message: string; toastType: string } }
+  | { type: "CLEAR_CLICKED_SEAT" }
+  | { type: "SELECT_TABLE"; payload: { tableId: number | null } }
+  | { type: "CLOSE_MODAL" }
+  | { type: "CLOSE_EDIT_PANEL" }
+
+interface SeatingActionResult {
+  ok: boolean
+  effects: SeatingEffect[]
+}
+
+interface SeatingActionConfirmRequired {
+  title: string
+  sub: string
+  onConfirm: () => SeatingActionResult
+}
+
+interface SeatingActionResultWithConfirm extends SeatingActionResult {
+  confirmRequired?: SeatingActionConfirmRequired
+}
+
+interface CreateTableModal {
+  type: TableType
+  seats: number
+  name: string
+  isRing?: boolean
+}
+
 // ── SPAWN ─────────────────────────────────────────────────────────────────────
 
-function getSpawnPosition(proto, spawnIndex, camRef, canvasWRef, canvasHRef) {
+function getSpawnPosition(
+  proto: Pick<SeatingTable, "type" | "seats" | "isRing">,
+  spawnIndex: number,
+  camRef: MutableRefObject<CameraState>,
+  canvasWRef: MutableRefObject<number>,
+  canvasHRef: MutableRefObject<number>
+): { x: number; y: number } {
   const cam = camRef.current;
   const cw = canvasWRef.current;
   const ch = canvasHRef.current;
   const d = getTableDims(proto);
 
-  const OFFSET = Math.min(Math.max(Math.max(d.w, d.h) * 0.2, 32), 72);
+  const OFFSET = Math.min(Math.max(Math.max(d.w as number, d.h as number) * 0.2, 32), 72);
 
-  const cx = cam.vx + cw / cam.z / 2 - d.w / 2;
-  const cy = cam.vy + ch / cam.z / 2 - d.h / 2;
+  const cx = cam.vx + cw / cam.z / 2 - (d.w as number) / 2;
+  const cy = cam.vy + ch / cam.z / 2 - (d.h as number) / 2;
 
   const rawX = cx + spawnIndex * OFFSET;
   const rawY = cy + spawnIndex * OFFSET;
 
-  const x = Math.max(0, Math.min(PLAN_W - d.w, Math.round(rawX / GRID) * GRID));
-  const y = Math.max(0, Math.min(PLAN_H - d.h, Math.round(rawY / GRID) * GRID));
+  const x = Math.max(0, Math.min(PLAN_W - (d.w as number), Math.round(rawX / GRID) * GRID));
+  const y = Math.max(0, Math.min(PLAN_H - (d.h as number), Math.round(rawY / GRID) * GRID));
 
   return { x, y };
 }
 
 // ── RESET HELPERS ─────────────────────────────────────────────────────────────
 
-function buildRingOnly() {
+function buildRingOnly(): SeatingTable[] {
   return [
     {
       id: 1,
@@ -70,20 +146,26 @@ const RESET_ZOOM = 0.9;
  * Toate acțiunile returnează { ok, effects[] } pentru ca page.js
  * să aplice efectele UI prin applySeatingEffect.
  */
-export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStatusChange, initialGuests, onSeatingStateChanged } = {}) {
+export function useSeatingData(
+  cam: CameraState,
+  camRef: MutableRefObject<CameraState>,
+  canvasWRef: MutableRefObject<number>,
+  canvasHRef: MutableRefObject<number>,
+  { onSaveStatusChange, initialGuests, onSeatingStateChanged }: UseSeatingDataOptions = {}
+) {
   // ── STATE ──
-  const [guests, setGuests] = useState(() => (initialGuests ?? INITIAL_GUESTS).map((g) => ({ ...g })));
-  const [tables, setTables] = useState(() => buildTemplate());
-  const [nextId, setNextId] = useState(10);
-  const [hydrated, setHydrated] = useState(false);
-  const [newTableIds, setNewTableIds] = useState(new Set());
+  const [guests, setGuests] = useState<SeatingGuest[]>(() => (initialGuests ?? INITIAL_GUESTS).map((g) => ({ ...g })));
+  const [tables, setTables] = useState<SeatingTable[]>(() => buildTemplate());
+  const [nextId, setNextId] = useState<number>(10);
+  const [hydrated, setHydrated] = useState<boolean>(false);
+  const [newTableIds, setNewTableIds] = useState<Set<number>>(new Set());
 
   // ── REFS ──
-  const tablesRef = useRef(tables);
-  const guestsRef = useRef(guests);
-  const historyRef = useRef([]);
-  const spawnCounterRef = useRef(0);
-  const onSaveStatusChangeRef = useRef(onSaveStatusChange);
+  const tablesRef = useRef<SeatingTable[]>(tables);
+  const guestsRef = useRef<SeatingGuest[]>(guests);
+  const historyRef = useRef<HistoryEntry[]>([]);
+  const spawnCounterRef = useRef<number>(0);
+  const onSaveStatusChangeRef = useRef<((status: SaveStatus) => void) | null | undefined>(onSaveStatusChange);
   useEffect(() => { onSaveStatusChangeRef.current = onSaveStatusChange; }, [onSaveStatusChange]);
 
   useEffect(() => { tablesRef.current = tables; }, [tables]);
@@ -101,18 +183,18 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, []);
 
   // ── SEATING STATE CHANGE NOTIFICATION ──
-  const prevSnapshotRef = useRef(null);
-  const onSeatingStateChangedRef = useRef(onSeatingStateChanged);
+  const prevSnapshotRef = useRef<Snapshot | null>(null);
+  const onSeatingStateChangedRef = useRef<((data: SeatingStateChangedData) => void) | null | undefined>(onSeatingStateChanged);
   useEffect(() => { onSeatingStateChangedRef.current = onSeatingStateChanged; }, [onSeatingStateChanged]);
 
   useEffect(() => {
     if (!hydrated) return;
 
-    const assignmentsSnapshot = Object.fromEntries(
+    const assignmentsSnapshot: Record<string, number | null> = Object.fromEntries(
       guests.map((g) => [g.id, g.tableId ?? null])
     );
 
-    const tablesSnapshot = tables.map((t) => ({
+    const tablesSnapshot: TableSnapshot[] = tables.map((t) => ({
       id:       t.id,
       name:     t.name,
       type:     t.type,
@@ -123,7 +205,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
       isRing:   !!t.isRing,
     }));
 
-    const snapshot = { assignments: assignmentsSnapshot, tables: tablesSnapshot };
+    const snapshot: Snapshot = { assignments: assignmentsSnapshot, tables: tablesSnapshot };
     const prev = prevSnapshotRef.current;
     prevSnapshotRef.current = snapshot;
 
@@ -134,7 +216,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
 
     if (!assignmentsChanged && !tablesChanged) return;
 
-    const reason = assignmentsChanged && tablesChanged ? "both"
+    const reason: ChangeReason = assignmentsChanged && tablesChanged ? "both"
       : assignmentsChanged ? "assignments"
       : "layout";
 
@@ -167,7 +249,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     ];
   }, []);
 
-  const undo = useCallback(() => {
+  const undo = useCallback((): SeatingActionResult => {
     if (!historyRef.current.length) {
       return {
         ok: false,
@@ -190,21 +272,21 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
 
   // ── COMPUTED VALUES ──
   const guestsByTable = useMemo(() => {
-    const map = {};
+    const map: Record<number, SeatingGuestWithMeta[]> = {};
     guests.forEach((g) => {
       if (g.tableId != null) {
         if (!map[g.tableId]) map[g.tableId] = [];
         map[g.tableId].push({
           ...g,
           meta: { isDeclined: g.guest_events?.[0]?.attendance_status === 'declined' },
-        });
+        } as SeatingGuestWithMeta);
       }
     });
     return map;
   }, [guests]);
 
-  const guestById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
-  const tableById = useMemo(() => new Map(tables.map((t) => [t.id, t])), [tables]);
+  const guestById = useMemo(() => new Map<number, SeatingGuest>(guests.map((g) => [g.id, g])), [guests]);
+  const tableById = useMemo(() => new Map<number, SeatingTable>(tables.map((t) => [t.id, t])), [tables]);
 
   const realTables = useMemo(() => tables.filter((t) => t.type !== "bar" && !t.isRing), [tables]);
   const totalSeats = useMemo(() => realTables.reduce((s, t) => s + t.seats, 0), [realTables]);
@@ -216,12 +298,12 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   const progress = guests.length > 0 ? (assignedCount / guests.length) * 100 : 0;
 
   const menuStats = useMemo(
-    () => guests.reduce((acc, g) => { acc[g.meniu] = (acc[g.meniu] || 0) + 1; return acc; }, {}),
+    () => guests.reduce<Record<string, number>>((acc, g) => { acc[g.meniu] = (acc[g.meniu] || 0) + 1; return acc; }, {}),
     [guests]
   );
 
   const guestMeta = useMemo(() => {
-    const groupsMap = new Map();
+    const groupsMap = new Map<string, number>();
     for (const guest of guests) {
       const group = guest.grup?.trim();
       if (!group) continue;
@@ -236,17 +318,17 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [guests, assignedCount, unassigned]);
 
   const groupColorMap = useMemo(() => {
-    const map = {};
+    const map: Record<string, string> = {};
     for (const group of guestMeta.groups) map[group.name] = getGroupColor(group.name);
     return map;
   }, [guestMeta.groups]);
 
   // ── ASSIGN GUEST ──
-  const assignGuest = useCallback((gId, tableId) => {
+  const assignGuest = useCallback((gId: number | string, tableId: number): SeatingActionResult => {
     const table = tableById.get(tableId);
     if (!table || table.type === "bar" || table.isRing) return { ok: false, effects: [] };
 
-    const guest = guestById.get(parseInt(gId));
+    const guest = guestById.get(parseInt(String(gId)));
     if (!guest || guest.tableId === tableId) return { ok: false, effects: [] };
 
     const occupied = guestsRef.current.filter((g) => g.tableId === tableId).length;
@@ -260,7 +342,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     }
 
     saveAction();
-    setGuests((prev) => prev.map((g) => (g.id === parseInt(gId) ? { ...g, tableId } : g)));
+    setGuests((prev) => prev.map((g) => (g.id === parseInt(String(gId)) ? { ...g, tableId } : g)));
 
     return {
       ok: true,
@@ -278,7 +360,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [saveAction, guestById, tableById]);
 
   // ── UNASSIGN GUEST ──
-  const unassignGuest = useCallback((guestId) => {
+  const unassignGuest = useCallback((guestId: number | null): SeatingActionResult => {
     if (!guestId) return { ok: false, effects: [] };
 
     const guest = guestsRef.current.find((g) => g.id === guestId);
@@ -303,7 +385,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [saveAction]);
 
   // ── MAGIC FILL ──
-  const magicFill = useCallback(() => {
+  const magicFill = useCallback((): SeatingActionResult => {
     const anyUnassigned = guestsRef.current.some(
       (g) => g.tableId === null && isSeatingEligible(g) &&
         !(g.grup && g.grup.toLowerCase() === "prezidiu")
@@ -326,7 +408,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
       prev.map((g) => assignments[g.id] !== undefined ? { ...g, tableId: assignments[g.id] } : g)
     );
 
-    const effects = [
+    const effects: SeatingEffect[] = [
       { type: "SHOW_TOAST", payload: { message: `✨ ${assignmentsCount} invitați așezați automat`, toastType: "green" } },
     ];
 
@@ -355,7 +437,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   );
 
   // ── CREATE TABLE ──
-  const createTable = useCallback((modal) => {
+  const createTable = useCallback((modal: CreateTableModal | null): SeatingActionResult => {
     if (modal?.type !== "bar" && !modal?.name?.trim()) {
       return {
         ok: false,
@@ -390,7 +472,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [nextId, saveAction, newTableIds.size, camRef, canvasWRef, canvasHRef]);
 
   // ── CLEAR NEW TABLE HIGHLIGHT ──
-  const clearNewTableHighlight = useCallback((tableId) => {
+  const clearNewTableHighlight = useCallback((tableId: number) => {
     setNewTableIds((prev) => {
       if (!prev.has(tableId)) return prev;
       const next = new Set(prev);
@@ -400,7 +482,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, []);
 
   // ── DELETE TABLE ──
-  const deleteTable = useCallback((tableId, tables) => {
+  const deleteTable = useCallback((tableId: number, _tables?: SeatingTable[]): SeatingActionResultWithConfirm => {
     const t = tablesRef.current.find((x) => x.id === tableId);
     if (!t) return { ok: false, effects: [] };
 
@@ -433,7 +515,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [saveAction]);
 
   // ── ROTATE TABLE ──
-  const rotateTable = useCallback((tableId, deg) => {
+  const rotateTable = useCallback((tableId: number, deg: number): SeatingActionResult => {
     saveAction();
     setTables((prev) =>
       prev.map((t) => (t.id === tableId ? { ...t, rotation: (((t.rotation || 0) + deg) % 360 + 360) % 360 } : t))
@@ -442,7 +524,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [saveAction]);
 
   // ── SAVE EDIT ──
-  const saveEdit = useCallback((editName, editSeats, editPanelTableId) => {
+  const saveEdit = useCallback((editName: string, editSeats: number, editPanelTableId: number): SeatingActionResult => {
     if (!editName.trim()) return { ok: false, effects: [] };
 
     saveAction();
@@ -462,7 +544,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, []);
 
   // ── RESET PLAN ──
-  const resetPlan = useCallback((dispatchCam) => {
+  const resetPlan = useCallback((dispatchCam?: ((action: { type: string; [key: string]: unknown }) => void) | null): SeatingActionResult => {
     saveAction();
     setTables(buildRingOnly());
     setGuests((prev) => prev.map((g) => ({ ...g, tableId: null })));
@@ -490,12 +572,12 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   }, [saveAction, canvasWRef, canvasHRef]);
 
   // ── SET TABLES (pentru drag extern) ──
-  const setTablesExternal = useCallback((updater) => {
+  const setTablesExternal = useCallback((updater: SeatingTable[] | ((prev: SeatingTable[]) => SeatingTable[])) => {
     setTables(updater);
   }, []);
 
   // ── FILTERED UNASSIGNED ──
-  const filteredUnassigned = useCallback((searchQuery) => {
+  const filteredUnassigned = useCallback((searchQuery?: string | null): SeatingGuest[] => {
     const base = guests.filter((g) => g.tableId == null && isSeatingEligible(g));
     if (!searchQuery) return base;
     const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -507,7 +589,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
   // ── REVERT TO SNAPSHOT ────────────────────────────────────────────────────
   // Restaurare atomică: setTables + setGuests cu tableId-urile din snapshot.
   // Apelat de page.js la confirmare dialog "Revenire".
-  const revertToSnapshot = useCallback(({ tables: snapTables, guests: snapGuests }) => {
+  const revertToSnapshot = useCallback(({ tables: snapTables, guests: snapGuests }: SeatingSnapshot) => {
     setTables(structuredClone(snapTables));
     setGuests(structuredClone(snapGuests));
   }, []);
@@ -555,7 +637,7 @@ export function useSeatingData(cam, camRef, canvasWRef, canvasHRef, { onSaveStat
     revertToSnapshot,
 
     // Helper
-    getGuestTableId: (guestId) => {
+    getGuestTableId: (guestId: number): number | null => {
       const guest = guestById.get(guestId);
       return guest?.tableId ?? null;
     },

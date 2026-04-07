@@ -1,6 +1,29 @@
 "use client";
 import { useState, useCallback, useRef, useEffect } from "react";
 
+// ── TIPURI INTERNE ────────────────────────────────────────────────────────────
+
+interface Toast {
+  id: string
+  msg: string
+  type: string
+}
+
+interface ClickedSeat {
+  tableId: number
+  seatIndex: number
+}
+
+interface EditPanel {
+  tableId: number
+}
+
+interface ConfirmDialog {
+  title: string
+  sub?: string
+  onConfirm: () => void
+}
+
 /**
  * useSeatingUI
  *
@@ -16,23 +39,23 @@ import { useState, useCallback, useRef, useEffect } from "react";
  */
 export function useSeatingUI() {
   // ── Selection & interaction ──
-  const [selectedTableId, setSelectedTableId] = useState(null);
-  const [clickedSeat, setClickedSeat] = useState(null);
-  const [hoveredGuest, _setHoveredGuestState] = useState(null);
-  const hoveredGuestRef = useRef(null);
-  const setHoveredGuest = useCallback((data) => {
+  const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [clickedSeat, setClickedSeat] = useState<ClickedSeat | null>(null);
+  const [hoveredGuest, _setHoveredGuestState] = useState<number | null>(null);
+  const hoveredGuestRef = useRef<number | null>(null);
+  const setHoveredGuest = useCallback((data: number | null) => {
     hoveredGuestRef.current = data;
     _setHoveredGuestState(data);
   }, []);
-  const [dragOver, setDragOver] = useState(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
   const [isDraggingGuest, setIsDraggingGuest] = useState(false);
 
   // ── Modals & panels ──
-  const [modal, setModal] = useState(null);
-  const [editPanel, setEditPanel] = useState(null);
+  const [modal, setModal] = useState<Record<string, unknown> | null>(null);
+  const [editPanel, setEditPanel] = useState<EditPanel | null>(null);
   const [editName, setEditName] = useState("");
   const [editSeats, setEditSeats] = useState(8);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog | null>(null);
 
   // ── Canvas modes ──
   const [lockMode, setLockMode] = useState(false);
@@ -40,10 +63,10 @@ export function useSeatingUI() {
   const [showCatering, setShowCatering] = useState(false);
 
   // ── Toasts ──
-  const [toasts, setToasts] = useState([]);
-  const toastTimersRef = useRef([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const showToast = useCallback((message, type = "rose") => {
+  const showToast = useCallback((message: string, type = "rose") => {
     const id = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     setToasts((prev) => [...prev, { id, msg: message, type }]);
     const timer = setTimeout(() => {
@@ -52,7 +75,7 @@ export function useSeatingUI() {
     toastTimersRef.current.push(timer);
   }, []);
 
-  const removeToast = useCallback((id) => {
+  const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 

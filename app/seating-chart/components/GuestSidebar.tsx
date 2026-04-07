@@ -1,20 +1,63 @@
 "use client";
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { getGroupColor } from "../utils/geometry.js";
+import { getGroupColor } from "../utils/geometry.ts";
+import type { SeatingGuest, SeatingTable } from "@/types/seating";
 
 const GUEST_ROW_HEIGHT = 38; // px per rând — fix, consistent cu CSS
 const OVERSCAN = 5; // rânduri extra deasupra/dedesubt pentru scroll smooth
+
+// ── LOCAL TYPES ───────────────────────────────────────────────────────────────
+
+interface GuestGroup {
+  name: string
+  count: number
+}
+
+interface GuestMetaSummary {
+  groups: GuestGroup[]
+}
+
+interface HoveredGuestTooltip {
+  guest: SeatingGuest
+  x: number
+  y: number
+}
+
+interface VirtualListProps {
+  items: SeatingGuest[]
+  height: number
+  renderItem: (item: SeatingGuest, index: number) => React.ReactNode
+}
+
+interface GuestSidebarProps {
+  guests: SeatingGuest[]
+  filteredUnassigned: SeatingGuest[]
+  searchQuery: string
+  setSearchQuery: (value: string) => void
+  guestMeta: GuestMetaSummary
+  groupColorMap: Record<string, string>
+  locateGuest: (id: number) => void
+  isDraggingGuest: boolean
+  setHoveredGuest: (value: HoveredGuestTooltip | null) => void
+  setIsDraggingGuest: (value: boolean) => void
+  tables: SeatingTable[]
+  highlightGroupId: string | null
+  setHighlightGroupId: (id: string | null) => void
+  activeGroupId?: string | null
+  setActiveGroupId?: (id: string | null) => void
+  onExport?: () => void
+}
 
 /**
  * VirtualList — virtualizare nativă fără dependențe externe.
  * Randează doar rândurile vizibile + OVERSCAN buffer.
  * Compatibil 100% cu Next.js 16 + Turbopack.
  */
-function VirtualList({ items, height, renderItem }) {
+function VirtualList({ items, height, renderItem }: VirtualListProps) {
   const [scrollTop, setScrollTop] = useState(0);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const handleScroll = useCallback((e) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
   }, []);
 
@@ -66,14 +109,14 @@ function GuestSidebar({
   guestMeta, groupColorMap, locateGuest, isDraggingGuest,
   setHoveredGuest, setIsDraggingGuest, tables, highlightGroupId,
   setHighlightGroupId, activeGroupId, setActiveGroupId, onExport,
-}) {
+}: GuestSidebarProps) {
   const allSeated = guests.length > 0 && filteredUnassigned.length === 0 && !searchQuery && !activeGroupId;
   const noGuests = guests.length === 0;
   const noResults = searchQuery && filteredUnassigned.length === 0;
 
   // Înălțimea listei virtualizate — măsurată din containerul real via ResizeObserver
   const [containerHeight, setContainerHeight] = useState(400);
-  const unassignedRef = useRef(null);
+  const unassignedRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = unassignedRef.current;
@@ -95,7 +138,7 @@ function GuestSidebar({
     return () => { ro.disconnect(); cancelAnimationFrame(raf); };
   }, [filteredUnassigned.length, searchQuery]);
 
-  const renderUnassignedRow = useCallback((g) => {
+  const renderUnassignedRow = useCallback((g: SeatingGuest) => {
     const gc = getGroupColor(g.grup);
     return (
       <div
@@ -148,7 +191,7 @@ function GuestSidebar({
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         {(searchQuery || activeGroupId) && (
-          <button className="sb-search-clear" onClick={() => { setSearchQuery(""); setActiveGroupId(null); }}>×</button>
+          <button className="sb-search-clear" onClick={() => { setSearchQuery(""); setActiveGroupId?.(null); }}>×</button>
         )}
       </div>
 
@@ -167,7 +210,7 @@ function GuestSidebar({
                   padding: "0.2rem 0.4rem", cursor: "pointer", borderRadius: "5px",
                   background: activeGroupId === g.name ? "rgba(201,144,122,0.12)" : "transparent",
                 }}
-                onClick={() => setActiveGroupId(activeGroupId === g.name ? null : g.name)}
+                onClick={() => setActiveGroupId?.(activeGroupId === g.name ? null : g.name)}
                 onMouseEnter={() => setHighlightGroupId(g.name)}
                 onMouseLeave={() => setHighlightGroupId(null)}
               >

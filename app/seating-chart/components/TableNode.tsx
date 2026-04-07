@@ -5,11 +5,68 @@ import {
   getSeatPositions,
   getSeatFillColor,
   getGroupColor,
-} from "../utils/geometry.js";
+} from "../utils/geometry.ts";
+import type { SeatingGuest, SeatingTable } from "@/types/seating";
 
 // Galben washed pentru mese noi nemutate
 const NEW_TABLE_STROKE = "#ECC94B";
 const NEW_TABLE_FILL = "rgba(236,201,75,0.15)";
+
+// ── LOCAL TYPES ───────────────────────────────────────────────────────────────
+
+interface DragOverValue {
+  id: number
+  full?: boolean
+}
+
+interface DraggingTableState {
+  id: number
+  ox: number
+  oy: number
+  dw: number
+  dh: number
+}
+
+interface ClickedSeatState {
+  guest: SeatingGuest
+  tableId: number
+  x: number
+  y: number
+}
+
+interface HoveredGuestState {
+  guest: SeatingGuest
+  x: number
+  y: number
+}
+
+interface TableNodeImplProps {
+  t: SeatingTable
+  assignedGuests: SeatingGuest[]
+  dragOver: DragOverValue | null
+  selectedTableId: number | null
+  lockMode: boolean
+  screenToSVG: (clientX: number, clientY: number) => { x: number; y: number } | null
+  assignGuest: (gId: string, tableId: number) => void
+  setSelectedTableId: (id: number | null) => void
+  setEditName: (name: string) => void
+  setEditSeats: (value: number) => void
+  setEditPanel: (panel: { tableId: number; x?: number; y?: number } | null) => void
+  setHoveredGuest: (value: HoveredGuestState | null) => void
+  setClickedSeat: (value: ClickedSeatState | null) => void
+  setIsDraggingGuest: (value: boolean) => void
+  setDragOver: (value: DragOverValue | null) => void
+  draggingTableRef: React.MutableRefObject<DraggingTableState | null>
+  wasMovedRef: React.MutableRefObject<boolean>
+  isHighlighted?: boolean
+  highlightGuestId?: number | null
+  highlightGroupId?: string | null
+  isFocused?: boolean
+  vzoom: number
+  newTableIds?: Set<number> | null
+  clearNewTableHighlight?: ((tableId: number) => void) | null
+  spaceDownRef?: React.MutableRefObject<boolean> | null
+}
 
 function TableNodeImpl({
   t,
@@ -37,12 +94,24 @@ function TableNodeImpl({
   newTableIds,
   clearNewTableHighlight,
   spaceDownRef,
-}) {
+}: TableNodeImplProps) {
   const d = useMemo(() => getTableDims(t), [t.type, t.seats, t.isRing]);
+
+  // TODO: TableDims optional fields — guaranteed present for their respective table types;
+  // cast as number to allow arithmetic within type-guarded branches
+  const dtw = d.tw as number;
+  const dth = d.th as number;
+  const dcx = d.cx as number;
+  const dcy = d.cy as number;
+  const dr  = d.r  as number;
+  const ds  = d.s  as number;
+  const dpad = d.pad as number;
+
   const cx = t.x + d.w / 2,
     cy = t.y + d.h / 2;
   const rot = t.type === "rect" || t.type === "prezidiu" || t.type === "bar" ? t.rotation || 0 : 0;
-  const isDragTarget = dragOver?.id === t.id || dragOver === t.id;
+  // TODO: dragOver can be object or null; `dragOver === t.id` is dead code kept for compat
+  const isDragTarget = dragOver?.id === t.id || (dragOver as unknown) === t.id;
   const isDragFull = dragOver?.id === t.id && dragOver?.full;
   const isSelected = selectedTableId === t.id;
   const isNew = newTableIds?.has(t.id);
@@ -77,11 +146,11 @@ function TableNodeImpl({
       : t.name.startsWith("Masa ") ? t.name.slice(5) : t.name)
     : t.name;
   const isDraggingThisTable = draggingTableRef?.current?.id === t.id;
-  const tooltipTimeoutRef = useRef(null);
+  const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDimmedByGroup = highlightGroupId != null && !assignedGuests.some((g) => g.grup === highlightGroupId);
   const tableOpacity = !isFocused ? 0.5 : isDimmedByGroup ? 0.3 : 1;
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e: React.MouseEvent<SVGGElement>) => {
     if (lockMode || e.button !== 0) return;
     if (spaceDownRef?.current) return;
     e.preventDefault();
@@ -155,7 +224,7 @@ function TableNodeImpl({
                         <circle
               cx={d.w / 2}
               cy={d.h / 2}
-              r={Math.min(d.tw, d.th) / 2}
+              r={Math.min(dtw, dth) / 2}
               fill="rgba(196,168,130,0.04)"
               stroke={isSelected ? "#B794F4" : "rgba(196,168,130,0.35)"}
               strokeWidth={isSelected ? 2 : 1.5}
@@ -187,7 +256,7 @@ function TableNodeImpl({
         {!t.isRing && t.type === "bar" && (
           <>
             <path
-              d={`M 8,${d.th} A ${d.tw / 2},${d.th} 0 0,1 ${d.tw + 8},${d.th} Z`}
+              d={`M 8,${dth} A ${dtw / 2},${dth} 0 0,1 ${dtw + 8},${dth} Z`}
               fill={isNew ? NEW_TABLE_FILL : "rgba(72,187,120,0.08)"}
               stroke={isSelected ? "#B794F4" : isNew ? NEW_TABLE_STROKE : "rgba(72,187,120,0.45)"}
               strokeWidth={bw}
@@ -197,19 +266,19 @@ function TableNodeImpl({
             />
             {vzoom >= 0.4 && (
               <>
-                <text x={d.tw / 2 + 8} y={d.th * 0.62} textAnchor="middle" fill="#276749" fontSize="10"
+                <text x={dtw / 2 + 8} y={dth * 0.62} textAnchor="middle" fill="#276749" fontSize="10"
                   fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
                   style={{ pointerEvents: "none" }}>
                   {shortName}
                 </text>
-                <text x={d.tw / 2 + 8} y={d.th * 0.82} textAnchor="middle" fill="#48BB78" fontSize="7.5"
+                <text x={dtw / 2 + 8} y={dth * 0.82} textAnchor="middle" fill="#48BB78" fontSize="7.5"
                   fontFamily="DM Sans,sans-serif" style={{ pointerEvents: "none" }}>
                   🍹 decor
                 </text>
               </>
             )}
             {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={d.tw / 2 + 8} y={d.th * 0.7} textAnchor="middle" fill="#276749" fontSize="32"
+              <text x={dtw / 2 + 8} y={dth * 0.7} textAnchor="middle" fill="#276749" fontSize="32"
                 fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
                 style={{ pointerEvents: "none" }}>
                 {shortName}
@@ -222,9 +291,9 @@ function TableNodeImpl({
         {t.type === "round" && (
           <>
             <circle
-              cx={d.cx}
-              cy={d.cy}
-              r={d.r}
+              cx={dcx}
+              cy={dcy}
+              r={dr}
               fill={isNew ? NEW_TABLE_FILL : "#FAF7F2"}
               stroke={occupancyBs}
               strokeWidth={bw}
@@ -233,23 +302,23 @@ function TableNodeImpl({
               vectorEffect="non-scaling-stroke"
             />
             {vzoom >= 0.4 && (
-              <circle cx={d.cx} cy={d.cy} r={d.r - 10} fill="none"
+              <circle cx={dcx} cy={dcy} r={dr - 10} fill="none"
                 stroke="rgba(201,144,122,0.1)" strokeWidth="1"
                 style={{ pointerEvents: "none" }} />
             )}
             {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
-              const arcR = d.r - 28;
+              const arcR = dr - 28;
               const pct = assignedGuests.length / t.seats;
               const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
               const startAngle = -Math.PI / 2;
               const endAngle = startAngle + pct * 2 * Math.PI;
-              const x1 = d.cx + arcR * Math.cos(startAngle);
-              const y1 = d.cy + arcR * Math.sin(startAngle);
-              const x2 = d.cx + arcR * Math.cos(endAngle);
-              const y2 = d.cy + arcR * Math.sin(endAngle);
+              const x1 = dcx + arcR * Math.cos(startAngle);
+              const y1 = dcy + arcR * Math.sin(startAngle);
+              const x2 = dcx + arcR * Math.cos(endAngle);
+              const y2 = dcy + arcR * Math.sin(endAngle);
               const largeArc = pct > 0.5 ? 1 : 0;
               if (assignedGuests.length >= t.seats)
-                return <circle cx={d.cx} cy={d.cy} r={arcR} fill="none" stroke={arcColor}
+                return <circle cx={dcx} cy={dcy} r={arcR} fill="none" stroke={arcColor}
                   strokeWidth="3" opacity={isSelected ? 0.7 : 0.5}
                   style={{ pointerEvents: "none" }} />;
               return <path d={`M ${x1} ${y1} A ${arcR} ${arcR} 0 ${largeArc} 1 ${x2} ${y2}`}
@@ -259,11 +328,11 @@ function TableNodeImpl({
             })()}
             {vzoom >= 0.5 && (
               <>
-                <text x={d.cx} y={d.cy - 10} textAnchor="middle" fill="#1E2340" fontSize="15"
+                <text x={dcx} y={dcy - 10} textAnchor="middle" fill="#1E2340" fontSize="15"
                   fontFamily="Cormorant Garamond,serif" fontWeight="700" style={{ pointerEvents: "none" }}>
                   {shortName}
                 </text>
-                <text x={d.cx} y={d.cy + 8} textAnchor="middle" fill={fillColor} fontSize="12"
+                <text x={dcx} y={dcy + 8} textAnchor="middle" fill={fillColor} fontSize="12"
                   fontFamily="DM Sans,sans-serif" fontWeight="700"
                   style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
                   {occupancyText}
@@ -272,12 +341,12 @@ function TableNodeImpl({
             )}
             {vzoom >= 0.4 && vzoom < 0.5 && (
               <>
-                <text x={d.cx} y={d.cy - 8} textAnchor="middle" fill="#1E2340" fontSize="32"
+                <text x={dcx} y={dcy - 8} textAnchor="middle" fill="#1E2340" fontSize="32"
                   fontFamily="Cormorant Garamond,serif" fontWeight="700"
                   style={{ pointerEvents: "none" }}>
                   {shortName}
                 </text>
-                <text x={d.cx} y={d.cy + 10} textAnchor="middle" fill={fillColor} fontSize="12"
+                <text x={dcx} y={dcy + 10} textAnchor="middle" fill={fillColor} fontSize="12"
                   fontFamily="DM Sans,sans-serif" fontWeight="700"
                   style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
                   {occupancyText}
@@ -285,7 +354,7 @@ function TableNodeImpl({
               </>
             )}
             {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={d.cx} y={d.cy + 6} textAnchor="middle" fill="#1E2340" fontSize="32"
+              <text x={dcx} y={dcy + 6} textAnchor="middle" fill="#1E2340" fontSize="32"
                 fontFamily="Cormorant Garamond,serif" fontWeight="700"
                 style={{ pointerEvents: "none" }}>
                 {shortName}
@@ -297,7 +366,7 @@ function TableNodeImpl({
         {/* SQUARE */}
         {t.type === "square" && (
           <>
-            <rect x={d.pad} y={d.pad} width={d.s} height={d.s} rx="10"
+            <rect x={dpad} y={dpad} width={ds} height={ds} rx="10"
               fill={isNew ? NEW_TABLE_FILL : "white"}
               stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
@@ -305,9 +374,9 @@ function TableNodeImpl({
             {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
               const pct = assignedGuests.length / t.seats;
               const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
-              const perimeter = (d.s + d.s) * 2;
+              const perimeter = (ds + ds) * 2;
               const dashLen = pct * perimeter;
-              return <rect x={d.pad} y={d.pad} width={d.s} height={d.s} rx="10"
+              return <rect x={dpad} y={dpad} width={ds} height={ds} rx="10"
                 fill="none" stroke={arcColor} strokeWidth="3"
                 strokeDasharray={`${dashLen} ${perimeter}`}
                 opacity={isSelected ? 0.7 : 0.5}
@@ -315,16 +384,16 @@ function TableNodeImpl({
             })()}
             {vzoom >= 0.4 && (
               <>
-                <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 - 10} textAnchor="middle"
+                <text x={dpad + ds / 2} y={dpad + ds / 2 - 10} textAnchor="middle"
                   fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
                   style={{ pointerEvents: "none" }}>{shortName}</text>
-                <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 + 8} textAnchor="middle"
+                <text x={dpad + ds / 2} y={dpad + ds / 2 + 8} textAnchor="middle"
                   fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
                   style={{ pointerEvents: "none" }}>{occupancyText}</text>
               </>
             )}
             {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={d.pad + d.s / 2} y={d.pad + d.s / 2 + 10} textAnchor="middle"
+              <text x={dpad + ds / 2} y={dpad + ds / 2 + 10} textAnchor="middle"
                 fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif" fontWeight="600"
                 style={{ pointerEvents: "none" }}>{shortName}</text>
             )}
@@ -334,7 +403,7 @@ function TableNodeImpl({
         {/* PREZIDIU */}
         {t.type === "prezidiu" && (
           <>
-            <rect x="25" y="22" width={d.tw} height={d.th} rx="12"
+            <rect x="25" y="22" width={dtw} height={dth} rx="12"
               fill={isNew ? NEW_TABLE_FILL : "rgba(201,144,122,0.07)"}
               stroke={isDragTarget ? "#C9907A" : isSelected ? "#B794F4" : isNew ? NEW_TABLE_STROKE : "rgba(201,144,122,0.4)"}
               strokeWidth={bw} strokeDasharray={bDash}
@@ -342,16 +411,16 @@ function TableNodeImpl({
               vectorEffect="non-scaling-stroke" />
             {vzoom >= 0.4 && (
               <>
-                <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
+                <text x={25 + dtw / 2} y={22 + dth / 2 - 8} textAnchor="middle"
                   fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif"
                   fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{shortName}</text>
-                <text x={25 + d.tw / 2} y={22 + d.th / 2 + 10} textAnchor="middle"
+                <text x={25 + dtw / 2} y={22 + dth / 2 + 10} textAnchor="middle"
                   fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
                   style={{ pointerEvents: "none" }}>{occupancyText}</text>
               </>
             )}
             {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={25 + d.tw / 2} y={22 + d.th / 2 + 6} textAnchor="middle"
+              <text x={25 + dtw / 2} y={22 + dth / 2 + 6} textAnchor="middle"
                 fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif"
                 fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{shortName}</text>
             )}
@@ -361,7 +430,7 @@ function TableNodeImpl({
         {/* RECT */}
         {t.type === "rect" && (
           <>
-            <rect x="25" y="22" width={d.tw} height={d.th} rx="10"
+            <rect x="25" y="22" width={dtw} height={dth} rx="10"
               fill={isNew ? NEW_TABLE_FILL : "white"}
               stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
               filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
@@ -369,9 +438,9 @@ function TableNodeImpl({
             {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
               const pct = assignedGuests.length / t.seats;
               const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
-              const perimeter = (d.tw + d.th) * 2;
+              const perimeter = (dtw + dth) * 2;
               const dashLen = pct * perimeter;
-              return <rect x="25" y="22" width={d.tw} height={d.th} rx="10"
+              return <rect x="25" y="22" width={dtw} height={dth} rx="10"
                 fill="none" stroke={arcColor} strokeWidth="3"
                 strokeDasharray={`${dashLen} ${perimeter}`}
                 opacity={isSelected ? 0.7 : 0.5}
@@ -379,16 +448,16 @@ function TableNodeImpl({
             })()}
             {vzoom >= 0.4 && (
               <>
-                <text x={25 + d.tw / 2} y={22 + d.th / 2 - 8} textAnchor="middle"
+                <text x={25 + dtw / 2} y={22 + dth / 2 - 8} textAnchor="middle"
                   fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
                   style={{ pointerEvents: "none" }}>{shortName}</text>
-                <text x={25 + d.tw / 2} y={22 + d.th / 2 + 10} textAnchor="middle"
+                <text x={25 + dtw / 2} y={22 + dth / 2 + 10} textAnchor="middle"
                   fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
                   style={{ pointerEvents: "none" }}>{occupancyText}</text>
               </>
             )}
             {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={25 + d.tw / 2} y={22 + d.th / 2 + 6} textAnchor="middle"
+              <text x={25 + dtw / 2} y={22 + dth / 2 + 6} textAnchor="middle"
                 fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif" fontWeight="600"
                 style={{ pointerEvents: "none" }}>{shortName}</text>
             )}
@@ -403,14 +472,15 @@ function TableNodeImpl({
             const isDeclinedGuest = guest.meta?.isDeclined ?? false;
             const highlightDimmed = highlightGuestId != null && assignedGuests.some(g => g.id === highlightGuestId) && highlightGuestId !== guest.id;
             const guestOpacity = (highlightDimmed ? 0.25 : 1) * (isDeclinedGuest ? 0.5 : 1);
+            // TODO: draggable is not in SVGProps<SVGGElement> but is supported at runtime on SVG elements
+            const svgDraggable = { draggable: "true" } as unknown as React.SVGProps<SVGGElement>;
             return (
-              <g key={idx} style={{ cursor: "pointer", opacity: guestOpacity }}
+              <g key={idx} {...svgDraggable} style={{ cursor: "pointer", opacity: guestOpacity }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setHoveredGuest(null);
                   setClickedSeat({ guest, tableId: t.id, x: e.clientX + 14, y: e.clientY - 14 });
                 }}
-                draggable="true"
                 onMouseDown={(e) => { e.stopPropagation(); }}
                 onDragStart={(e) => {
                   e.stopPropagation();
@@ -420,7 +490,7 @@ function TableNodeImpl({
                   e.dataTransfer.setData("fromTableId", String(t.id));
                 }}
                 onDragEnd={() => setIsDraggingGuest(false)}
-                onMouseEnter={(e) => { e.stopPropagation(); clearTimeout(tooltipTimeoutRef.current); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
+                onMouseEnter={(e) => { e.stopPropagation(); clearTimeout(tooltipTimeoutRef.current as ReturnType<typeof setTimeout>); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
                 onMouseLeave={(e) => { e.stopPropagation(); tooltipTimeoutRef.current = setTimeout(() => setHoveredGuest(null), 250); }}
                 >
                   <circle cx={pos.x} cy={pos.y} r="18" fill={gc} stroke="white" strokeWidth="2"
@@ -491,7 +561,7 @@ function TableNodeImpl({
   );
 }
 
-function tableNodeComparator(prev, next) {
+function tableNodeComparator(prev: TableNodeImplProps, next: TableNodeImplProps): boolean {
   if (prev.t !== next.t) return false;
   if (prev.assignedGuests !== next.assignedGuests) return false;
   if (prev.lockMode !== next.lockMode) return false;
@@ -506,8 +576,9 @@ function tableNodeComparator(prev, next) {
 
   // dragOver: re-render doar dacă afectează această masă
   if (prev.dragOver !== next.dragOver) {
-    const prevAffects = prev.dragOver?.id === prev.t.id || prev.dragOver === prev.t.id;
-    const nextAffects = next.dragOver?.id === next.t.id || next.dragOver === next.t.id;
+    // TODO: dragOver?.id check — prev.dragOver may be object or null
+    const prevAffects = prev.dragOver?.id === prev.t.id || (prev.dragOver as unknown) === prev.t.id;
+    const nextAffects = next.dragOver?.id === next.t.id || (next.dragOver as unknown) === next.t.id;
     if (prevAffects || nextAffects) return false;
   }
 

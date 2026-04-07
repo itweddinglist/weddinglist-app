@@ -1,5 +1,5 @@
 "use client";
-import { getSeatFillColor, generateCateringText } from "../utils/geometry.js";
+import { getSeatFillColor, generateCateringText } from "../utils/geometry.ts";
 
 export default function CateringModal({
   showCatering,

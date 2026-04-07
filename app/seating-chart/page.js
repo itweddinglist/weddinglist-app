@@ -9,22 +9,22 @@ import {
   TYPE_LABELS,
   getGroupColor,
   getTableDims,
-} from "./utils/geometry.js";
-import { useCamera } from "./hooks/useCamera.js";
-import { useSeatingData } from "./hooks/useSeatingData.js";
-import { useSeatingUI } from "./hooks/useSeatingUI.js";
+} from "./utils/geometry.ts";
+import { useCamera } from "./hooks/useCamera.ts";
+import { useSeatingData } from "./hooks/useSeatingData.ts";
+import { useSeatingUI } from "./hooks/useSeatingUI.ts";
 import { applySeatingEffect } from "./utils/applySeatingEffect.js";
 import { useGuestLocator } from "./hooks/useGuestLocator.js";
-import { useTableInteractions } from "./hooks/useTableInteractions.js";
-import { TableNode } from "./components/TableNode.jsx";
-import GuestSidebar from "./components/GuestSidebar.jsx";
-import CanvasToolbar from "./components/CanvasToolbar.jsx";
-import StatsPanel from "./components/StatsPanel.jsx";
+import { useTableInteractions } from "./hooks/useTableInteractions.ts";
+import { TableNode } from "./components/TableNode.tsx";
+import GuestSidebar from "./components/GuestSidebar.tsx";
+import CanvasToolbar from "./components/CanvasToolbar.tsx";
+import StatsPanel from "./components/StatsPanel.tsx";
 import CateringModal from "./components/CateringModal.jsx";
-import EditPanel from "./components/EditPanel.jsx";
+import EditPanel from "./components/EditPanel.tsx";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import ToastStack from "./components/ToastStack.jsx";
-import { exportToPng } from "./utils/exportPng.js";
+import { exportToPng } from "./utils/exportPng.ts";
 import FpsCounter from "./components/FpsCounter.jsx";
 import SaveIndicator from "../components/SaveIndicator.jsx";
 import { supabaseClient } from "../lib/supabase/client";

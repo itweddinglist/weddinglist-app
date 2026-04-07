@@ -1,12 +1,26 @@
 "use client";
+import type { SeatingTable, TableType } from "@/types/seating";
 
-const LIMITS = {
-  round: { min: 4, max: 16, def: 8 },
-  square: { min: 4, max: 12, def: 4 },
-  rect: { min: 4, max: 20, def: 10 },
-  prezidiu: { min: 4, max: 20, def: 8 },
-  bar: { min: 0, max: 0, def: 0 },
+const LIMITS: Record<TableType, { min: number; max: number; def: number }> = {
+  round:    { min: 4, max: 16, def: 8  },
+  square:   { min: 4, max: 12, def: 4  },
+  rect:     { min: 4, max: 20, def: 10 },
+  prezidiu: { min: 4, max: 20, def: 8  },
+  bar:      { min: 0, max: 0,  def: 0  },
 };
+
+interface EditPanelProps {
+  editPanel: { tableId: number } | null
+  setEditPanel: (panel: { tableId: number } | null) => void
+  tables: SeatingTable[]
+  editName: string
+  setEditName: (name: string) => void
+  editSeats: number
+  setEditSeats: (updater: number | ((s: number) => number)) => void
+  saveEdit: () => void
+  deleteTable: (id: number) => void
+  rotateTable: (id: number, degrees: number) => void
+}
 
 export default function EditPanel({
   editPanel,
@@ -19,7 +33,7 @@ export default function EditPanel({
   saveEdit,
   deleteTable,
   rotateTable,
-}) {
+}: EditPanelProps) {
   if (!editPanel) return null;
   const t = tables.find((x) => x.id === editPanel.tableId);
   if (!t) return null;

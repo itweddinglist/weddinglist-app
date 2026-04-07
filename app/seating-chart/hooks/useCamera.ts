@@ -1,8 +1,19 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
-import { camReducer, getInitialCam, ZOOM_DEFAULT, ZOOM_MIN, ZOOM_MAX } from "../utils/camera.js";
-import { loadStorageState } from "../utils/storage.js";
-import { PLAN_CX, PLAN_CY, getTableDims } from "../utils/geometry.js";
+import { camReducer, getInitialCam, ZOOM_DEFAULT, ZOOM_MIN, ZOOM_MAX } from "../utils/camera.ts";
+import { loadStorageState } from "../utils/storage.ts";
+import { PLAN_CX, PLAN_CY, getTableDims } from "../utils/geometry.ts";
+import type { SeatingTable, Point } from "@/types/seating";
+
+// Tipul acumulatorului pentru wheel events (rafId este number | null)
+interface WheelAcc {
+  sumZoomExp: number
+  lastNx: number
+  lastNy: number
+  lastCW: number
+  lastCH: number
+  rafId: number | null
+}
 
 export function useCamera() {
   const [cam, dispatchCam] = useReducer(camReducer, null, () => getInitialCam(1200, 700));
@@ -10,12 +21,12 @@ export function useCamera() {
   const [canvasH, setCanvasH] = useState(700);
   const [hydrated, setHydrated] = useState(false);
 
-  const canvasRef = useRef(null);
-  const svgRef = useRef(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const camRef = useRef(cam);
   const canvasWRef = useRef(canvasW);
   const canvasHRef = useRef(canvasH);
-  const wheelAccRef = useRef({
+  const wheelAccRef = useRef<WheelAcc>({
     sumZoomExp: 0,
     lastNx: 0.5,
     lastNy: 0.5,
@@ -76,9 +87,10 @@ export function useCamera() {
   useEffect(() => {
     const acc = wheelAccRef.current;
 
-    const onWheel = (e) => {
+    const onWheel = (e: WheelEvent) => {
       const el = canvasRef.current;
-      if (!el || !el.contains(e.target)) return;
+      // e.target este EventTarget | null; contains() acceptă Node | null
+      if (!el || !el.contains(e.target as Node | null)) return;
       e.preventDefault();
 
       const rect = svgRef.current ? svgRef.current.getBoundingClientRect() : null;
@@ -147,7 +159,7 @@ export function useCamera() {
     [cam, canvasW, canvasH]
   );
 
-  const screenToSVG = useCallback((clientX, clientY) => {
+  const screenToSVG = useCallback((clientX: number, clientY: number): Point | null => {
     if (!svgRef.current) return null;
     const rect = svgRef.current.getBoundingClientRect();
     const nx = (clientX - rect.left) / rect.width;
@@ -159,7 +171,7 @@ export function useCamera() {
     return { x, y };
   }, []);
 
-  const fitToScreen = useCallback((tables) => {
+  const fitToScreen = useCallback((tables: SeatingTable[]) => {
     if (!tables || tables.length === 0) {
       const cw = canvasWRef.current;
       const ch = canvasHRef.current;
@@ -208,8 +220,9 @@ export function useCamera() {
       canvasH: ch,
     });
   }, []);
+
   const focusPoint = useCallback(
-    (x, y, zoom = 1.5) => {
+    (x: number, y: number, zoom = 1.5) => {
       const cw = canvasWRef.current;
       const ch = canvasHRef.current;
       dispatchCam({
@@ -225,7 +238,7 @@ export function useCamera() {
   );
 
   const zoomBy = useCallback(
-    (d) => {
+    (d: number) => {
       const cW = canvasWRef.current;
       const cH = canvasHRef.current;
       const prevZ = camRef.current.z;
