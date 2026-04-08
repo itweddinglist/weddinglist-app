@@ -20,7 +20,6 @@ interface Props {
   weddingId: string;
   onSave: (result: { guest: GuestWithRelations; warnings?: string[] }) => void;
   onClose: () => void;
-  devToken: string;
 }
 
 const inputStyle = {
@@ -45,7 +44,7 @@ const labelStyle = {
 };
 
 export default function GuestFormModal({
-  guest, groups, weddingId, onSave, onClose, devToken,
+  guest, groups, weddingId, onSave, onClose,
 }: Props) {
   const isEditing = !!guest;
 
@@ -120,20 +119,14 @@ export default function GuestFormModal({
       if (isEditing) {
         res = await fetch(`/api/guests/${guest.id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${devToken}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
       } else {
         payload.wedding_id = weddingId;
         res = await fetch("/api/guests", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${devToken}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
       }

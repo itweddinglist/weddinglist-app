@@ -26,10 +26,19 @@ import { clearAll } from "./cache";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeRequest(headers: Record<string, string> = {}): NextRequest {
+function makeRequest(
+  headers: Record<string, string> = {},
+  cookies: Record<string, string> = {}
+): NextRequest {
   return {
     headers: {
       get: (key: string) => headers[key.toLowerCase()] ?? null,
+    },
+    cookies: {
+      get: (key: string) => {
+        const value = cookies[key];
+        return value !== undefined ? { value } : undefined;
+      },
     },
   } as unknown as NextRequest;
 }

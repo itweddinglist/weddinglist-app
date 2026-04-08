@@ -114,5 +114,8 @@ export async function resolveSession(): Promise<SessionState> {
     return { status: "guest" };
   }
 
+  // Refresh shadow session cookie în background — nu blocăm UI-ul
+  void fetch("/api/auth/shadow-session", { method: "POST" }).catch(() => undefined);
+
   return buildAuthenticatedState(bootstrap);
 }

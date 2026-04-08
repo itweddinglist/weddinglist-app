@@ -11,6 +11,7 @@ import type { BootstrapResponse } from "@/app/lib/auth/fetch-wordpress-bootstrap
 import type { ServerAppContext, AuthenticatedContext } from "./types";
 import { makeCacheKey, get as cacheGet, set as cacheSet } from "./cache";
 import { getDevSession } from "@/lib/auth/dev-session";
+import { verifyShadowToken, SHADOW_COOKIE } from "@/lib/auth/shadow-session";
 
 /** Filters the raw Cookie header to only wordpress_logged_in_* cookies. */
 function filterWpCookies(cookieHeader: string): string {
@@ -129,6 +130,13 @@ export async function getServerAppContext(
   );
 
   if (!result.ok) {
+    // WP down — fallback la shadow session dacă există și e valid
+    const shadowCookieValue = request.cookies.get(SHADOW_COOKIE)?.value;
+    if (shadowCookieValue) {
+      const shadowCtx = await verifyShadowToken(shadowCookieValue, request_id);
+      if (shadowCtx) return shadowCtx;
+    }
+
     return {
       status: "wp_unavailable",
       reason: result.reason,
