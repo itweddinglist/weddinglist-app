@@ -2,6 +2,7 @@
 // lib/seating/use-seating-sync.test.ts
 // Unit tests pentru SaveStatus + confirmedSnapshot + retry/confirmRevert
 // Faza 10 — Seating Sync Integrity Hardening
+// Faza 11 — load mutat pe server (fetch /api/.../seating/load)
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -9,49 +10,20 @@ import { renderHook, act } from "@testing-library/react";
 import { useSeatingSync } from "./use-seating-sync";
 import type { SeatingSnapshot } from "./types";
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
+// ─── Response helpers ─────────────────────────────────────────────────────────
 
-vi.mock("./id-bridge", () => ({
-  fetchAndAllocateIds: vi.fn().mockResolvedValue({
-    guests: new Map(),
-    tables: new Map(),
-    guestsReverse: new Map(),
-    tablesReverse: new Map(),
-  }),
-}));
-
-vi.mock("./map-guests", () => ({
-  mapGuestsToSeating: vi.fn().mockReturnValue([]),
-}));
-
-vi.mock("./map-assignments", () => ({
-  applyAssignments: vi.fn().mockReturnValue([]),
-}));
-
-/**
- * Supabase mock cu chain thenable.
- * await supabase.from("x").select("*").eq("k","v") → { data: [], error: null }
- */
-function makeSupabaseMock() {
-  const chain: any = {};
-  chain.from = vi.fn().mockReturnValue(chain);
-  chain.select = vi.fn().mockReturnValue(chain);
-  chain.eq = vi.fn().mockReturnValue(chain);
-  // Thenable: orice await pe chain rezolvă cu data goală
-  chain.then = (onfulfilled: (v: unknown) => unknown) =>
-    Promise.resolve({ data: [], error: null }).then(onfulfilled);
-  return chain;
-}
-
-function makeSnapshot(overrides: Partial<SeatingSnapshot> = {}): SeatingSnapshot {
+function makeLoadResponse(): Response {
   return {
-    reason: "assignments",
-    assignments: { 1: 10 },
-    tables: [
-      { id: 10, name: "Masa 1", type: "round", seats: 8, x: 100, y: 200, rotation: 0, isRing: false },
-    ],
-    ...overrides,
-  };
+    ok: true,
+    status: 200,
+    json: async () => ({
+      data: {
+        guests: [],
+        guestIdMap: [],
+        tableIdMap: [],
+      },
+    }),
+  } as Response;
 }
 
 function makeSuccessResponse(): Response {
@@ -70,6 +42,17 @@ function makeErrorResponse(status = 500): Response {
   } as Response;
 }
 
+function makeSnapshot(overrides: Partial<SeatingSnapshot> = {}): SeatingSnapshot {
+  return {
+    reason: "assignments",
+    assignments: { 1: 10 },
+    tables: [
+      { id: 10, name: "Masa 1", type: "round", seats: 8, x: 100, y: 200, rotation: 0, isRing: false },
+    ],
+    ...overrides,
+  };
+}
+
 const WEDDING_ID = "wedding-uuid";
 const EVENT_ID = "event-uuid";
 
@@ -80,7 +63,11 @@ describe("useSeatingSync — Faza 10", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    fetchMock = vi.fn();
+    // Default: load reușit, sync reușit
+    fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeSuccessResponse());
+    });
     vi.stubGlobal("fetch", fetchMock);
   });
 
@@ -90,8 +77,7 @@ describe("useSeatingSync — Faza 10", () => {
   });
 
   // ── Helper: drenează microtask queue până load() finalizează ──────────────
-  // load() are 3 await-uri secvențiale (supabase guests, seat_assignments,
-  // fetchAndAllocateIds). Fiecare necesită cel puțin 2 ticks de microtask.
+  // load() are 2 await-uri secvențiale: fetch() + response.json()
   // Rulăm 10 runde pentru a acoperi și React state updates.
   async function waitForLoad(_result: any) {
     await act(async () => {
@@ -104,9 +90,8 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 1. Stare inițială ──────────────────────────────────────────────────────
 
   it("saveStatus initial este idle, confirmedSnapshot este null", () => {
-    const supabase = makeSupabaseMock();
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
     expect(result.current.saveStatus).toBe("idle");
     expect(result.current.confirmedSnapshot).toBeNull();
@@ -116,9 +101,8 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 2. confirmedSnapshot setat după load reușit ────────────────────────────
 
   it("confirmedSnapshot este setat după load reușit", async () => {
-    const supabase = makeSupabaseMock();
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -132,10 +116,8 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 3. saveStatus: saving → saved după sync reușit ────────────────────────
 
   it("saveStatus devine saved după sync reușit", async () => {
-    fetchMock.mockResolvedValue(makeSuccessResponse());
-    const supabase = makeSupabaseMock();
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -154,10 +136,12 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 4. saveStatus → unconfirmed după toate retry-urile eșuate ─────────────
 
   it("saveStatus devine unconfirmed după toate retry-urile eșuate", async () => {
-    fetchMock.mockResolvedValue(makeErrorResponse(500));
-    const supabase = makeSupabaseMock();
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeErrorResponse(500));
+    });
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -177,10 +161,8 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 5. confirmedSnapshot include tablesSnapshot după sync success ──────────
 
   it("confirmedSnapshot.tables actualizat după sync reușit", async () => {
-    fetchMock.mockResolvedValue(makeSuccessResponse());
-    const supabase = makeSupabaseMock();
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -209,11 +191,12 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 6. retry() este deduped ────────────────────────────────────────────────
 
   it("al doilea apel retry() în timp ce primul e în curs este ignorat", async () => {
-    // Fetch eșuează → forțăm unconfirmed
-    fetchMock.mockResolvedValue(makeErrorResponse());
-    const supabase = makeSupabaseMock();
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeErrorResponse());
+    });
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -227,9 +210,6 @@ describe("useSeatingSync — Faza 10", () => {
     });
 
     expect(result.current.saveStatus).toBe("unconfirmed");
-
-    // Acum fetch reușește pentru retry
-    fetchMock.mockResolvedValue(makeSuccessResponse());
 
     // Un fetch care nu se rezolvă imediat — simulăm retry în curs
     let resolveRetryFetch!: (r: Response) => void;
@@ -246,7 +226,6 @@ describe("useSeatingSync — Faza 10", () => {
     act(() => { result.current.retry(); });
 
     // Rezolvăm fetch-ul manual cu success
-    fetchMock.mockResolvedValue(makeSuccessResponse());
     resolveRetryFetch(makeSuccessResponse());
 
     await act(async () => {
@@ -260,10 +239,12 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 7. confirmRevert() resetează statusul ─────────────────────────────────
 
   it("confirmRevert() resetează saveStatus la saved, apoi idle după 2s", async () => {
-    fetchMock.mockResolvedValue(makeErrorResponse());
-    const supabase = makeSupabaseMock();
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeErrorResponse());
+    });
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -295,10 +276,12 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 8. retry() trimite starea curentă cu retryCount = 0 ───────────────────
 
   it("retry() declanșează un nou doSync cu retryCount 0 (nu continuă din where left off)", async () => {
-    fetchMock.mockResolvedValue(makeErrorResponse());
-    const supabase = makeSupabaseMock();
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeErrorResponse());
+    });
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -329,10 +312,12 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 9. onSeatingStateChanged stochează snapshot în latestSnapshotRef ──────
 
   it("retry() folosește ultimul snapshot primit, nu pe cel original", async () => {
-    fetchMock.mockResolvedValue(makeErrorResponse());
-    const supabase = makeSupabaseMock();
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeErrorResponse());
+    });
     const { result } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);
@@ -369,12 +354,14 @@ describe("useSeatingSync — Faza 10", () => {
   // ── 10. beforeunload activ doar când unconfirmed ───────────────────────────
 
   it("beforeunload handler este adăugat când status = unconfirmed și eliminat la schimbare", async () => {
-    fetchMock.mockResolvedValue(makeErrorResponse());
-    const supabase = makeSupabaseMock();
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/seating/load")) return Promise.resolve(makeLoadResponse());
+      return Promise.resolve(makeErrorResponse());
+    });
     const addListenerSpy = vi.spyOn(window, "addEventListener");
 
     const { result, unmount } = renderHook(() =>
-      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID, supabase })
+      useSeatingSync({ weddingId: WEDDING_ID, eventId: EVENT_ID })
     );
 
     await waitForLoad(result);

@@ -28,7 +28,6 @@ import { exportToPng } from "./utils/exportPng.ts";
 import FpsCounter from "./components/FpsCounter.jsx";
 import SaveIndicator from "../components/SaveIndicator.jsx";
 import ReadOnlyBanner from "../components/ReadOnlyBanner.tsx";
-import { supabaseClient } from "../lib/supabase/client";
 import { useSeatingSync } from "../../lib/seating/use-seating-sync";
 import { useSession } from "../lib/auth/session/use-session";
 import { clearSessionCache } from "../lib/auth/session/session-bridge";
@@ -793,7 +792,6 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
   } = useSeatingSync({
     weddingId,
     eventId,
-    supabase: supabaseClient,
   });
 
   if (isLoading) {

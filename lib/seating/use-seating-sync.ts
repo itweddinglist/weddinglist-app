@@ -4,14 +4,12 @@
 // Snapshot minim: { reason, assignments, tables } — fără guest model coupling.
 // Faza 9.5: cancel stale retries + snapshot hashing stabil
 // Faza 10: confirmedSnapshotRef + SaveStatus + retry/confirmRevert
+// Faza 11: load mutat pe server (GET /api/.../seating/load) — service_role
 // =============================================================================
 
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { fetchAndAllocateIds } from "./id-bridge";
-import { mapGuestsToSeating, type GuestWithEventData } from "./map-guests";
-import { applyAssignments, type SeatAssignmentRow } from "./map-assignments";
 import type {
   SeatingGuest,
   SeatingSnapshot,
@@ -19,6 +17,8 @@ import type {
   AssignmentState,
   NumericIdMap,
   SeatingFullSyncRequest,
+  SeatingLoadResponse,
+  SeatingIdMapEntry,
 } from "./types";
 
 const SYNC_DEBOUNCE_MS = 1500;
@@ -43,7 +43,6 @@ export interface ConfirmedSnapshot {
 export interface UseSeatingSyncOptions {
   weddingId: string;
   eventId: string;
-  supabase: any;
 }
 
 export interface SeatingSyncState {
@@ -87,10 +86,22 @@ function buildGuestsSnapshot(
   }));
 }
 
+// ── Reconstituie NumericIdMap din array-urile plate din răspunsul API ─────────
+function buildNumericIdMap(
+  guestIdMap: SeatingIdMapEntry[],
+  tableIdMap: SeatingIdMapEntry[]
+): NumericIdMap {
+  return {
+    guests:        new Map(guestIdMap.map((r) => [r.uuid, r.numericId])),
+    tables:        new Map(tableIdMap.map((r) => [r.uuid, r.numericId])),
+    guestsReverse: new Map(guestIdMap.map((r) => [r.numericId, r.uuid])),
+    tablesReverse: new Map(tableIdMap.map((r) => [r.numericId, r.uuid])),
+  };
+}
+
 export function useSeatingSync({
   weddingId,
   eventId,
-  supabase,
 }: UseSeatingSyncOptions): SeatingSyncState {
   const [initialGuests, setInitialGuests] = useState<SeatingGuest[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,23 +113,17 @@ export function useSeatingSync({
 
   const idMapsRef = useRef<NumericIdMap | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Faza 9.5: ref pentru retry timers — permite cancel stale retries
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedSnapshotRef = useRef<string | null>(null);
 
   // ── Faza 10: noi refs ──────────────────────────────────────────────────────
-  /** Snapshot-ul confirmat de server — immutable după salvare */
   const confirmedSnapshotRef = useRef<ConfirmedSnapshot | null>(null);
-  /** Guestii fără assignments — baza pentru buildGuestsSnapshot */
   const baseGuestsRef = useRef<SeatingGuest[]>([]);
-  /** Ultimul snapshot primit via onSeatingStateChanged — folosit la retry */
   const latestSnapshotRef = useRef<SeatingSnapshot | null>(null);
-  /** Dedup: previne apeluri paralele la retry() */
   const isRetryInProgressRef = useRef(false);
-  /** Timer pentru reset "saved" → "idle" după SAVED_IDLE_MS */
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── LOAD ────────────────────────────────────────────────────────────────────
+  // ── LOAD — server-side, service_role ────────────────────────────────────────
 
   useEffect(() => {
     if (!weddingId || !eventId) return;
@@ -130,66 +135,39 @@ export function useSeatingSync({
       setError(null);
 
       try {
-        const { data: guests, error: guestsError } = await supabase
-          .from("guests")
-          .select(`
-            id, first_name, last_name,
-            guest_group:guest_groups(name),
-            guest_events(attendance_status, meal_choice, event_id)
-          `)
-          .eq("wedding_id", weddingId);
+        const response = await fetch(
+          `/api/weddings/${weddingId}/seating/load?event_id=${eventId}`
+        );
 
-        if (guestsError) throw guestsError;
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err?.error?.message ?? `Load failed: ${response.status}`);
+        }
 
-        const guestsForEvent = (guests ?? []).map((g: any) => ({
-          ...g,
-          guest_events: g.guest_events?.filter((ge: any) => ge.event_id === eventId) ?? [],
-        })) as GuestWithEventData[];
-
-        const { data: assignments, error: assignmentsError } = await supabase
-          .from("seat_assignments")
-          .select(`
-            guest_events!inner(guest_id, event_id, wedding_id),
-            seats!inner(table_id)
-          `)
-          .eq("guest_events.event_id", eventId)
-          .eq("guest_events.wedding_id", weddingId);
-
-        if (assignmentsError) throw assignmentsError;
-
-        const assignmentRows: SeatAssignmentRow[] = (assignments ?? []).map((row: any) => ({
-          guest_id: row.guest_events.guest_id,
-          table_id: row.seats.table_id,
-        }));
-
-        const guestUuids = guestsForEvent.map((g) => g.id);
-        const tableUuids = [...new Set(assignmentRows.map((a) => a.table_id))];
-
-        const maps = await fetchAndAllocateIds(supabase, weddingId, eventId, guestUuids, tableUuids);
-
+        const json = await response.json() as { data: SeatingLoadResponse };
         if (cancelled) return;
 
+        const { guests, guestIdMap, tableIdMap } = json.data;
+
+        const maps = buildNumericIdMap(guestIdMap, tableIdMap);
         idMapsRef.current = maps;
         setIdMaps(maps);
 
-        const seatingGuests = mapGuestsToSeating(guestsForEvent, maps);
-        const withAssignments = applyAssignments(seatingGuests, assignmentRows, maps);
+        // baseGuests = guests fără tableId — pentru buildGuestsSnapshot la retry
+        baseGuestsRef.current = guests.map((g) => ({ ...g, tableId: null }));
 
-        // Faza 10: stocăm baza fără assignments pentru buildGuestsSnapshot
-        baseGuestsRef.current = seatingGuests;
-
-        // Faza 10: confirmed snapshot după load reușit (tables = [] — se va seta la primul sync)
         confirmedSnapshotRef.current = {
           tables: [],
-          guests: structuredClone(withAssignments),
+          guests: structuredClone(guests),
           serverConfirmedAt: Date.now(),
         };
 
-        setInitialGuests(withAssignments);
-      } catch (err: any) {
+        setInitialGuests(guests);
+      } catch (err: unknown) {
         if (!cancelled) {
+          const msg = err instanceof Error ? err.message : "Failed to load seating data";
           console.error("[SeatingSync] load failed:", err);
-          setError(err.message ?? "Failed to load seating data");
+          setError(msg);
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -198,7 +176,7 @@ export function useSeatingSync({
 
     load();
     return () => { cancelled = true; };
-  }, [weddingId, eventId, supabase]);
+  }, [weddingId, eventId]);
 
   // ── SYNC ────────────────────────────────────────────────────────────────────
 
@@ -209,7 +187,6 @@ export function useSeatingSync({
     const maps = idMapsRef.current;
     if (!maps) return;
 
-    // Faza 10: status → saving la fiecare încercare
     setSaveStatus("saving");
 
     const tables: SeatingFullSyncRequest["tables"] = snapshot.tables.map((t) => ({
@@ -233,10 +210,8 @@ export function useSeatingSync({
       table_local_id: tableId,
     }));
 
-    // Faza 9.5: hash stabil în loc de JSON.stringify
     const snapshotKey = stableSnapshotHash(tables, assignments);
     if (snapshotKey === lastSyncedSnapshotRef.current) {
-      // Snapshot identic cu cel sincronizat — nu facem request
       isRetryInProgressRef.current = false;
       setSaveStatus("saved");
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -260,10 +235,8 @@ export function useSeatingSync({
 
         if (retryCount < SYNC_MAX_RETRIES) {
           const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
-          // Faza 9.5: salvăm retry timer pentru a putea cancela
           retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1), delay);
         } else {
-          // Faza 10: toate retry-urile au eșuat → unconfirmed
           lastSyncedSnapshotRef.current = null;
           isRetryInProgressRef.current = false;
           setSaveStatus("unconfirmed");
@@ -283,7 +256,6 @@ export function useSeatingSync({
         lastSyncedSnapshotRef.current = snapshotKey;
       }
 
-      // Faza 10: sync success — update confirmedSnapshot + status → saved
       confirmedSnapshotRef.current = {
         tables: structuredClone(snapshot.tables),
         guests: structuredClone(buildGuestsSnapshot(baseGuestsRef.current, snapshot.assignments)),
@@ -307,7 +279,6 @@ export function useSeatingSync({
   }, [weddingId, eventId]);
 
   // ── RETRY ─────────────────────────────────────────────────────────────────
-  // Trimite starea CURENTĂ (latestSnapshotRef), reset retry counter, dedup.
 
   const retry = useCallback((): void => {
     if (isRetryInProgressRef.current) return;
@@ -315,7 +286,6 @@ export function useSeatingSync({
     const snapshot = latestSnapshotRef.current;
     if (!snapshot) return;
 
-    // Cancelăm orice timer pending
     if (syncTimerRef.current) {
       clearTimeout(syncTimerRef.current);
       syncTimerRef.current = null;
@@ -330,8 +300,6 @@ export function useSeatingSync({
   }, [doSync]);
 
   // ── CONFIRM REVERT ────────────────────────────────────────────────────────
-  // Apelat de page.js DUPĂ ce revertToSnapshot a restaurat state-ul în useSeatingData.
-  // Resetează sync state: status → saved (→ idle după 2s), clearErrors.
 
   const confirmRevert = useCallback((): void => {
     isRetryInProgressRef.current = false;
@@ -351,14 +319,11 @@ export function useSeatingSync({
     (snapshot: SeatingSnapshot) => {
       if (!idMapsRef.current) return;
 
-      // Faza 10: stocăm ultimul snapshot pentru retry
       latestSnapshotRef.current = snapshot;
 
-      // Faza 9.5 + 10: cancelăm retry stale când vine un nou snapshot
       if (retryTimerRef.current) {
         clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
-        // Noul snapshot invalidează retry-ul stale
         isRetryInProgressRef.current = false;
       }
 
@@ -368,7 +333,7 @@ export function useSeatingSync({
     [doSync]
   );
 
-  // Faza 9.5 + 10: cleanup complet — debounce + retry + saved timers
+  // Cleanup complet
   useEffect(() => {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
@@ -383,7 +348,6 @@ export function useSeatingSync({
     error,
     onSeatingStateChanged,
     idMaps,
-    // Faza 10
     saveStatus,
     confirmedAt: confirmedSnapshotRef.current?.serverConfirmedAt ?? null,
     confirmedSnapshot: confirmedSnapshotRef.current,

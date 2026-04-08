@@ -112,3 +112,14 @@ export interface SeatingAssignmentsResponse {
     guest_id: string;
   }[];
 }
+
+export interface SeatingIdMapEntry {
+  uuid: string;
+  numericId: number;
+}
+
+export interface SeatingLoadResponse {
+  guests: SeatingGuest[];
+  guestIdMap: SeatingIdMapEntry[];
+  tableIdMap: SeatingIdMapEntry[];
+}
