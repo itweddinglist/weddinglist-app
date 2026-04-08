@@ -27,10 +27,12 @@ import ToastStack from "./components/ToastStack.jsx";
 import { exportToPng } from "./utils/exportPng.ts";
 import FpsCounter from "./components/FpsCounter.jsx";
 import SaveIndicator from "../components/SaveIndicator.jsx";
+import ReadOnlyBanner from "../components/ReadOnlyBanner.tsx";
 import { supabaseClient } from "../lib/supabase/client";
 import { useSeatingSync } from "../../lib/seating/use-seating-sync";
 import { useSession } from "../lib/auth/session/use-session";
 import { clearSessionCache } from "../lib/auth/session/session-bridge";
+import { useReadOnlyMode } from "../../lib/system/read-only";
 import "./seating-chart.css";
 
 const EMPTY_ARRAY = [];
@@ -73,6 +75,9 @@ function SeatingChartInner({
     hydrated,
     focusPoint,
   } = useCamera();
+
+  // ── Read-only mode ──
+  const { isReadOnly } = useReadOnlyMode();
 
   // ── Save status — vine din useSeatingSync (API sync) ──
   const [isOffline, setIsOffline] = useState(
@@ -226,8 +231,9 @@ function SeatingChartInner({
   }, [data, handleResult]);
 
   const handleMagicFill = useCallback(() => {
+    if (isReadOnly) return;
     handleResult(data.magicFill());
-  }, [data, handleResult]);
+  }, [data, handleResult, isReadOnly]);
 
   const handleCreateTable = useCallback(() => {
     if (!ui.modal) return;
@@ -236,10 +242,10 @@ function SeatingChartInner({
   }, [data, ui.modal, handleResult]);
 
   const handleSaveEdit = useCallback(() => {
-    if (!ui.editPanel) return;
+    if (isReadOnly || !ui.editPanel) return;
     const result = data.saveEdit(ui.editName, ui.editSeats, ui.editPanel.tableId);
     handleResult(result);
-  }, [data, ui.editPanel, ui.editName, ui.editSeats, handleResult]);
+  }, [data, ui.editPanel, ui.editName, ui.editSeats, handleResult, isReadOnly]);
 
   const handleDeleteTable = useCallback((tableId) => {
     const result = data.deleteTable(tableId);
@@ -336,6 +342,7 @@ function SeatingChartInner({
             onExport={() => setExportDialog(true)}
           />
           <div className="sc-canvas-col">
+            <ReadOnlyBanner />
             <CanvasToolbar
               vzoom={vzoom}
               zoomBy={zoomBy}
@@ -352,6 +359,7 @@ function SeatingChartInner({
               setModal={ui.setModal}
               getNextTableName={data.getNextTableName}
               onExport={() => setExportDialog(true)}
+              isReadOnly={isReadOnly}
             />
 
             <div className="sc-canvas" ref={canvasRef} tabIndex={0} style={{ outline: "none" }}>
@@ -361,6 +369,7 @@ function SeatingChartInner({
                 height="100%"
                 viewBox={viewBox}
                 onMouseDown={handleSvgMouseDown}
+                style={isReadOnly ? { pointerEvents: "none" } : undefined}
                 onMouseEnter={() => setHighlightGroupId(null)}
                 onClick={(e) => {
                   if (e.target === svgRef.current || e.target.getAttribute?.("data-bg") === "1") {

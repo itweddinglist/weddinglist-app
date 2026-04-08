@@ -37,6 +37,7 @@ interface CanvasToolbarProps {
   setModal: (config: Record<string, unknown> | null) => void
   getNextTableName: () => string
   onExport?: () => void
+  isReadOnly?: boolean
 }
 
 export default function CanvasToolbar({
@@ -55,6 +56,7 @@ export default function CanvasToolbar({
   setModal,
   getNextTableName,
   onExport,
+  isReadOnly = false,
 }: CanvasToolbarProps) {
   const btn = {
     display: "inline-flex",
@@ -237,7 +239,15 @@ export default function CanvasToolbar({
       <div style={group}>
         <div style={label}>Acțiuni</div>
         <div style={row}>
-          <button style={btnAccent} onClick={magicFill}>
+          <button
+            style={{
+              ...btnAccent,
+              ...(isReadOnly ? { opacity: 0.4, cursor: "not-allowed", pointerEvents: "none" } : {}),
+            }}
+            onClick={magicFill}
+            disabled={isReadOnly}
+            title={isReadOnly ? "Indisponibil în modul read-only" : undefined}
+          >
             <Wand2 size={13} strokeWidth={1.7} /> Magic Fill
           </button>
           <button style={btn} onClick={undo}>
