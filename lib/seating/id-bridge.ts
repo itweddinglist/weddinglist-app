@@ -2,6 +2,9 @@
 // lib/seating/id-bridge.ts
 // Batch allocation via RPC allocate_seating_numeric_ids_batch.
 // Un singur apel RPC per entity_type — nu 600 apeluri individuale.
+//
+// NOTĂ: persistarea în seating_id_maps se face server-side în
+// GET /api/weddings/[weddingId]/seating/load — nu aici.
 // =============================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js";
