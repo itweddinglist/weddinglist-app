@@ -6,6 +6,7 @@ import {
 } from "../fetch-wordpress-bootstrap";
 import { withCircuitBreaker } from "./wp-circuit-breaker";
 import { isEnabled } from "../feature-flags";
+import { getDevSession } from "@/lib/auth/dev-session";
 
 export type SessionState =
   | { status: "loading" }
@@ -80,6 +81,11 @@ function buildAuthenticatedState(bootstrap: BootstrapResponse): SessionState {
 }
 
 export async function resolveSession(): Promise<SessionState> {
+  const devSession = getDevSession();
+  if (devSession) {
+    return buildAuthenticatedState(devSession);
+  }
+
   if (!isEnabled("wpBridgeEnabled")) {
     return { status: "guest" };
   }
