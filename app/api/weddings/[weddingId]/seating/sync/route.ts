@@ -65,8 +65,8 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
       p_wedding_id:  access.wedding_id,
       p_event_id:    body.event_id,
       p_caller_uid:  authResult.ctx.app_user_id,
-      p_tables:      JSON.stringify(body.tables),
-      p_assignments: JSON.stringify(body.assignments),
+      p_tables:      body.tables,
+      p_assignments: body.assignments,
     });
 
     if (error) {
