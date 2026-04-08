@@ -12,12 +12,11 @@ import type { ImportResult, ImportRowWarning } from "@/types/guest-import";
 interface Props {
   onImport: (result: { imported: number; warnings?: ImportRowWarning[] }) => void;
   onClose: () => void;
-  devToken: string;
 }
 
 type Step = "upload" | "importing" | "done";
 
-export default function GuestImportModal({ onImport, onClose, devToken }: Props) {
+export default function GuestImportModal({ onImport, onClose }: Props) {
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -53,7 +52,6 @@ export default function GuestImportModal({ onImport, onClose, devToken }: Props)
 
       const res = await fetch("/api/guests/import", {
         method: "POST",
-        headers: { Authorization: `Bearer ${devToken}` },
         body: formData,
       });
 

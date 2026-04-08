@@ -141,7 +141,6 @@ export default function GuestListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weddingId, setWeddingId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<string>("loading");
 
   const [search, setSearch] = useState("");
@@ -215,16 +214,6 @@ export default function GuestListPage() {
 
       if (session.status === "authenticated") {
         setWeddingId(session.activeWeddingId);
-        // Token-ul vine din sessionStorage cache — folosim același pattern ca seating
-        const raw = sessionStorage.getItem("wl_session_cache");
-        if (raw) {
-          try {
-            const cached = JSON.parse(raw);
-            setToken(cached.data?.token ?? null);
-          } catch {
-            setToken(null);
-          }
-        }
       } else {
         setIsLoading(false);
       }
@@ -234,16 +223,13 @@ export default function GuestListPage() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
   const fetchGuests = useCallback(async () => {
-    if (!weddingId || !token) return;
+    if (!weddingId) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(
-        `/api/guests?wedding_id=${weddingId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fetch(`/api/guests?wedding_id=${weddingId}`);
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -257,11 +243,11 @@ export default function GuestListPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [weddingId, token]);
+  }, [weddingId]);
 
   useEffect(() => {
-    if (weddingId && token) fetchGuests();
-  }, [weddingId, token, fetchGuests]);
+    if (weddingId) fetchGuests();
+  }, [weddingId, fetchGuests]);
 
   // ── Filtrare locală ────────────────────────────────────────────────────────
 
@@ -384,20 +370,16 @@ export default function GuestListPage() {
 
   const handleDelete = useCallback(async (guestId: string) => {
     if (!confirm("Ești sigur că vrei să ștergi acest invitat?")) return;
-    if (!token) return;
 
     try {
-      const res = await fetch(`/api/guests/${guestId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`/api/guests/${guestId}`, { method: "DELETE" });
 
       if (!res.ok) throw new Error("Eroare la ștergerea invitatului.");
       fetchGuests();
     } catch (err: any) {
       alert(err.message);
     }
-  }, [token, fetchGuests]);
+  }, [fetchGuests]);
 
   // ── Session states ─────────────────────────────────────────────────────────
 
@@ -561,7 +543,7 @@ export default function GuestListPage() {
         )}
       </div>
 
-      {isAddModalOpen && weddingId && token && (
+      {isAddModalOpen && weddingId && (
         <GuestFormModal
           guest={editingGuest}
           groups={groups}
@@ -571,15 +553,13 @@ export default function GuestListPage() {
             setIsAddModalOpen(false);
             setEditingGuest(null);
           }}
-          devToken={token}
         />
       )}
 
-      {isImportModalOpen && token && (
+      {isImportModalOpen && (
         <GuestImportModal
           onImport={handleImportDone}
           onClose={() => setIsImportModalOpen(false)}
-          devToken={token}
         />
       )}
 
