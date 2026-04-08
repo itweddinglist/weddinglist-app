@@ -10,6 +10,7 @@ import { withCircuitBreaker } from "@/app/lib/auth/session/wp-circuit-breaker";
 import type { BootstrapResponse } from "@/app/lib/auth/fetch-wordpress-bootstrap";
 import type { ServerAppContext, AuthenticatedContext } from "./types";
 import { makeCacheKey, get as cacheGet, set as cacheSet } from "./cache";
+import { getDevSession } from "@/lib/auth/dev-session";
 
 /** Filters the raw Cookie header to only wordpress_logged_in_* cookies. */
 function filterWpCookies(cookieHeader: string): string {
@@ -90,6 +91,24 @@ export async function getServerAppContext(
 ): Promise<ServerAppContext> {
   const request_id =
     request.headers.get("x-request-id") ?? crypto.randomUUID();
+
+  // Dev bypass — verificat înainte de orice cookie sau apel WP
+  const devSession = getDevSession();
+  if (devSession && devSession.authenticated && devSession.user && devSession.app_user_id) {
+    const ctx: AuthenticatedContext = {
+      status: "authenticated",
+      request_id,
+      app_user_id: devSession.app_user_id,
+      wp_user_id: devSession.user.wp_user_id,
+      email: devSession.user.email,
+      display_name: devSession.user.display_name,
+      plan_tier: devSession.user.plan_tier,
+      active_wedding_id: devSession.active_wedding_id,
+      active_event_id: devSession.active_event_id,
+      weddings: devSession.weddings,
+    };
+    return ctx;
+  }
 
   const cookieHeader = request.headers.get("cookie") ?? "";
   const filteredCookies = filterWpCookies(cookieHeader);
