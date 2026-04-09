@@ -161,7 +161,6 @@ export function useSeatingSync({
 
         const loadedTables = tables ?? [];
         confirmedSnapshotRef.current = {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           tables: loadedTables.map(({ uuid: _uuid, ...rest }) => rest),
           guests: structuredClone(guests),
           serverConfirmedAt: Date.now(),
