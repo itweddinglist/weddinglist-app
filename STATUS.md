@@ -7,7 +7,7 @@
 
 ## 1. PROGRES REAL
 
-**Evaluare sinceră: ~87% din produs funcțional**
+**Evaluare sinceră: ~90% din produs funcțional**
 
 ---
 
@@ -87,6 +87,7 @@ Noua cheie e în `.env.local` local.
 ## 5. TESTE
 
 - **706/706 verzi** pe develop
+- **`npm run build` ✅** — build producție verde (Next.js 16.2.2 Turbopack)
 - Testele `.test.js` NU migrate la TypeScript (intenționat)
 
 ---
@@ -146,7 +147,7 @@ Noua cheie e în `.env.local` local.
 
 | Fază | Task | Status |
 |------|------|--------|
-| 0 | `/dev` route | ⏳ |
+| 0 | `/dev` route | ✅ DONE |
 | 1 | Auth cleanup (`lib/auth/dev-session.ts`) | ✅ DONE |
 | 2 | Shadow session | ✅ DONE |
 | 3 | Idempotency table | ✅ DONE |
