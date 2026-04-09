@@ -100,7 +100,7 @@ Frontend          = cache + draft state (nu trusted)
 
 ---
 
-## 5. SCHEMA DB — 22 TABELE
+## 5. SCHEMA DB — 23 TABELE
 
 ```
 app_users, identity_links, weddings, wedding_members,
@@ -110,7 +110,8 @@ budget_items, payments, vendors,
 rsvp_invitations, rsvp_responses,
 data_migrations, seating_editor_states,
 seating_id_maps, seating_id_counters,
-audit_logs, idempotency_keys
+audit_logs, idempotency_keys,
+seating_audit_logs
 ```
 
 ### Constraints cheie
@@ -338,3 +339,6 @@ debugAuthEnabled: process.env.NODE_ENV === "development"
 | #115 | Adaugă migrații pentru RPC-urile seating (allocate + sync) |
 | #116 | Șterge app/dashboard/page.js duplicat |
 | #117 | Fix export JSON + PDF: wedding_id query param, schema corectă, Uint8Array, filename ASCII |
+| #128 | Faza 7: conflict system OCC, VERSION_MISMATCH, GUEST_NOT_FOUND, tab overlap |
+| #129 | Fix tab overlap fals-pozitiv la reload: sessionStorage în loc de Math.random per mount |
+| #131 | Faza 9: seating_audit_logs, RPC v3 cu audit tiered (light/full), cleanup pg_cron |
