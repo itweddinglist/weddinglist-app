@@ -7,7 +7,7 @@
 
 ## 1. PROGRES REAL
 
-**Evaluare sinceră: ~82% din produs funcțional**
+**Evaluare sinceră: ~87% din produs funcțional**
 
 ---
 
@@ -23,7 +23,7 @@
 | RSVP Dashboard | ✅ Funcțional | Buguri mici UI/UX |
 | Export JSON | ✅ Fix aplicat | wedding_id din query param, sort_order eliminat |
 | Export PDF | ✅ Fix aplicat | location_name eliminat, filename ASCII, Uint8Array |
-| Budget | ❌ Lipsă complet | Doar API, fără UI (404) |
+| Budget | ✅ Funcțional | UI complet: CRUD items, payments, state machine |
 | Dashboard | ⚠️ Parțial | Statistici reale via API, Task Engine integrat |
 | Settings | ✅ Vizual | Funcționalitate netestat complet |
 | Vendors | ❌ Blocat | Blocat pe Voxel |
@@ -32,23 +32,7 @@
 
 ## 3. MODIFICĂRI LOCALE ACTIVE (NECOMISE)
 
-**ATENȚIE: Aceste fișiere sunt modificate local și NU trebuie pe main/develop fără atenție.**
-
-### 3.1 Dev bypass auth (4 fișiere — DE ÎNLOCUIT în Faza 1)
-
-Scopul: permit testarea locală fără WordPress.
-Activare: `NEXT_PUBLIC_DEBUG_AUTH=true` în `.env.local`
-
-| Fișier | Modificare |
-|--------|-----------|
-| `app/lib/auth/fetch-wordpress-bootstrap.ts` | Returnează mock dacă `NEXT_PUBLIC_DEBUG_AUTH=true` |
-| `app/lib/auth/session/session-bridge.ts` | Returnează mock session dacă `debugAuthEnabled` |
-| `lib/server-context/get-server-app-context.ts` | Returnează context mock dacă `debugAuthEnabled` |
-| `app/guest-list/page.tsx` | Token guard relaxat (nu cere token pentru fetch) |
-
-**Plan:** Toate 4 înlocuite de `lib/auth/dev-session.ts` în Faza 1 din SPEC V5.4.
-
-### 3.2 `.env.local` — variabile adăugate pentru dev
+### 3.1 `.env.local` — variabile adăugate pentru dev
 
 ```
 NEXT_PUBLIC_DEBUG_AUTH=true
@@ -117,6 +101,7 @@ Noua cheie e în `.env.local` local.
 | #115 | feat(db): adauga migratii pentru rpc-urile seating | ✅ Merged develop |
 | #116 | fix: sterge app/dashboard/page.js duplicat | ✅ Merged develop |
 | #117 | fix(export): repara export json si pdf - wedding not found si erori schema | ✅ Merged develop |
+| #118 | feat(budget): implementare completa budget ui - crud items, payments, state machine | ✅ Merged develop |
 
 ---
 
@@ -128,8 +113,8 @@ Noua cheie e în `.env.local` local.
 3. ~~RPC-urile nu sunt în migrații~~ → **REZOLVAT** (20260409000001 + 20260409000002)
 4. Magic Fill netestat cu date reale
 5. ~~Export JSON/PDF broken~~ → **REZOLVAT**
-6. Budget UI lipsă (404)
-7. Dev bypass nestructurat în 4 fișiere
+6. ~~Budget UI lipsă (404)~~ → **REZOLVAT** (PR #118)
+7. ~~Dev bypass nestructurat în 4 fișiere~~ → **REZOLVAT** (lib/auth/dev-session.ts + Faza 1 completă)
 
 ### Importante
 8. Dashboard nu respectă mockup-ul de referință
@@ -152,7 +137,7 @@ Noua cheie e în `.env.local` local.
 
 ## 8. URMĂTORUL TASK
 
-**Faza 7 — Conflict system + client state machine** sau **Faza 1 — Auth cleanup**.
+**Faza 7 — Conflict system + client state machine** sau **Faza 0 — `/dev` route**.
 
 ---
 
@@ -161,8 +146,8 @@ Noua cheie e în `.env.local` local.
 | Fază | Task | Status |
 |------|------|--------|
 | 0 | `/dev` route | ⏳ |
-| 1 | Auth cleanup (`lib/auth/dev-session.ts`) | ⏳ |
-| 2 | Shadow session | ⏳ |
+| 1 | Auth cleanup (`lib/auth/dev-session.ts`) | ✅ DONE |
+| 2 | Shadow session | ✅ DONE |
 | 3 | Idempotency table | ✅ DONE |
 | 4 | Read-only mode | ✅ DONE |
 | 5 | RPC `allocate_seating_numeric_ids_batch` | ✅ DONE (migration + fix) |
