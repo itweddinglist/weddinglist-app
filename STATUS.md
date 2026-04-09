@@ -102,6 +102,7 @@ Noua cheie e în `.env.local` local.
 | #116 | fix: sterge app/dashboard/page.js duplicat | ✅ Merged develop |
 | #117 | fix(export): repara export json si pdf - wedding not found si erori schema | ✅ Merged develop |
 | #118 | feat(budget): implementare completa budget ui - crud items, payments, state machine | ✅ Merged develop |
+| #119 | feat(seating): faza 7 - conflict system occ si version mismatch | ⏳ PR deschis |
 
 ---
 
@@ -137,7 +138,7 @@ Noua cheie e în `.env.local` local.
 
 ## 8. URMĂTORUL TASK
 
-**Faza 7 — Conflict system + client state machine** sau **Faza 0 — `/dev` route**.
+**Faza 8 — Silent refetch >10min** sau **Faza 9 — Audit system tiered** sau **Faza 0 — `/dev` route**.
 
 ---
 
@@ -152,7 +153,7 @@ Noua cheie e în `.env.local` local.
 | 4 | Read-only mode | ✅ DONE |
 | 5 | RPC `allocate_seating_numeric_ids_batch` | ✅ DONE (migration + fix) |
 | 6 | RPC `sync_seating_editor_state` | ✅ DONE (migration + fix) |
-| 7 | Conflict system + client state machine | ⏳ |
+| 7 | Conflict system + client state machine | ✅ DONE (PR #119) |
 | 8 | Silent refetch | ⏳ |
 | 9 | Audit system tiered | ⏳ |
 | 10 | Data access layer | ⏳ |
