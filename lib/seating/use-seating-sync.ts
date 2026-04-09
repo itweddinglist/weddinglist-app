@@ -151,16 +151,22 @@ export function useSeatingSync({
   const currentVersionRef = useRef<number>(-1);
 
   // ── Faza 7: tab overlap detection ─────────────────────────────────────────
-  const tabSessionIdRef = useRef<string>(
-    typeof window !== "undefined"
-      ? `wl_${Math.random().toString(36).slice(2)}`
-      : ""
-  );
+  // sessionStorage supraviețuiește reload-ului în același tab dar NU în tab-uri noi.
+  // Astfel evităm fals-pozitive la refresh: același tab → același tabSessionId.
+  const tabSessionIdRef = useRef<string>("");
 
   useEffect(() => {
     if (typeof window === "undefined" || !weddingId) return;
+
+    const SESSION_KEY = "wl_seating_session_id";
+    let myId = sessionStorage.getItem(SESSION_KEY);
+    if (!myId) {
+      myId = `wl_${Math.random().toString(36).slice(2)}`;
+      sessionStorage.setItem(SESSION_KEY, myId);
+    }
+    tabSessionIdRef.current = myId;
+
     const key = `wl_seating_tab_${weddingId}`;
-    const myId = tabSessionIdRef.current;
 
     // Detectează dacă alt tab are deja planul deschis
     const existing = localStorage.getItem(key);
