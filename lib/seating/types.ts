@@ -87,10 +87,13 @@ export interface SeatingFullSyncRequest {
   event_id: string;
   tables: SeatingTableSyncItem[];
   assignments: SeatingAssignmentSyncItem[];
+  version?: number;        // OCC — revizuirea curentă din DB; -1 sau absent = skip check
+  force_overwrite?: boolean; // true = ignoră VERSION_MISMATCH (logate în audit)
 }
 
 export interface SeatingFullSyncResponse {
   success: true;
+  version: number;         // revizuirea nouă după sync
   synced: {
     tables_created: number;
     tables_updated: number;
@@ -135,4 +138,5 @@ export interface SeatingLoadResponse {
   tables: SeatingTableLoad[];
   guestIdMap: SeatingIdMapEntry[];
   tableIdMap: SeatingIdMapEntry[];
+  version: number;  // revision curentă din seating_editor_states
 }

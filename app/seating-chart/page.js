@@ -56,6 +56,10 @@ function SeatingChartInner({
   confirmedSnapshot,
   onRetry,
   onRevertConfirmed,
+  saveError,
+  clearSaveError,
+  onForceOverwrite,
+  tabOverlap,
 }) {
   // ── Layer 1: Camera ──
   const {
@@ -120,6 +124,17 @@ function SeatingChartInner({
   const handleResult = useCallback((result) => {
     result?.effects?.forEach((effect) => applySeatingEffect(effect, ui));
   }, [ui]);
+
+  // ── Faza 7: reacționează la saveError ─────────────────────────────────────
+  useEffect(() => {
+    if (!saveError) return;
+    if (saveError.code === "GUEST_NOT_FOUND") {
+      ui.showToast("Un invitat din plan nu mai există în lista ta. Verifică planul și reîncearcă.", "red");
+    }
+    if (saveError.code === "CAPACITY_EXCEEDED") {
+      ui.showToast("O masă din plan are prea mulți invitați față de locurile disponibile.", "red");
+    }
+  }, [saveError, ui]);
 
   // ── Drag preview tick — forțează re-render vizual fără setTables per frame ──
   const [, setDragTick] = useState(0);
@@ -727,6 +742,42 @@ function SeatingChartInner({
           }}
         />
       )}
+      {/* Faza 7: VERSION_MISMATCH dialog */}
+      {saveError?.code === "VERSION_MISMATCH" && (
+        <div className="sc-overlay">
+          <div className="sc-confirm">
+            <div className="conf-title">Plan modificat</div>
+            <div className="conf-sub">
+              Planul a fost modificat de pe alt dispozitiv. Ce vrei să faci?
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                className="conf-cancel"
+                onClick={() => { clearSaveError(); window.location.reload(); }}
+              >
+                🔄 Reîncarcă
+              </button>
+              <button
+                className="conf-ok"
+                onClick={() => { clearSaveError(); onForceOverwrite(); }}
+              >
+                ⚠️ Păstrează modificările mele
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Faza 7: tab overlap banner */}
+      {tabOverlap && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "#ECC94B", color: "#744210", padding: "0.5rem 1rem",
+          fontSize: "0.78rem", fontFamily: "DM Sans,sans-serif",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+        }}>
+          ⚠️ Planul de mese este deschis în alt tab. Modificările simultane pot crea conflicte.
+        </div>
+      )}
       <FpsCounter />
     </>
   );
@@ -792,6 +843,10 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
     confirmedSnapshot,
     retry,
     confirmRevert,
+    saveError,
+    clearSaveError,
+    forceOverwrite,
+    tabOverlap,
   } = useSeatingSync({
     weddingId,
     eventId,
@@ -816,6 +871,10 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
       confirmedSnapshot={confirmedSnapshot}
       onRetry={retry}
       onRevertConfirmed={confirmRevert}
+      saveError={saveError}
+      clearSaveError={clearSaveError}
+      onForceOverwrite={forceOverwrite}
+      tabOverlap={tabOverlap}
     />
   );
 }
