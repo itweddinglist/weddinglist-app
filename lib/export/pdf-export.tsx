@@ -170,7 +170,6 @@ const styles = StyleSheet.create({
   emptyTable: {
     fontSize: 9,
     color: "#9DA3BC",
-    fontStyle: "italic",
   },
   // Guests list
   guestsSection: {
