@@ -106,10 +106,13 @@ export interface SeatingFullSyncRequest {
   event_id: string;
   tables: SeatingTableSyncItem[];
   assignments: SeatingAssignmentSyncItem[];
+  version?: number;
+  force_overwrite?: boolean;
 }
 
 export interface SeatingFullSyncResponse {
   success: true;
+  version: number;
   synced: {
     tables_created: number;
     tables_updated: number;

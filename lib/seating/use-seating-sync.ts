@@ -1,10 +1,13 @@
 // =============================================================================
 // lib/seating/use-seating-sync.ts
-// Orchestrator Faza 6 — Seating ↔ Guests Integration.
-// Snapshot minim: { reason, assignments, tables } — fără guest model coupling.
-// Faza 9.5: cancel stale retries + snapshot hashing stabil
-// Faza 10: confirmedSnapshotRef + SaveStatus + retry/confirmRevert
-// Faza 11: load mutat pe server (GET /api/.../seating/load) — service_role
+// Orchestrator Faza 6-7 — Seating ↔ Guests Integration + Conflict System.
+//
+// Faza 7 adaugă:
+//   - VERSION_MISMATCH: OCC check, rollback la confirmedSnapshotRef, dialog UI
+//   - GUEST_NOT_FOUND: toast + saveError cu codul explicit
+//   - CAPACITY_EXCEEDED: toast + saveError
+//   - Tab overlap: localStorage session_id per tab, warning persistent
+//   - forceOverwrite: retrimite cu p_force=true după dialog
 // =============================================================================
 
 "use client";
@@ -30,6 +33,15 @@ const SAVED_IDLE_MS = 2000;
 // ─── SaveStatus ───────────────────────────────────────────────────────────────
 
 export type SaveStatus = "idle" | "saving" | "saved" | "unconfirmed";
+
+// ─── SaveError ────────────────────────────────────────────────────────────────
+
+export type SaveError =
+  | { code: "VERSION_MISMATCH"; message: string }
+  | { code: "GUEST_NOT_FOUND"; message: string }
+  | { code: "CAPACITY_EXCEEDED"; message: string }
+  | { code: "FORBIDDEN"; message: string }
+  | { code: "TABLE_MAPPING_NOT_FOUND"; message: string };
 
 // ─── ConfirmedSnapshot ────────────────────────────────────────────────────────
 
@@ -59,6 +71,11 @@ export interface SeatingSyncState {
   confirmedSnapshot: ConfirmedSnapshot | null;
   retry: () => void;
   confirmRevert: () => void;
+  // Faza 7
+  saveError: SaveError | null;
+  clearSaveError: () => void;
+  forceOverwrite: () => void;
+  tabOverlap: boolean;
 }
 
 // ── Faza 9.5: hash stabil fără JSON.stringify pe obiecte mari ─────────────────
@@ -114,6 +131,10 @@ export function useSeatingSync({
   // ── Faza 10: SaveStatus ────────────────────────────────────────────────────
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
+  // ── Faza 7: SaveError + tab overlap ───────────────────────────────────────
+  const [saveError, setSaveError] = useState<SaveError | null>(null);
+  const [tabOverlap, setTabOverlap] = useState(false);
+
   const idMapsRef = useRef<NumericIdMap | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -125,6 +146,43 @@ export function useSeatingSync({
   const latestSnapshotRef = useRef<SeatingSnapshot | null>(null);
   const isRetryInProgressRef = useRef(false);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Faza 7: version tracking ───────────────────────────────────────────────
+  const currentVersionRef = useRef<number>(-1);
+
+  // ── Faza 7: tab overlap detection ─────────────────────────────────────────
+  const tabSessionIdRef = useRef<string>(
+    typeof window !== "undefined"
+      ? `wl_${Math.random().toString(36).slice(2)}`
+      : ""
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !weddingId) return;
+    const key = `wl_seating_tab_${weddingId}`;
+    const myId = tabSessionIdRef.current;
+
+    // Detectează dacă alt tab are deja planul deschis
+    const existing = localStorage.getItem(key);
+    if (existing && existing !== myId) {
+      setTabOverlap(true);
+    }
+
+    localStorage.setItem(key, myId);
+
+    const handler = (e: StorageEvent) => {
+      if (e.key === key && e.newValue && e.newValue !== myId) {
+        setTabOverlap(true);
+      }
+    };
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      if (localStorage.getItem(key) === myId) {
+        localStorage.removeItem(key);
+      }
+    };
+  }, [weddingId]);
 
   // ── LOAD — server-side, service_role ────────────────────────────────────────
 
@@ -150,13 +208,15 @@ export function useSeatingSync({
         const json = await response.json() as { data: SeatingLoadResponse };
         if (cancelled) return;
 
-        const { guests, tables, guestIdMap, tableIdMap } = json.data;
+        const { guests, tables, guestIdMap, tableIdMap, version } = json.data;
 
         const maps = buildNumericIdMap(guestIdMap, tableIdMap);
         idMapsRef.current = maps;
         setIdMaps(maps);
 
-        // baseGuests = guests fără tableId — pentru buildGuestsSnapshot la retry
+        // Salvează versiunea curentă pentru OCC la sync
+        currentVersionRef.current = version ?? 0;
+
         baseGuestsRef.current = guests.map((g) => ({ ...g, tableId: null }));
 
         const loadedTables = tables ?? [];
@@ -187,7 +247,8 @@ export function useSeatingSync({
 
   const doSync = useCallback(async (
     snapshot: SeatingSnapshot,
-    retryCount = 0
+    retryCount = 0,
+    useForce = false
   ): Promise<void> => {
     const maps = idMapsRef.current;
     if (!maps) return;
@@ -216,7 +277,7 @@ export function useSeatingSync({
     }));
 
     const snapshotKey = stableSnapshotHash(tables, assignments);
-    if (snapshotKey === lastSyncedSnapshotRef.current) {
+    if (!useForce && snapshotKey === lastSyncedSnapshotRef.current) {
       isRetryInProgressRef.current = false;
       setSaveStatus("saved");
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
@@ -230,17 +291,60 @@ export function useSeatingSync({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event_id: eventId, tables, assignments }),
+          body: JSON.stringify({
+            event_id:       eventId,
+            tables,
+            assignments,
+            version:        useForce ? -1 : currentVersionRef.current,
+            force_overwrite: useForce,
+          }),
         }
       );
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        console.error("[SeatingSync] sync failed:", err);
+        const errCode: string = err?.error?.code ?? "";
+        const errMsg: string  = err?.error?.message ?? "Eroare necunoscută";
 
+        console.error("[SeatingSync] sync failed:", errCode, errMsg);
+
+        // ── Erori care nu se retryează ────────────────────────────────────────
+        if (errCode === "VERSION_MISMATCH") {
+          isRetryInProgressRef.current = false;
+          lastSyncedSnapshotRef.current = null;
+          setSaveError({ code: "VERSION_MISMATCH", message: "Planul a fost modificat de pe alt dispozitiv." });
+          setSaveStatus("unconfirmed");
+          return;
+        }
+
+        if (errCode === "GUEST_NOT_FOUND") {
+          isRetryInProgressRef.current = false;
+          lastSyncedSnapshotRef.current = null;
+          setSaveError({ code: "GUEST_NOT_FOUND", message: errMsg });
+          setSaveStatus("unconfirmed");
+          return;
+        }
+
+        if (errCode === "CAPACITY_EXCEEDED") {
+          isRetryInProgressRef.current = false;
+          lastSyncedSnapshotRef.current = null;
+          setSaveError({ code: "CAPACITY_EXCEEDED", message: errMsg });
+          setSaveStatus("unconfirmed");
+          return;
+        }
+
+        if (errCode === "FORBIDDEN") {
+          isRetryInProgressRef.current = false;
+          lastSyncedSnapshotRef.current = null;
+          setSaveError({ code: "FORBIDDEN", message: "Acces interzis. Reîncarcă pagina." });
+          setSaveStatus("unconfirmed");
+          return;
+        }
+
+        // ── Erori retryabile (TABLE_MAPPING_NOT_FOUND, network, etc.) ─────────
         if (retryCount < SYNC_MAX_RETRIES) {
           const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
-          retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1), delay);
+          retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1, useForce), delay);
         } else {
           lastSyncedSnapshotRef.current = null;
           isRetryInProgressRef.current = false;
@@ -250,6 +354,11 @@ export function useSeatingSync({
       }
 
       const result = await response.json();
+
+      // Actualizează versiunea locală cu ce a returnat serverul
+      if (typeof result.data?.version === "number") {
+        currentVersionRef.current = result.data.version;
+      }
 
       if (result.data?.bridge_updates?.tables?.length > 0) {
         for (const update of result.data.bridge_updates.tables) {
@@ -267,6 +376,7 @@ export function useSeatingSync({
         serverConfirmedAt: Date.now(),
       };
       isRetryInProgressRef.current = false;
+      setSaveError(null);
       setSaveStatus("saved");
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_IDLE_MS);
@@ -274,7 +384,7 @@ export function useSeatingSync({
       console.error("[SeatingSync] sync network error:", err);
       if (retryCount < SYNC_MAX_RETRIES) {
         const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
-        retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1), delay);
+        retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1, useForce), delay);
       } else {
         lastSyncedSnapshotRef.current = null;
         isRetryInProgressRef.current = false;
@@ -300,15 +410,44 @@ export function useSeatingSync({
       retryTimerRef.current = null;
     }
 
+    setSaveError(null);
     isRetryInProgressRef.current = true;
     doSync(snapshot, 0);
   }, [doSync]);
+
+  // ── FORCE OVERWRITE ───────────────────────────────────────────────────────
+  // Faza 7: "Păstrează modificările mele" — trimite cu p_force=true
+
+  const forceOverwrite = useCallback((): void => {
+    const snapshot = latestSnapshotRef.current;
+    if (!snapshot) return;
+
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = null;
+    }
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+
+    setSaveError(null);
+    isRetryInProgressRef.current = true;
+    doSync(snapshot, 0, true);
+  }, [doSync]);
+
+  // ── CLEAR SAVE ERROR ──────────────────────────────────────────────────────
+
+  const clearSaveError = useCallback((): void => {
+    setSaveError(null);
+  }, []);
 
   // ── CONFIRM REVERT ────────────────────────────────────────────────────────
 
   const confirmRevert = useCallback((): void => {
     isRetryInProgressRef.current = false;
     lastSyncedSnapshotRef.current = null;
+    setSaveError(null);
 
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current);
@@ -359,5 +498,9 @@ export function useSeatingSync({
     confirmedSnapshot: confirmedSnapshotRef.current,
     retry,
     confirmRevert,
+    saveError,
+    clearSaveError,
+    forceOverwrite,
+    tabOverlap,
   };
 }

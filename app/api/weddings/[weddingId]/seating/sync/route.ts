@@ -23,16 +23,17 @@ import type { SeatingFullSyncRequest, SeatingFullSyncResponse } from "@/types/se
 
 type RouteContext = { params: Promise<{ weddingId: string }> };
 
-// Mapare ERRCODE → HTTP status + cod API
+// Mapare ERRCODE → HTTP status + cod API (aliniat cu SPEC v5.4 secțiunea 10.3)
 const RPC_ERROR_MAP: Record<string, { status: number; code: string }> = {
   P0001: { status: 403, code: "FORBIDDEN" },
-  P0002: { status: 400, code: "TABLE_SCOPE_INVALID" },
-  P0003: { status: 409, code: "SEAT_REDUCTION_BLOCKED" },
-  P0004: { status: 400, code: "GUEST_MAPPING_NOT_FOUND" },
-  P0005: { status: 400, code: "GUEST_EVENT_NOT_FOUND" },
+  P0002: { status: 409, code: "VERSION_MISMATCH" },
+  P0003: { status: 409, code: "CAPACITY_EXCEEDED" },
+  P0004: { status: 400, code: "GUEST_NOT_FOUND" },
+  P0005: { status: 400, code: "GUEST_NOT_FOUND" },
   P0006: { status: 400, code: "TABLE_MAPPING_NOT_FOUND" },
-  P0007: { status: 409, code: "TABLE_SCOPE_INVALID" },
-  P0008: { status: 409, code: "NO_FREE_SEAT" },
+  P0007: { status: 400, code: "TABLE_DELETED" },
+  P0008: { status: 409, code: "CAPACITY_EXCEEDED" },
+  P0009: { status: 400, code: "EVENT_NOT_FOUND" },
 };
 
 export async function POST(request: NextRequest, context: RouteContext): Promise<Response> {
@@ -67,6 +68,8 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
       p_caller_uid:  authResult.ctx.app_user_id,
       p_tables:      body.tables,
       p_assignments: body.assignments,
+      p_version:     body.version     ?? -1,
+      p_force:       body.force_overwrite ?? false,
     });
 
     if (error) {

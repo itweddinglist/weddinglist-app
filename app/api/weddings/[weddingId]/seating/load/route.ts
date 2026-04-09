@@ -197,11 +197,20 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       isRing:   (t.shape_config as any)?.is_ring === true,
     }));
 
+    // ── 7. Version (OCC) ─────────────────────────────────────────────────────
+    const { data: editorState } = await supabaseServer
+      .from("seating_editor_states")
+      .select("revision")
+      .eq("wedding_id", access.wedding_id)
+      .eq("event_id", eventId)
+      .maybeSingle();
+
     const responseBody: SeatingLoadResponse = {
       guests:     withAssignments,
       tables:     seatingTables,
       guestIdMap: guestRows.map((r) => ({ uuid: r.entity_uuid, numericId: r.numeric_id })),
       tableIdMap: tableRows.map((r) => ({ uuid: r.entity_uuid, numericId: r.numeric_id })),
+      version:    (editorState as any)?.revision ?? 0,
     };
 
     return successResponse<SeatingLoadResponse>(responseBody);
