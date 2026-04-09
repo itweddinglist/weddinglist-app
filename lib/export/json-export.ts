@@ -167,7 +167,6 @@ export async function exportWeddingJson(
       .from("budget_items")
       .select("*")
       .eq("wedding_id", weddingId)
-      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
       .order("id", { ascending: true });
 
@@ -198,7 +197,7 @@ export async function exportWeddingJson(
       .from("rsvp_responses")
       .select("*")
       .eq("wedding_id", weddingId)
-      .order("created_at", { ascending: true })
+      .order("responded_at", { ascending: true, nullsFirst: true })
       .order("id", { ascending: true });
 
     if (rrErr) return { success: false, error: "Failed to export RSVP responses." };

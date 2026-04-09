@@ -26,7 +26,11 @@ export async function GET(request: NextRequest): Promise<Response> {
   if (!authResult.ok) return authResult.response;
 
   // ── Authorization ──────────────────────────────────────────────────────────
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const weddingIdParam = request.nextUrl.searchParams.get("wedding_id");
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingIdParam ?? undefined,
+  });
   if (!access.ok) return access.response;
 
   const weddingId = access.wedding_id;

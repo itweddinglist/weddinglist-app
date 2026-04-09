@@ -14,9 +14,9 @@ import {
   requireWeddingAccess,
 } from "@/lib/server-context";
 import { supabaseServer } from "@/app/lib/supabase/server";
-import { sanitizeText } from "@/lib/sanitize";
 import { WeddingPdfDocument } from "@/lib/export/pdf-export";
 import type { PdfData, PdfGuest, PdfTable } from "@/lib/export/pdf-export";
+import { slugifyTitle } from "@/lib/export/json-export";
 import { wl_audit } from "@/lib/audit/wl-audit";
 import {
   errorResponse,
@@ -30,7 +30,11 @@ export async function GET(request: NextRequest): Promise<Response> {
   if (!authResult.ok) return authResult.response;
 
   // ── Authorization ──────────────────────────────────────────────────────────
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const weddingIdParam = request.nextUrl.searchParams.get("wedding_id");
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingIdParam ?? undefined,
+  });
   if (!access.ok) return access.response;
 
   const weddingId = access.wedding_id;
@@ -39,7 +43,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // ── Fetch wedding ──────────────────────────────────────────────────────
     const { data: wedding, error: wErr } = await supabaseServer
       .from("weddings")
-      .select("title, event_date, location_name")
+      .select("title, event_date")
       .eq("id", weddingId)
       .single();
 
@@ -148,7 +152,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const pdfData: PdfData = {
       couple_names: wedding.title,
       wedding_date: wedding.event_date ?? null,
-      location: sanitizeText(wedding.location_name, 200),
+      location: null,
       generated_at: new Date().toISOString(),
       stats: { total, accepted, declined, pending, maybe, special_meals, has_allergies },
       tables: pdfTables,
@@ -160,7 +164,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       React.createElement(WeddingPdfDocument, { data: pdfData }) as any
     );
 
-    const filename = `weddinglist-${sanitizeText(wedding.title, 50)?.replace(/\s+/g, "-").toLowerCase() ?? "export"}-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const filename = `weddinglist-${slugifyTitle(wedding.title) || "export"}-${new Date().toISOString().slice(0, 10)}.pdf`;
 
     // ── Audit ──────────────────────────────────────────────────────────────
     await wl_audit("export.pdf_completed", {
@@ -171,7 +175,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       metadata: { filename },
     });
 
-    return new Response(buffer as unknown as BodyInit, {
+    return new Response(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
