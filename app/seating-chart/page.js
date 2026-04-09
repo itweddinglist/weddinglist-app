@@ -49,6 +49,7 @@ function isTableVisible(t, cam, canvasW, canvasH) {
 
 function SeatingChartInner({
   initialGuests,
+  initialTables,
   onSeatingStateChanged,
   syncSaveStatus,
   confirmedAt,
@@ -108,6 +109,7 @@ function SeatingChartInner({
   // ── Layer 2: Data ──
   const data = useSeatingData(cam, camRef, canvasWRef, canvasHRef, {
     initialGuests,
+    initialTables,
     onSeatingStateChanged,
   });
 
@@ -781,6 +783,7 @@ function ModalCreate({ modal, setModal, createTable }) {
 function SeatingChartWrapperInner({ weddingId, eventId }) {
   const {
     initialGuests,
+    initialTables,
     isLoading,
     error,
     onSeatingStateChanged,
@@ -806,6 +809,7 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
   return (
     <SeatingChartInner
       initialGuests={initialGuests}
+      initialTables={initialTables}
       onSeatingStateChanged={onSeatingStateChanged}
       syncSaveStatus={saveStatus}
       confirmedAt={confirmedAt}

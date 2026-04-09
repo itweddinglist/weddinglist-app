@@ -53,6 +53,7 @@ interface SeatingStateChangedData {
 interface UseSeatingDataOptions {
   onSaveStatusChange?: ((status: SaveStatus) => void) | null
   initialGuests?: SeatingGuest[] | null
+  initialTables?: SeatingTable[] | null
   onSeatingStateChanged?: ((data: SeatingStateChangedData) => void) | null
 }
 
@@ -151,11 +152,13 @@ export function useSeatingData(
   camRef: MutableRefObject<CameraState>,
   canvasWRef: MutableRefObject<number>,
   canvasHRef: MutableRefObject<number>,
-  { onSaveStatusChange, initialGuests, onSeatingStateChanged }: UseSeatingDataOptions = {}
+  { onSaveStatusChange, initialGuests, initialTables, onSeatingStateChanged }: UseSeatingDataOptions = {}
 ) {
   // ── STATE ──
   const [guests, setGuests] = useState<SeatingGuest[]>(() => (initialGuests ?? INITIAL_GUESTS).map((g) => ({ ...g })));
-  const [tables, setTables] = useState<SeatingTable[]>(() => buildTemplate());
+  const [tables, setTables] = useState<SeatingTable[]>(() =>
+    initialTables ? initialTables.map((t) => ({ ...t } as SeatingTable)) : buildTemplate()
+  );
   const [nextId, setNextId] = useState<number>(10);
   const [hydrated, setHydrated] = useState<boolean>(false);
   const [newTableIds, setNewTableIds] = useState<Set<number>>(new Set());
@@ -177,7 +180,8 @@ export function useSeatingData(
     const ch = canvasHRef.current || 700;
     const result = loadStorageState(cw, ch);
     if (!initialGuests && result.data.guests) setGuests(result.data.guests);
-    if (result.data.tables) setTables(result.data.tables);
+    // DB are prioritate față de localStorage — dacă initialTables e prezent, ignorăm localStorage
+    if (!initialTables && result.data.tables) setTables(result.data.tables);
     if (result.data.nextId) setNextId(result.data.nextId);
     setHydrated(true);
   }, []);

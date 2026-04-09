@@ -118,8 +118,21 @@ export interface SeatingIdMapEntry {
   numericId: number;
 }
 
+export interface SeatingTableLoad {
+  id: number;        // numeric_id
+  uuid: string;      // UUID din DB
+  name: string;
+  type: string;
+  seats: number;
+  x: number;
+  y: number;
+  rotation: number;
+  isRing: boolean;
+}
+
 export interface SeatingLoadResponse {
   guests: SeatingGuest[];
+  tables: SeatingTableLoad[];
   guestIdMap: SeatingIdMapEntry[];
   tableIdMap: SeatingIdMapEntry[];
 }

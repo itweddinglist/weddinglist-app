@@ -26,7 +26,7 @@ import {
 } from "@/lib/api-response";
 import { mapGuestsToSeating } from "@/lib/seating/map-guests";
 import { applyAssignments, type SeatAssignmentRow } from "@/lib/seating/map-assignments";
-import type { NumericIdMap, SeatingLoadResponse } from "@/lib/seating/types";
+import type { NumericIdMap, SeatingLoadResponse, SeatingTableLoad } from "@/lib/seating/types";
 import type { GuestWithEventData } from "@/lib/seating/map-guests";
 
 type RouteContext = { params: Promise<{ weddingId: string }> };
@@ -73,7 +73,17 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       guest_events: g.guest_events?.filter((ge: any) => ge.event_id === eventId) ?? [],
     }));
 
-    // ── 2. Seat assignments ───────────────────────────────────────────────────
+    // ── 2. Tables ─────────────────────────────────────────────────────────────
+    const { data: rawTables, error: tablesError } = await supabaseServer
+      .from("tables")
+      .select("id, name, table_type, seat_count, x, y, rotation, shape_config")
+      .eq("wedding_id", access.wedding_id)
+      .eq("event_id", eventId)
+      .is("deleted_at", null);
+
+    if (tablesError) return internalErrorResponse(tablesError, "GET seating/load — tables");
+
+    // ── 3. Seat assignments ───────────────────────────────────────────────────
     const { data: rawAssignments, error: assignmentsError } = await supabaseServer
       .from("seat_assignments")
       .select(`
@@ -92,9 +102,13 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       table_id: row.seats.table_id,
     }));
 
-    // ── 3. Allocate numeric IDs ────────────────────────────────────────────────
+    // ── 4. Allocate numeric IDs ────────────────────────────────────────────────
     const guestUuids = guestsForEvent.map((g) => g.id);
-    const tableUuids = [...new Set(assignmentRows.map((a) => a.table_id))];
+    // Include TOATE mesele din DB + cele din assignments (pot fi disjuncte temporar)
+    const tableUuids = [...new Set([
+      ...(rawTables ?? []).map((t: any) => t.id as string),
+      ...assignmentRows.map((a) => a.table_id),
+    ])];
 
     let guestRows: AllocRow[] = [];
     let tableRows: AllocRow[] = [];
@@ -127,7 +141,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       tableRows = data ?? [];
     }
 
-    // ── 4. Upsert seating_id_maps (service_role) ──────────────────────────────
+    // ── 5. Upsert seating_id_maps (service_role) ──────────────────────────────
     if (guestRows.length > 0) {
       const { error } = await supabaseServer
         .from("seating_id_maps")
@@ -160,7 +174,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       if (error) return internalErrorResponse(error, "GET seating/load — upsert table maps");
     }
 
-    // ── 5. Build NumericIdMap + map guests ────────────────────────────────────
+    // ── 6. Build NumericIdMap + map guests + map tables ───────────────────────
     const idMaps: NumericIdMap = {
       guests:        new Map(guestRows.map((r) => [r.entity_uuid, r.numeric_id])),
       tables:        new Map(tableRows.map((r) => [r.entity_uuid, r.numeric_id])),
@@ -171,8 +185,21 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     const seatingGuests = mapGuestsToSeating(guestsForEvent, idMaps);
     const withAssignments = applyAssignments(seatingGuests, assignmentRows, idMaps);
 
+    const seatingTables: SeatingTableLoad[] = (rawTables ?? []).map((t: any) => ({
+      id:       idMaps.tables.get(t.id) ?? 0,
+      uuid:     t.id as string,
+      name:     t.name as string,
+      type:     t.table_type as string,
+      seats:    t.seat_count as number,
+      x:        Number(t.x),
+      y:        Number(t.y),
+      rotation: Number(t.rotation),
+      isRing:   (t.shape_config as any)?.is_ring === true,
+    }));
+
     const responseBody: SeatingLoadResponse = {
       guests:     withAssignments,
+      tables:     seatingTables,
       guestIdMap: guestRows.map((r) => ({ uuid: r.entity_uuid, numericId: r.numeric_id })),
       tableIdMap: tableRows.map((r) => ({ uuid: r.entity_uuid, numericId: r.numeric_id })),
     };

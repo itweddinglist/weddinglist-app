@@ -14,6 +14,7 @@ import type {
   SeatingGuest,
   SeatingSnapshot,
   SeatingTableSnapshot,
+  SeatingTableLoad,
   AssignmentState,
   NumericIdMap,
   SeatingFullSyncRequest,
@@ -47,6 +48,7 @@ export interface UseSeatingSyncOptions {
 
 export interface SeatingSyncState {
   initialGuests: SeatingGuest[] | null;
+  initialTables: SeatingTableLoad[] | null;
   isLoading: boolean;
   error: string | null;
   onSeatingStateChanged: (snapshot: SeatingSnapshot) => void;
@@ -104,6 +106,7 @@ export function useSeatingSync({
   eventId,
 }: UseSeatingSyncOptions): SeatingSyncState {
   const [initialGuests, setInitialGuests] = useState<SeatingGuest[] | null>(null);
+  const [initialTables, setInitialTables] = useState<SeatingTableLoad[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [idMaps, setIdMaps] = useState<NumericIdMap | null>(null);
@@ -147,7 +150,7 @@ export function useSeatingSync({
         const json = await response.json() as { data: SeatingLoadResponse };
         if (cancelled) return;
 
-        const { guests, guestIdMap, tableIdMap } = json.data;
+        const { guests, tables, guestIdMap, tableIdMap } = json.data;
 
         const maps = buildNumericIdMap(guestIdMap, tableIdMap);
         idMapsRef.current = maps;
@@ -156,13 +159,16 @@ export function useSeatingSync({
         // baseGuests = guests fără tableId — pentru buildGuestsSnapshot la retry
         baseGuestsRef.current = guests.map((g) => ({ ...g, tableId: null }));
 
+        const loadedTables = tables ?? [];
         confirmedSnapshotRef.current = {
-          tables: [],
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          tables: loadedTables.map(({ uuid: _uuid, ...rest }) => rest),
           guests: structuredClone(guests),
           serverConfirmedAt: Date.now(),
         };
 
         setInitialGuests(guests);
+        setInitialTables(loadedTables);
       } catch (err: unknown) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : "Failed to load seating data";
@@ -344,6 +350,7 @@ export function useSeatingSync({
 
   return {
     initialGuests,
+    initialTables,
     isLoading,
     error,
     onSeatingStateChanged,
