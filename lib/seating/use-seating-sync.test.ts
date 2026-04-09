@@ -19,6 +19,7 @@ function makeLoadResponse(): Response {
     json: async () => ({
       data: {
         guests: [],
+        tables: [],
         guestIdMap: [],
         tableIdMap: [],
       },
