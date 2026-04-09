@@ -100,7 +100,7 @@ Frontend          = cache + draft state (nu trusted)
 
 ---
 
-## 5. SCHEMA DB — 18 TABELE
+## 5. SCHEMA DB — 22 TABELE
 
 ```
 app_users, identity_links, weddings, wedding_members,
@@ -108,7 +108,9 @@ events, guests, guest_events, guest_groups,
 tables, seats, seat_assignments,
 budget_items, payments, vendors,
 rsvp_invitations, rsvp_responses,
-data_migrations, seating_editor_states
+data_migrations, seating_editor_states,
+seating_id_maps, seating_id_counters,
+audit_logs, idempotency_keys
 ```
 
 ### Constraints cheie
@@ -212,10 +214,29 @@ lib/
     use-seating-sync.ts
     id-bridge.ts
     map-guests.ts
+    map-assignments.ts
+    types.ts                     ← SeatingTable, SeatingTableLoad, SeatingLoadResponse
+  system/
+    read-only.ts                 ← Faza 4 read-only mode
+  supabase/
+    idempotency.ts               ← Faza 3 idempotency table
+    db.ts                        ← Data access layer (Faza 10)
   mutations/
   validation/
   audit/
     wl-audit.ts
+  export/
+    json-export.ts
+    pdf-export.tsx
+
+app/
+  api/
+    weddings/[weddingId]/
+      seating/
+        load/route.ts            ← GET server-side, service_role, returnează tables + guests + id maps
+        sync/route.ts
+  components/
+    ReadOnlyBanner.tsx           ← Faza 4 read-only banner
 ```
 
 ---
@@ -232,10 +253,11 @@ DELETE /api/guests/[id]
 GET  /api/budget/items
 POST /api/budget/items
 GET  /api/dashboard/stats
+GET  /api/weddings/[id]/seating/load   ← server-side, service_role, returnează tables+guests+idMaps
 POST /api/weddings/[id]/seating/sync
 GET  /api/rsvp/dashboard
-POST /api/export/json
-POST /api/export/pdf
+GET  /api/export/json                  ← ?wedding_id= query param
+GET  /api/export/pdf                   ← ?wedding_id= query param
 
 DEV ONLY (NODE_ENV=development):
 GET  /api/dev/session
@@ -311,3 +333,8 @@ debugAuthEnabled: process.env.NODE_ENV === "development"
 | #110 | Migrare TypeScript seating chart (15 fișiere) |
 | #111 | Fix zoom cursor freeze la ZOOM_MIN |
 | #112 | Fix require-wedding-access: user_id → app_user_id |
+| #113 | Mută load seating pe server — endpoint GET securizat cu service_role |
+| #114 | Fix seating sync: elimină JSON.stringify din parametrii RPC |
+| #115 | Adaugă migrații pentru RPC-urile seating (allocate + sync) |
+| #116 | Șterge app/dashboard/page.js duplicat |
+| #117 | Fix export JSON + PDF: wedding_id query param, schema corectă, Uint8Array, filename ASCII |
