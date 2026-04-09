@@ -7,7 +7,7 @@
 
 ## 1. PROGRES REAL
 
-**Evaluare sinceră: ~90% din produs funcțional**
+**Evaluare sinceră: ~92% din produs funcțional**
 
 ---
 
@@ -103,7 +103,10 @@ Noua cheie e în `.env.local` local.
 | #116 | fix: sterge app/dashboard/page.js duplicat | ✅ Merged develop |
 | #117 | fix(export): repara export json si pdf - wedding not found si erori schema | ✅ Merged develop |
 | #118 | feat(budget): implementare completa budget ui - crud items, payments, state machine | ✅ Merged develop |
-| #119 | feat(seating): faza 7 - conflict system occ si version mismatch | ⏳ PR deschis |
+| #119 | feat(seating): faza 7 - conflict system occ si version mismatch | ✅ Merged develop |
+| #129 | fix(seating): tab overlap fals pozitiv la reload - sessionstorage | ✅ Merged develop |
+| #130 | docs: actualizeaza status - faza 0 done, build verde, 90% | ✅ Merged develop |
+| #131 | feat(db): faza 9 - audit system tiered seating_audit_logs si rpc v3 | ✅ Merged develop |
 
 ---
 
@@ -133,13 +136,13 @@ Noua cheie e în `.env.local` local.
 17. DNS `app.weddinglist.ro`
 18. ToS + Privacy Policy în română
 19. RLS reactivat pe DEV după testare
-20. Postgres Cron configurat pentru cleanup audit logs
+20. Postgres Cron activat: Dashboard → Database → Extensions → `pg_cron` (cleanup audit logs, migration 20260409000004)
 
 ---
 
 ## 8. URMĂTORUL TASK
 
-**Faza 8 — Silent refetch >10min** sau **Faza 9 — Audit system tiered** sau **Faza 0 — `/dev` route**.
+**Faza 8 — Silent refetch >10min** sau **Faza 10 — Data access layer** sau **Faza 12 — Product completion**.
 
 ---
 
@@ -156,7 +159,7 @@ Noua cheie e în `.env.local` local.
 | 6 | RPC `sync_seating_editor_state` | ✅ DONE (migration + fix) |
 | 7 | Conflict system + client state machine | ✅ DONE (PR #119) |
 | 8 | Silent refetch | ⏳ |
-| 9 | Audit system tiered | ⏳ |
+| 9 | Audit system tiered | ✅ DONE (PR #131) |
 | 10 | Data access layer | ⏳ |
 | 11 | Security hardening | ⏳ |
 | 12 | Product completion | ⏳ |
