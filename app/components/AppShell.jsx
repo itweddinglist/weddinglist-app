@@ -8,12 +8,8 @@ const MODULES = [
   { id: "seating-chart", icon: "🪑", label: "Plan Mese", path: "/seating-chart" },
   { id: "guest-list", icon: "👥", label: "Listă Invitați", path: "/guest-list" },
   { id: "budget", icon: "💰", label: "Buget", path: "/budget" },
-  { id: "checklist", icon: "✅", label: "Checklist", path: "/checklist" },
-  { id: "timeline", icon: "⏰", label: "Timeline", path: "/timeline" },
+  { id: "rsvp", icon: "💌", label: "RSVP", path: "/rsvp" },
   { id: "vendors", icon: "🤝", label: "Furnizori", path: "/vendors" },
-  { id: "gift-registry", icon: "🎁", label: "Wishlist", path: "/gift-registry" },
-  { id: "moodboard", icon: "🖼️", label: "Moodboard", path: "/moodboard" },
-  { id: "notes", icon: "📝", label: "Notițe", path: "/notes" },
   { id: "export", icon: "📄", label: "Export", path: "/export" },
   { id: "settings", icon: "⚙️", label: "Setări", path: "/settings" },
 ];
