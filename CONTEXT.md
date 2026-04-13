@@ -169,6 +169,7 @@ app/seating-chart/hooks/useSeatingUI.ts
 app/seating-chart/utils/geometry.ts
 app/seating-chart/utils/exportPng.ts
 app/seating-chart/utils/storage.ts
+app/seating-chart/utils/magicFill.ts
 ```
 
 ### Fișiere nemigrate la TypeScript (intenționat)
@@ -342,3 +343,6 @@ debugAuthEnabled: process.env.NODE_ENV === "development"
 | #128 | Faza 7: conflict system OCC, VERSION_MISMATCH, GUEST_NOT_FOUND, tab overlap |
 | #129 | Fix tab overlap fals-pozitiv la reload: sessionStorage în loc de Math.random per mount |
 | #131 | Faza 9: seating_audit_logs, RPC v3 cu audit tiered (light/full), cleanup pg_cron |
+| #132 | docs: actualizeaza status si context - faza 9 done, 92% |
+| #133 | fix(sidebar): elimina module fantoma si adauga rsvp in navigare |
+| #134 | fix(seating): magic fill v2.0 + fix pgrst203 sync overloads |
