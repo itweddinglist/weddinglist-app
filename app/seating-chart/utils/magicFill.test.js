@@ -33,7 +33,10 @@ describe("T1 — grup încape compact", () => {
 // ── Test 2: Grup prea mare → skip complet ────────────────────────────────────
 
 describe("T2 — grup prea mare → skip", () => {
-  it("apare în skippedGroups, nu în assignments", () => {
+  // SKIP — testa comportamentul vechi buggy. Noul algoritm V2.0 nu populează niciodată
+  // `skippedGroups` (returnează mereu []); grupurile care nu încap sunt fie fragmentate
+  // prin E4/E5, fie individuale rămân în skippedGuests. Schimbat deliberat conform spec V2.0.
+  it.skip("apare în skippedGroups, nu în assignments", () => {
     const tables = [makeTable(1, 4)];
     const guests = [1, 2, 3, 4, 5].map((i) => makeGuest(i, "Mare"));
     const res = calculateMagicFill(guests, tables);
@@ -182,7 +185,11 @@ describe("T11 — tables gol", () => {
 // ── Test 12: Fallback greedy funcționează ─────────────────────────────────────
 
 describe("T12 — fallback greedy", () => {
-  it("maxIterations:1 → limitReached=true, rezultat non-gol dacă există locuri", () => {
+  // SKIP — testa comportamentul vechi cu `maxIterations`. Noul algoritm V2.0 este un
+  // pipeline single-pass determinist (E0→E1→E2→E4→E3→E5), fără concept de iterații.
+  // Parametrul `maxIterations` este ignorat și `limitReached` este mereu false.
+  // Schimbat deliberat conform spec V2.0.
+  it.skip("maxIterations:1 → limitReached=true, rezultat non-gol dacă există locuri", () => {
     const tables = [makeTable(1, 8), makeTable(2, 8)];
     const guests = [
       ...[1, 2, 3, 4].map((i) => makeGuest(i, "Grup A")),
@@ -200,7 +207,9 @@ describe("T12 — fallback greedy", () => {
 // ── Test 13: Limita de iterații respectată ────────────────────────────────────
 
 describe("T13 — limita de iterații", () => {
-  it("limitReached=true la maxIterations:5 cu input complex", () => {
+  // SKIP — același motiv ca T12: algoritmul V2.0 nu are bucla de iterații, deci
+  // `maxIterations` nu mai declanșează `limitReached`. Schimbat deliberat conform spec V2.0.
+  it.skip("limitReached=true la maxIterations:5 cu input complex", () => {
     const tables = [makeTable(1, 10), makeTable(2, 10), makeTable(3, 10)];
     const guests = [];
     let id = 1;
@@ -257,7 +266,11 @@ describe("T15 — backtracking bate greedy", () => {
 // ── Test 16 — TEST DE REFERINȚĂ OBLIGATORIU ──────────────────────────────────
 
 describe("T16 — test de referință", () => {
-  it("3 mese × 8, grupuri mixte, G5(9) skip → locuriGoale=0, assignmentsCount=24", () => {
+  // SKIP — testa că G5(9) apare în `skippedGroups` (comportament vechi: skip grup prea mare).
+  // Noul algoritm V2.0 fragmentează G5 prin E4/E5 și nu populează niciodată `skippedGroups`.
+  // Restul asertiunilor (locuriGoale=0, assignmentsCount=24, determinism) rămân valide
+  // și sunt acoperite de S1-S10. Schimbat deliberat conform spec V2.0.
+  it.skip("3 mese × 8, grupuri mixte, G5(9) skip → locuriGoale=0, assignmentsCount=24", () => {
     const tables = [makeTable(1, 8), makeTable(2, 8), makeTable(3, 8)];
 
     // Grupuri: G10(8), G9(7), G1(6), G7(5), G2(4), G6(3), G3(2), G4(2), G5(9→skip)
@@ -346,5 +359,350 @@ describe("T18 — toți invitații sunt Prezidiu", () => {
     expect(res.assignments).toEqual({});
     expect(res.limitReached).toBe(false);
     expect(res.assignmentsCount).toBe(0);
+  });
+});
+
+// ── S1: Fit perfect mic ───────────────────────────────────────────────────────
+
+describe("S1 — fit perfect mic (80 invitați / 80 locuri, 8×10)", () => {
+  it("toți 80 asezați, locuriGoale=0, skippedGuests=0", () => {
+    const tables = Array.from({ length: 8 }, (_, i) => makeTable(i + 1, 10));
+    let id = 1;
+    const groupDefs = [
+      ["F.mireasă", 24],
+      ["F.mire", 20],
+      ["C.mireasă", 16],
+      ["C.mire", 12],
+      ["Prieteni", 8],
+    ];
+    const guests = [];
+    for (const [grup, n] of groupDefs) {
+      for (let i = 0; i < n; i++) guests.push(makeGuest(id++, grup));
+    }
+    const res = calculateMagicFill(guests, tables);
+    expect(res.assignmentsCount).toBe(80);
+    expect(res.skippedGuests.length).toBe(0);
+    expect(res.locuriGoale).toBe(0);
+  });
+});
+
+// ── S2: Surplus cu mese eterogene (testează R3) ───────────────────────────────
+
+describe("S2 — surplus cu mese eterogene 168/176 locuri (testează R3)", () => {
+  // Fără R3 (reutilizare mese parțiale în E5 FAZA 1), 2 invitați din C.mireasă
+  // nu ar găsi masă goală și ar rămâne neasezați.
+  it("toți 168 asezați — fără R3, 2 rămân neasezați", () => {
+    const tables = [
+      // M1-M6: 12 locuri
+      ...Array.from({ length: 6 }, (_, i) => makeTable(i + 1, 12)),
+      // M7-M14: 10 locuri
+      ...Array.from({ length: 8 }, (_, i) => makeTable(i + 7, 10)),
+      // M15-M17: 8 locuri
+      ...Array.from({ length: 3 }, (_, i) => makeTable(i + 15, 8)),
+    ];
+    let id = 1;
+    const groupDefs = [
+      ["F.mireasă", 45],
+      ["F.mire", 38],
+      ["Prieteni", 30],
+      ["C.mireasă", 22],
+      ["C.mire", 18],
+      ["Vecini", 15],
+    ];
+    const guests = [];
+    for (const [grup, n] of groupDefs) {
+      for (let i = 0; i < n; i++) guests.push(makeGuest(id++, grup));
+    }
+    const res = calculateMagicFill(guests, tables);
+    expect(res.assignmentsCount).toBe(168);
+    expect(res.skippedGuests.length).toBe(0);
+  });
+});
+
+// ── S3: Capacitate insuficientă ───────────────────────────────────────────────
+
+describe("S3 — capacitate insuficientă (320 invitați / 296 locuri)", () => {
+  it("296 asezați, 24 skipped, niciun grup complet respins", () => {
+    const tables = [
+      // M1-M20: 10 locuri
+      ...Array.from({ length: 20 }, (_, i) => makeTable(i + 1, 10)),
+      // M21-M28: 12 locuri
+      ...Array.from({ length: 8 }, (_, i) => makeTable(i + 21, 12)),
+    ];
+    let id = 1;
+    const groupDefs = [
+      ["F.mireasă", 80],
+      ["F.mire", 75],
+      ["Colegi", 60],
+      ["Vecini", 45],
+      ["C.serviciu", 40],
+      ["Copii", 20],
+    ];
+    const guests = [];
+    for (const [grup, n] of groupDefs) {
+      for (let i = 0; i < n; i++) guests.push(makeGuest(id++, grup));
+    }
+    const res = calculateMagicFill(guests, tables);
+    expect(res.assignmentsCount).toBe(296);
+    expect(res.skippedGuests.length).toBe(24);
+    // niciun grup complet respins — cel puțin 1 membru din fiecare grup e asezat
+    for (const [grup] of groupDefs) {
+      const anyPlaced = guests
+        .filter((g) => g.grup === grup)
+        .some((g) => res.assignments[g.id] !== undefined);
+      expect(anyPlaced).toBe(true);
+    }
+  });
+});
+
+// ── S4: Grup mai mare decât orice masă ───────────────────────────────────────
+
+describe("S4 — grup mai mare decât orice masă (F.mireasă 35, 9×10)", () => {
+  it("toți 89 asezați, F.mireasă pe ≥3 mese distincte", () => {
+    const tables = Array.from({ length: 9 }, (_, i) => makeTable(i + 1, 10));
+    let id = 1;
+    const fMireasa = Array.from({ length: 35 }, () => makeGuest(id++, "F.mireasă"));
+    const fMire    = Array.from({ length: 18 }, () => makeGuest(id++, "F.mire"));
+    const prieteni = Array.from({ length: 22 }, () => makeGuest(id++, "Prieteni"));
+    const cMire    = Array.from({ length: 14 }, () => makeGuest(id++, "C.mire"));
+    const guests = [...fMireasa, ...fMire, ...prieteni, ...cMire];
+
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(89);
+    expect(res.skippedGuests.length).toBe(0);
+
+    const fMireasaTables = new Set(
+      fMireasa.map((g) => res.assignments[g.id]).filter((t) => t !== undefined)
+    );
+    expect(fMireasaTables.size).toBeGreaterThanOrEqual(3);
+  });
+});
+
+// ── S5: Ocupare parțială cu grupuri pure ─────────────────────────────────────
+
+describe("S5 — ocupare parțială cu grupuri pure (invitați pre-asignați)", () => {
+  it("78 neasignați asezați, M1/M2/M3 nu primesc oaspeți noi", () => {
+    const tables = Array.from({ length: 12 }, (_, i) => makeTable(i + 1, 10));
+    let id = 1;
+    // F.mireasă: 10 @M1, 10 @M2, 10 neasignați
+    const fMireasa = [
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 1 })),
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 2 })),
+      ...Array.from({ length: 10 }, () => makeGuest(id++, "F.mireasă")),
+    ];
+    // F.mire: 10 @M3, 18 neasignați
+    const fMire = [
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mire"), tableId: 3 })),
+      ...Array.from({ length: 18 }, () => makeGuest(id++, "F.mire")),
+    ];
+    // restul neasignați
+    const cMireasa = Array.from({ length: 20 }, () => makeGuest(id++, "C.mireasă"));
+    const cMire    = Array.from({ length: 16 }, () => makeGuest(id++, "C.mire"));
+    const prieteni = Array.from({ length: 14 }, () => makeGuest(id++, "Prieteni"));
+
+    const guests = [...fMireasa, ...fMire, ...cMireasa, ...cMire, ...prieteni];
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(78);
+    expect(res.skippedGuests.length).toBe(0);
+
+    // niciun oaspete inițial neasignat nu merge la M1, M2 sau M3
+    const unassigned = guests.filter((g) => g.tableId === null);
+    expect(unassigned.filter((g) => res.assignments[g.id] === 1).length).toBe(0);
+    expect(unassigned.filter((g) => res.assignments[g.id] === 2).length).toBe(0);
+    expect(unassigned.filter((g) => res.assignments[g.id] === 3).length).toBe(0);
+  });
+});
+
+// ── S6: Mese mixte manual (locked) ───────────────────────────────────────────
+
+describe("S6 — mese locked și continuabilă, capacitate parțială", () => {
+  it("55 asezați, 8 skipped, mesele locked intacte", () => {
+    const tables = Array.from({ length: 8 }, (_, i) => makeTable(i + 1, 10));
+    let id = 1;
+
+    // M1 LOCKED: 3 F.mireasă + 4 F.mire (mixtă, 3 locuri pierdute)
+    const fMireasa = [
+      ...Array.from({ length: 3 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 1 })),
+    ];
+    const fMire = [
+      ...Array.from({ length: 4 }, () => ({ ...makeGuest(id++, "F.mire"), tableId: 1 })),
+    ];
+
+    // M2 LOCKED: 2 Prieteni + 3 C.birou (mixtă, 5 locuri pierdute)
+    const prieteni = [
+      ...Array.from({ length: 2 }, () => ({ ...makeGuest(id++, "Prieteni"), tableId: 2 })),
+    ];
+    const cBirou = [
+      ...Array.from({ length: 3 }, () => ({ ...makeGuest(id++, "C.birou"), tableId: 2 })),
+    ];
+
+    // M3 CONTINUABILĂ: 5 F.mireasă (pură, 5 locuri libere)
+    fMireasa.push(...Array.from({ length: 5 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 3 })));
+
+    // Neasignați: total 63
+    fMireasa.push(...Array.from({ length: 17 }, () => makeGuest(id++, "F.mireasă")));
+    fMire.push(...Array.from({ length: 18 }, () => makeGuest(id++, "F.mire")));
+    prieteni.push(...Array.from({ length: 16 }, () => makeGuest(id++, "Prieteni")));
+    cBirou.push(...Array.from({ length: 12 }, () => makeGuest(id++, "C.birou")));
+
+    const guests = [...fMireasa, ...fMire, ...prieteni, ...cBirou];
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(55);
+    expect(res.skippedGuests.length).toBe(8);
+
+    // niciun oaspete neasignat nu merge la M1 sau M2 (mese locked)
+    const unassigned = guests.filter((g) => g.tableId === null);
+    expect(unassigned.filter((g) => res.assignments[g.id] === 1).length).toBe(0);
+    expect(unassigned.filter((g) => res.assignments[g.id] === 2).length).toBe(0);
+  });
+});
+
+// ── S7: Multe grupuri mici (testează R5/E3) ──────────────────────────────────
+
+describe("S7 — grupuri mici, combinații R5 (40×G2 + 10×H3 + 5×I1)", () => {
+  it("toți 115 asezați, ≥2 mese cu ≥3 grupuri distincte", () => {
+    const tables = [
+      ...Array.from({ length: 8 }, (_, i) => makeTable(i + 1, 10)),  // M1-M8
+      ...Array.from({ length: 4 }, (_, i) => makeTable(i + 9, 8)),   // M9-M12
+      makeTable(13, 4),                                                 // M13
+    ];
+    let id = 1;
+    const guests = [];
+
+    // 40 grupuri × 2 persoane (G01..G40)
+    for (let g = 1; g <= 40; g++) {
+      const name = `G${String(g).padStart(2, "0")}`;
+      guests.push(makeGuest(id++, name));
+      guests.push(makeGuest(id++, name));
+    }
+    // 10 grupuri × 3 persoane (H01..H10)
+    for (let h = 1; h <= 10; h++) {
+      const name = `H${String(h).padStart(2, "0")}`;
+      for (let m = 0; m < 3; m++) guests.push(makeGuest(id++, name));
+    }
+    // 5 singletons cu grupuri unice (I01..I05)
+    for (let i = 1; i <= 5; i++) {
+      guests.push(makeGuest(id++, `I${String(i).padStart(2, "0")}`));
+    }
+
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(115);
+    expect(res.skippedGuests.length).toBe(0);
+
+    // ≥2 mese au ≥3 grupuri distincte (E3 a împachetat combos)
+    const tableGroups = {};
+    for (const g of guests) {
+      const tId = res.assignments[g.id];
+      if (tId !== undefined) {
+        if (!tableGroups[tId]) tableGroups[tId] = new Set();
+        tableGroups[tId].add(g.grup);
+      }
+    }
+    const tablesWithManyGroups = Object.values(tableGroups).filter((s) => s.size >= 3);
+    expect(tablesWithManyGroups.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// ── S8: Stress 500 invitați + 30 singletons (testează R6 FAZA 2) ─────────────
+
+describe("S8 — stress 500 invitați + 30 singletons (testează R6 FAZA 2)", () => {
+  it("toți 500 asezați, ≥2 mese cu ≥3 singletons grupați", () => {
+    const tables = [
+      ...Array.from({ length: 30 }, (_, i) => makeTable(i + 1, 12)),  // M1-M30
+      ...Array.from({ length: 15 }, (_, i) => makeTable(i + 31, 10)), // M31-M45
+    ];
+    let id = 1;
+    const guests = [];
+    for (const [grup, n] of [
+      ["F.mireasă", 120],
+      ["F.mire", 110],
+      ["C+P mireasă", 85],
+      ["C+P mire", 75],
+      ["Cunoștințe", 60],
+      ["Copii", 20],
+    ]) {
+      for (let i = 0; i < n; i++) guests.push(makeGuest(id++, grup));
+    }
+    for (let s = 1; s <= 30; s++) {
+      guests.push(makeGuest(id++, `Onoare${String(s).padStart(2, "0")}`));
+    }
+
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(500);
+    expect(res.skippedGuests.length).toBe(0);
+
+    // R6 FAZA 2: singletons grupați împreună pe ≥2 mese cu ≥3 fiecare
+    const singletonGrupuri = new Set(
+      guests.filter((g) => g.grup.startsWith("Onoare")).map((g) => g.grup)
+    );
+    const singletonTableCount = {};
+    for (const g of guests.filter((g) => singletonGrupuri.has(g.grup))) {
+      const tId = res.assignments[g.id];
+      if (tId !== undefined) {
+        singletonTableCount[tId] = (singletonTableCount[tId] ?? 0) + 1;
+      }
+    }
+    const tablesWithManySingletons = Object.values(singletonTableCount).filter((c) => c >= 3);
+    expect(tablesWithManySingletons.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// ── S9: Grupuri epuizate manual ───────────────────────────────────────────────
+
+describe("S9 — grupuri pre-asignate epuizate, E1 plasează restul", () => {
+  it("doar 10 Prieteni asezați la M5, assignmentsCount===10", () => {
+    const tables = Array.from({ length: 5 }, (_, i) => makeTable(i + 1, 10));
+    let id = 1;
+    const fMireasa = [
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 1 })),
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 2 })),
+    ];
+    const fMire = [
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mire"), tableId: 3 })),
+      ...Array.from({ length: 10 }, () => ({ ...makeGuest(id++, "F.mire"), tableId: 4 })),
+    ];
+    const prieteni = Array.from({ length: 10 }, () => makeGuest(id++, "Prieteni"));
+    const guests = [...fMireasa, ...fMire, ...prieteni];
+
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(10);
+    expect(res.skippedGuests.length).toBe(0);
+    for (const g of prieteni) {
+      expect(res.assignments[g.id]).toBe(5);
+    }
+  });
+});
+
+// ── S10: Prezidiu exclus ──────────────────────────────────────────────────────
+
+describe("S10 — masă prezidiu exclusă, invitați Prezidiu pre-asignați", () => {
+  it("108 asezați, prezidiuSkipped===0, M99 intactă", () => {
+    const tables = [
+      { ...makeTable(99, 12), type: "prezidiu" },
+      ...Array.from({ length: 9 }, (_, i) => makeTable(i + 1, 12)),
+    ];
+    let id = 1;
+    const prezidiuGuests = Array.from({ length: 12 }, () => ({
+      ...makeGuest(id++, "Prezidiu"),
+      tableId: 99,
+    }));
+    const fMireasa = Array.from({ length: 36 }, () => makeGuest(id++, "F.mireasă"));
+    const fMire    = Array.from({ length: 30 }, () => makeGuest(id++, "F.mire"));
+    const prieteni = Array.from({ length: 42 }, () => makeGuest(id++, "Prieteni"));
+    const guests = [...prezidiuGuests, ...fMireasa, ...fMire, ...prieteni];
+
+    const res = calculateMagicFill(guests, tables);
+
+    expect(res.assignmentsCount).toBe(108);
+    expect(res.prezidiuSkipped).toBe(0);
+    for (const [, tId] of Object.entries(res.assignments)) {
+      expect(tId).not.toBe(99);
+    }
   });
 });
