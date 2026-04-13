@@ -1,13 +1,13 @@
 # STATUS.md — WeddingList App
 # Spec version active: V5.4
-# Last synced with SPEC: 2026-04-09
+# Last synced with SPEC: 2026-04-13
 # Rol: Starea curentă a proiectului. Se actualizează la fiecare sesiune.
 
 ---
 
 ## 1. PROGRES REAL
 
-**Evaluare sinceră: ~92% din produs funcțional**
+**Evaluare sinceră: ~94% din produs funcțional**
 
 ---
 
@@ -18,13 +18,13 @@
 | Seating Chart UI | ✅ Funcțional | Vizualizare, drag & drop |
 | Seating Chart Save | ✅ Funcțional | RPC sync există + migration + fix JSON.stringify |
 | Seating Chart Load | ✅ Funcțional | GET /seating/load server-side, tables din DB |
-| Magic Fill | ⚠️ Netestat | Necesită validare cu date reale |
+| Magic Fill | ✅ Funcțional | V2.0, 6 etape deterministe, testat 600 invitați, 344+ așezați |
 | Listă Invitați | ✅ Funcțional | 600 invitați testați |
 | RSVP Dashboard | ✅ Funcțional | Buguri mici UI/UX |
 | Export JSON | ✅ Fix aplicat | wedding_id din query param, sort_order eliminat |
 | Export PDF | ✅ Fix aplicat | location_name eliminat, filename ASCII, Uint8Array |
 | Budget | ✅ Funcțional | UI complet: CRUD items, payments, state machine |
-| Dashboard | ⚠️ Parțial | Statistici reale via API, Task Engine integrat |
+| Dashboard | ⚠️ Parțial | Statistici reale via API, Task Engine integrat; auth cu anon key în client — necesită refactor după Faza 10 |
 | Settings | ✅ Vizual | Funcționalitate netestat complet |
 | Vendors | ❌ Blocat | Blocat pe Voxel |
 
@@ -86,7 +86,8 @@ Noua cheie e în `.env.local` local.
 
 ## 5. TESTE
 
-- **706/706 verzi** pe develop
+- **712/712 verzi** + 4 skipped (716 total) pe develop
+- T2, T12, T13, T16 marcate `.skip`
 - **`npm run build` ✅** — build producție verde (Next.js 16.2.2 Turbopack)
 - Testele `.test.js` NU migrate la TypeScript (intenționat)
 
@@ -107,6 +108,9 @@ Noua cheie e în `.env.local` local.
 | #129 | fix(seating): tab overlap fals pozitiv la reload - sessionstorage | ✅ Merged develop |
 | #130 | docs: actualizeaza status - faza 0 done, build verde, 90% | ✅ Merged develop |
 | #131 | feat(db): faza 9 - audit system tiered seating_audit_logs si rpc v3 | ✅ Merged develop |
+| #132 | docs: actualizeaza status si context - faza 9 done, 92% | ✅ Merged develop |
+| #133 | fix(sidebar): elimina module fantoma si adauga rsvp in navigare | ✅ Merged develop |
+| #134 | fix(magic-fill): rescriere algoritm v2.0 + fix sync_seating_editor_state pgrst203 | ✅ Merged develop |
 
 ---
 
@@ -116,21 +120,21 @@ Noua cheie e în `.env.local` local.
 1. ~~`sync_seating_editor_state` RPC lipsă~~ → **REZOLVAT** (migration + fix)
 2. ~~`allocate_seating_numeric_ids_batch` RPC cu bug-uri~~ → **migration adăugată**
 3. ~~RPC-urile nu sunt în migrații~~ → **REZOLVAT** (20260409000001 + 20260409000002)
-4. Magic Fill netestat cu date reale
+4. ~~Magic Fill netestat cu date reale~~ → **REZOLVAT** (PR #134 — V2.0, 344+ așezați din 600)
 5. ~~Export JSON/PDF broken~~ → **REZOLVAT**
 6. ~~Budget UI lipsă (404)~~ → **REZOLVAT** (PR #118)
 7. ~~Dev bypass nestructurat în 4 fișiere~~ → **REZOLVAT** (lib/auth/dev-session.ts + Faza 1 completă)
 
 ### Importante
-8. Dashboard nu respectă mockup-ul de referință
+8. Dashboard auth cu anon key în client — necesită refactor; amânat după Faza 10
 9. Task Engine neintegrat cu date reale
-10. Sidebar cu module fantomă (Checklist, Timeline, Wishlist, Moodboard, Notițe)
+10. ~~Sidebar cu module fantomă (Checklist, Timeline, Wishlist, Moodboard, Notițe)~~ → **REZOLVAT** (PR #133)
 11. Zoom bug la ZOOM_MIN neconfirmat prin testare reală
 12. `app/guest-list/page.tsx` token guard relaxat local
 
 ### Pre-launch
 13. `wpBridgeEnabled: true` la launch
-14. Migrații aplicate pe PROD
+14. Migrații aplicate pe PROD — include `20260413000001`
 15. `RESEND_API_KEY` în Vercel
 16. `SHADOW_SESSION_SECRET` în Vercel
 17. DNS `app.weddinglist.ro`
@@ -142,7 +146,8 @@ Noua cheie e în `.env.local` local.
 
 ## 8. URMĂTORUL TASK
 
-**Faza 8 — Silent refetch >10min** sau **Faza 10 — Data access layer** sau **Faza 12 — Product completion**.
+**Dashboard** — amânat după Faza 10 (necesită refactor auth anon key în client).
+**Faza 10 — Data access layer** sau **Faza 12 — Product completion**.
 
 ---
 
