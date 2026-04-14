@@ -66,7 +66,9 @@ export default function RsvpDashboard() {
   const [regeneratingLinks, setRegeneratingLinks] = useState<Set<string>>(new Set());
   // Dialog confirmare pentru "Regenerează link" — conține guestId-ul în curs
   const [regenConfirmGuestId, setRegenConfirmGuestId] = useState<string | null>(null);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [manualOverride, setManualOverride] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const weddingId = sessionState.status === "authenticated" ? sessionState.activeWeddingId : null;
 
@@ -93,10 +95,11 @@ export default function RsvpDashboard() {
   }, [weddingId]);
 
   useEffect(() => {
+    if (!weddingId) return;
     fetchData();
     const interval = setInterval(fetchData, 30_000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, weddingId]);
 
   // ─── Filtered guests ──────────────────────────────────────────────────────
 
@@ -113,7 +116,7 @@ export default function RsvpDashboard() {
       filterStatus === "all" ||
       (filterStatus === "not_invited" && !g.invitation_id) ||
       (filterStatus === "opened_not_answered" &&
-        g.opened_at && g.rsvp_status === "pending") ||
+        g.opened_at !== null && g.rsvp_status === "pending" && g.is_active === true) ||
       g.rsvp_status === filterStatus;
 
     return matchSearch && matchFilter;
@@ -143,10 +146,10 @@ export default function RsvpDashboard() {
 
   const sendWhatsApp = async (
     guest: RsvpGuestRow,
-    invitationToken: string,
+    publicLinkId: string,
     invitationId: string
   ) => {
-    const link = `${window.location.origin}/rsvp/${invitationToken}`;
+    const link = getPublicRsvpUrl(publicLinkId);
     const message = t.dashboard.whatsapp_message
       .replace("{firstName}", guest.first_name)
       .replace("{rsvpLink}", link);
@@ -164,20 +167,39 @@ export default function RsvpDashboard() {
     guestEventId: string,
     status: "accepted" | "declined" | "maybe"
   ) => {
-    await fetch(`/api/rsvp/manual`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guest_event_id: guestEventId, status }),
-    });
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/rsvp/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guest_event_id: guestEventId, status }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setActionError(json.error?.message ?? "Eroare la actualizarea statusului.");
+        return;
+      }
+    } catch {
+      setActionError("Nu s-a putut contacta serverul.");
+      return;
+    }
     setManualOverride(null);
     await fetchData();
   };
 
   const bulkGenerateLinks = async () => {
     const withoutInvitation = filtered.filter((g) => !g.invitation_id);
-    for (const g of withoutInvitation) {
-      await generateLink(g.guest_id);
-    }
+    if (withoutInvitation.length === 0) return;
+    let done = 0;
+    setBulkProgress({ done: 0, total: withoutInvitation.length });
+    await Promise.all(
+      withoutInvitation.map(async (g) => {
+        await generateLink(g.guest_id);
+        done += 1;
+        setBulkProgress({ done, total: withoutInvitation.length });
+      })
+    );
+    setBulkProgress(null);
   };
 
   // Copiere instantă — folosește public_link_id din datele încărcate, ZERO requesturi noi.
@@ -308,9 +330,22 @@ export default function RsvpDashboard() {
 
       {stats && <RsvpStatsGrid stats={stats} />}
 
+      {actionError && (
+        <div style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: "rgba(229,62,62,0.08)", border: "1px solid rgba(229,62,62,0.3)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+          <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--color-danger)" }}>{actionError}</p>
+          <button onClick={() => setActionError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-text-muted)", fontSize: "1rem", lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
       <div style={styles.actionBar}>
-        <button onClick={bulkGenerateLinks} style={styles.primaryBtn}>
-          Generează invitații
+        <button
+          onClick={bulkGenerateLinks}
+          disabled={bulkProgress !== null}
+          style={{ ...styles.primaryBtn, ...(bulkProgress !== null ? { opacity: 0.7, cursor: "not-allowed" } : {}) }}
+        >
+          {bulkProgress !== null
+            ? `${bulkProgress.done}/${bulkProgress.total} generate...`
+            : "Generează invitații"}
         </button>
         <button onClick={exportCsv} style={styles.secondaryBtn}>
           Export CSV
@@ -355,7 +390,7 @@ export default function RsvpDashboard() {
             key={g.guest_event_id}
             guest={g}
             onGenerate={() => generateLink(g.guest_id)}
-            onWhatsApp={(invToken) => sendWhatsApp(g, invToken, g.invitation_id!)}
+            onWhatsApp={() => sendWhatsApp(g, g.public_link_id!, g.invitation_id!)}
             onManual={(status) => manualOverrideStatus(g.guest_event_id, status)}
             onCopyLink={() => copyLink(g.public_link_id, g.guest_id)}
             onRegenerate={() => setRegenConfirmGuestId(g.guest_id)}
@@ -444,7 +479,7 @@ function GuestRow({
 }: {
   guest: RsvpGuestRow;
   onGenerate: () => void;
-  onWhatsApp: (token: string) => void;
+  onWhatsApp: () => void;
   onManual: (status: "accepted" | "declined" | "maybe") => void;
   onCopyLink: () => void;
   onRegenerate: () => void;
@@ -489,7 +524,7 @@ function GuestRow({
             {isGenerating ? "..." : "Generează link"}
           </button>
         ) : (
-          <button onClick={() => onWhatsApp(guest.invitation_id!)} style={styles.whatsappBtn}>
+          <button onClick={onWhatsApp} style={styles.whatsappBtn}>
             WhatsApp
           </button>
         )}

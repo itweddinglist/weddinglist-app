@@ -101,7 +101,14 @@ export default function SettingsPage() {
                 (Art. 20 GDPR — Dreptul la portabilitate).
               </p>
             </div>
-            <a href={weddingId ? "/export" : "#"} style={styles.linkBtn}>
+            <a
+              href={weddingId ? "/export" : "#"}
+              title={!weddingId ? "Nu există nuntă activă" : undefined}
+              style={{
+                ...styles.linkBtn,
+                ...(!weddingId ? { opacity: 0.45, cursor: "not-allowed", pointerEvents: "none" } : {}),
+              }}
+            >
               Mergi la Export
             </a>
           </div>
