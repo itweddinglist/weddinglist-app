@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "@/app/lib/auth/session/use-session"
-import { generateTasks, type TaskEngineResult } from "@/lib/task-engine"
-import { buildTaskEngineContext } from "@/lib/selectors/dashboard-selectors"
-import type { DashboardStats } from "@/types/dashboard"
+import { generateTasks, type TaskEngineResult, type TaskEngineContext } from "@/lib/task-engine"
+import type { DashboardStats, TaskContextResponse } from "@/types/dashboard"
 
 const MODULES = [
   {
@@ -104,52 +103,52 @@ export default function Dashboard() {
       setErrorMessage(null)
 
       try {
-        const { createClient } = await import("@supabase/supabase-js")
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
-        const { data: sessionData } = await supabase.auth.getSession()
-        const jwt = sessionData?.session?.access_token
+        const [statsRes, taskCtxRes] = await Promise.all([
+          fetch("/api/dashboard/stats", { cache: "no-store" }),
+          fetch("/api/dashboard/task-context", { cache: "no-store" }),
+        ])
 
-        if (!jwt) {
+        const [statsJson, taskCtxJson] = await Promise.all([
+          statsRes.json(),
+          taskCtxRes.json(),
+        ])
+
+        if (!statsRes.ok || !statsJson.success) {
           setLoadingState("error")
-          setErrorMessage("Sesiunea a expirat. Reîncarcă pagina.")
+          setErrorMessage(statsJson.error?.message ?? "Eroare la încărcarea statisticilor.")
           return
         }
 
-        const res = await fetch(
-          `/api/dashboard/stats?wedding_id=${activeWeddingId}`,
-          {
-            headers: { Authorization: `Bearer ${jwt}` },
-            cache: "no-store",
-          }
-        )
-
-        const json = await res.json()
-
-        if (!res.ok || !json.success) {
-          setLoadingState("error")
-          setErrorMessage(json.error?.message ?? "Eroare la încărcarea statisticilor.")
-          return
-        }
-
-        setStats(json.data)
+        const statsData: DashboardStats = statsJson.data
+        setStats(statsData)
         setLoadingState("success")
 
         // ── Task Engine ────────────────────────────────────────────────────────
-        const daysUntilWedding = json.data.wedding.event_date
-          ? Math.max(0, Math.ceil((new Date(json.data.wedding.event_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-          : 365
+        if (taskCtxRes.ok && taskCtxJson.success) {
+          const taskCtxData: TaskContextResponse = taskCtxJson.data
+          const daysUntilWedding = statsData.wedding.event_date
+            ? Math.max(0, Math.ceil((new Date(statsData.wedding.event_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+            : 365
+          const rsvpSentCount =
+            statsData.stats.rsvp_accepted +
+            statsData.stats.rsvp_declined +
+            statsData.stats.rsvp_maybe
 
-        const supabaseForTasks = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          { global: { headers: { Authorization: `Bearer ${jwt}` } } }
-        )
-
-        const taskCtx = await buildTaskEngineContext(supabaseForTasks, activeWeddingId!, daysUntilWedding)
-        if (taskCtx) {
+          const taskCtx: TaskEngineContext = {
+            daysUntilWedding,
+            guestsTotal:            statsData.stats.guests_total,
+            guestsUnassigned:       Math.max(0, statsData.stats.guests_total - statsData.stats.seated_guests_total),
+            rsvpPending:            statsData.stats.rsvp_pending,
+            rsvpSentCount,
+            hasLocation:            taskCtxData.has_location,
+            hasCatering:            taskCtxData.has_catering,
+            vendorsInProgressCount: taskCtxData.vendors_in_progress_count,
+            budgetTotal:            statsData.stats.budget_total,
+            budgetPaid:             statsData.stats.budget_paid,
+            paymentDueSoonCount:    taskCtxData.payments_due_soon_count,
+            tablesTotal:            statsData.stats.tables_total,
+            seatedGuestsTotal:      statsData.stats.seated_guests_total,
+          }
           setTaskResult(generateTasks(taskCtx))
         }
       } catch {
