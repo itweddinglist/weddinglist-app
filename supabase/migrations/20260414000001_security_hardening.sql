@@ -231,32 +231,47 @@ CREATE INDEX IF NOT EXISTS idx_data_migrations_status
 
 -- =============================================================================
 -- Prioritate 3 — audit și idempotency
+-- DO block defensiv: tabelele pot lipsi pe DEV dacă migrațiile
+-- originale au fost marcate applied dar nu executate fizic.
 -- =============================================================================
 
--- idempotency_keys
-DROP INDEX IF EXISTS idx_idempotency_hash;
-CREATE INDEX IF NOT EXISTS idx_idempotency_hash
-  ON idempotency_keys (request_hash);
+DO $$
+BEGIN
+  -- idempotency_keys
+  IF EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'idempotency_keys'
+  ) THEN
+    DROP INDEX IF EXISTS idx_idempotency_hash;
+    CREATE INDEX IF NOT EXISTS idx_idempotency_hash
+      ON idempotency_keys (request_hash);
 
-DROP INDEX IF EXISTS idx_idempotency_created;
-CREATE INDEX IF NOT EXISTS idx_idempotency_created
-  ON idempotency_keys (created_at);
+    DROP INDEX IF EXISTS idx_idempotency_created;
+    CREATE INDEX IF NOT EXISTS idx_idempotency_created
+      ON idempotency_keys (created_at);
+  END IF;
 
--- audit_logs (partial indexes — WHERE clause obligatorie)
-DROP INDEX IF EXISTS idx_audit_app_user_id;
-CREATE INDEX IF NOT EXISTS idx_audit_app_user_id
-  ON audit_logs (app_user_id)
-  WHERE app_user_id IS NOT NULL;
+  -- audit_logs (partial indexes — WHERE clause obligatorie)
+  IF EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'audit_logs'
+  ) THEN
+    DROP INDEX IF EXISTS idx_audit_app_user_id;
+    CREATE INDEX IF NOT EXISTS idx_audit_app_user_id
+      ON audit_logs (app_user_id)
+      WHERE app_user_id IS NOT NULL;
 
-DROP INDEX IF EXISTS idx_audit_wedding_id;
-CREATE INDEX IF NOT EXISTS idx_audit_wedding_id
-  ON audit_logs (wedding_id)
-  WHERE wedding_id IS NOT NULL;
+    DROP INDEX IF EXISTS idx_audit_wedding_id;
+    CREATE INDEX IF NOT EXISTS idx_audit_wedding_id
+      ON audit_logs (wedding_id)
+      WHERE wedding_id IS NOT NULL;
 
-DROP INDEX IF EXISTS idx_audit_action_time;
-CREATE INDEX IF NOT EXISTS idx_audit_action_time
-  ON audit_logs (action, created_at DESC);
+    DROP INDEX IF EXISTS idx_audit_action_time;
+    CREATE INDEX IF NOT EXISTS idx_audit_action_time
+      ON audit_logs (action, created_at DESC);
 
-DROP INDEX IF EXISTS idx_audit_created_at;
-CREATE INDEX IF NOT EXISTS idx_audit_created_at
-  ON audit_logs (created_at DESC);
+    DROP INDEX IF EXISTS idx_audit_created_at;
+    CREATE INDEX IF NOT EXISTS idx_audit_created_at
+      ON audit_logs (created_at DESC);
+  END IF;
+END $$;
