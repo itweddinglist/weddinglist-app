@@ -47,7 +47,8 @@ export type SaveError =
   | { code: "GUEST_NOT_FOUND"; message: string }
   | { code: "CAPACITY_EXCEEDED"; message: string }
   | { code: "FORBIDDEN"; message: string }
-  | { code: "TABLE_MAPPING_NOT_FOUND"; message: string };
+  | { code: "TABLE_MAPPING_NOT_FOUND"; message: string }
+  | { code: "MASSIVE_CONFLICT"; message: string; serverState: SeatingLoadResponse };
 
 // ─── ConfirmedSnapshot ────────────────────────────────────────────────────────
 
@@ -82,6 +83,8 @@ export interface SeatingSyncState {
   clearSaveError: () => void;
   forceOverwrite: () => void;
   tabOverlap: boolean;
+  // Faza 8
+  confirmWithServerVersion: () => void;
 }
 
 // ── Faza 9.5: hash stabil fără JSON.stringify pe obiecte mari ─────────────────
@@ -109,6 +112,42 @@ function buildGuestsSnapshot(
     ...g,
     tableId: (assignments[g.id] as number | null | undefined) ?? null,
   }));
+}
+
+// ── Faza 8: detectMassiveConflict ────────────────────────────────────────────
+// Compară assignments serverului cu draft-ul local.
+// Massive conflict = >20% din assignments diferă.
+// Excepție: dacă serverul are 0 assignments și draft-ul are >5 → userul
+// a adăugat de la zero, nu e conflict masiv.
+function detectMassiveConflict(
+  serverState: SeatingLoadResponse,
+  draftSnapshot: SeatingSnapshot
+): boolean {
+  const serverAssigned = serverState.guests.filter((g) => g.tableId !== null).length;
+  const draftAssigned  = Object.values(draftSnapshot.assignments).filter((v) => v !== null).length;
+
+  if (serverAssigned === 0 && draftAssigned > 5) return false;
+
+  const serverMap: Record<number, number | null> = {};
+  for (const g of serverState.guests) {
+    serverMap[g.id] = g.tableId;
+  }
+
+  const allGuestIds = new Set([
+    ...Object.keys(serverMap).map(Number),
+    ...Object.keys(draftSnapshot.assignments).map(Number),
+  ]);
+
+  if (allGuestIds.size === 0) return false;
+
+  let diffCount = 0;
+  for (const guestId of allGuestIds) {
+    const serverTableId = serverMap[guestId] ?? null;
+    const draftTableId  = draftSnapshot.assignments[guestId] ?? null;
+    if (serverTableId !== draftTableId) diffCount++;
+  }
+
+  return diffCount / allGuestIds.size > 0.2;
 }
 
 // ── Reconstituie NumericIdMap din array-urile plate din răspunsul API ─────────
@@ -155,6 +194,9 @@ export function useSeatingSync({
 
   // ── Faza 7: version tracking ───────────────────────────────────────────────
   const currentVersionRef = useRef<number>(-1);
+
+  // ── Faza 8: massive conflict server state ──────────────────────────────────
+  const massiveConflictServerStateRef = useRef<SeatingLoadResponse | null>(null);
 
   // ── Faza 7: tab overlap detection ─────────────────────────────────────────
   // sessionStorage supraviețuiește reload-ului în același tab dar NU în tab-uri noi.
@@ -405,6 +447,61 @@ export function useSeatingSync({
     }
   }, [weddingId, eventId]);
 
+  // ── Faza 8: SILENT REFETCH ────────────────────────────────────────────────
+  // Apelează load fără să modifice state-ul UI.
+  // Returnează SeatingLoadResponse sau null la eroare (nu blochează userul).
+
+  const silentRefetch = useCallback(async (): Promise<SeatingLoadResponse | null> => {
+    try {
+      const response = await fetch(
+        `/api/weddings/${weddingId}/seating/load?event_id=${eventId}`
+      );
+      if (!response.ok) return null;
+      const json = await response.json() as { data: SeatingLoadResponse };
+      return json.data ?? null;
+    } catch {
+      return null;
+    }
+  }, [weddingId, eventId]);
+
+  // ── Faza 8: SAVE WITH SMART REFETCH ───────────────────────────────────────
+  // Dacă tab-ul a fost inactiv >10min → silent refetch → detectMassiveConflict.
+  // Conflict masiv → dialog explicit (nu salvăm silențios).
+  // Fără conflict → actualizare silențioasă confirmedSnapshotRef + version → doSync.
+  // silentRefetch null (eroare rețea) → continuăm cu doSync, nu blocăm userul.
+
+  const saveWithSmartRefetch = useCallback(async (snapshot: SeatingSnapshot): Promise<void> => {
+    const lastConfirmedAt   = confirmedSnapshotRef.current?.serverConfirmedAt ?? 0;
+    const timeSinceLastSync = Date.now() - lastConfirmedAt;
+
+    if (timeSinceLastSync > 10 * 60 * 1000) {
+      const serverState = await silentRefetch();
+
+      if (serverState !== null) {
+        if (detectMassiveConflict(serverState, snapshot)) {
+          massiveConflictServerStateRef.current = serverState;
+          setSaveError({
+            code: "MASSIVE_CONFLICT",
+            message: "Am actualizat planul cu modificările partenerului tău. Verifică înainte de a salva.",
+            serverState,
+          });
+          setSaveStatus("unconfirmed");
+          return;
+        }
+
+        // Fără conflict masiv — actualizare silențioasă
+        confirmedSnapshotRef.current = {
+          tables: serverState.tables.map(({ uuid: _uuid, ...rest }) => rest),
+          guests: structuredClone(serverState.guests),
+          serverConfirmedAt: Date.now(),
+        };
+        currentVersionRef.current = serverState.version;
+      }
+    }
+
+    await doSync(snapshot);
+  }, [silentRefetch, doSync]);
+
   // ── RETRY ─────────────────────────────────────────────────────────────────
 
   const retry = useCallback((): void => {
@@ -471,6 +568,30 @@ export function useSeatingSync({
     savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_IDLE_MS);
   }, []);
 
+  // ── Faza 8: CONFIRM WITH SERVER VERSION ───────────────────────────────────
+  // "Salvează cu versiunea actualizată" — preia versiunea serverului și
+  // retrimite draft-ul curent pe deasupra ei.
+
+  const confirmWithServerVersion = useCallback((): void => {
+    const serverState = massiveConflictServerStateRef.current;
+    if (!serverState) return;
+
+    massiveConflictServerStateRef.current = null;
+    currentVersionRef.current = serverState.version;
+    confirmedSnapshotRef.current = {
+      tables: serverState.tables.map(({ uuid: _uuid, ...rest }) => rest),
+      guests: structuredClone(serverState.guests),
+      serverConfirmedAt: Date.now(),
+    };
+    setSaveError(null);
+
+    const snapshot = latestSnapshotRef.current;
+    if (!snapshot) return;
+
+    lastSyncedSnapshotRef.current = null;
+    doSync(snapshot, 0, false);
+  }, [doSync]);
+
   const onSeatingStateChanged = useCallback(
     (snapshot: SeatingSnapshot) => {
       if (!idMapsRef.current) return;
@@ -484,9 +605,9 @@ export function useSeatingSync({
       }
 
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = setTimeout(() => doSync(snapshot), SYNC_DEBOUNCE_MS);
+      syncTimerRef.current = setTimeout(() => saveWithSmartRefetch(snapshot), SYNC_DEBOUNCE_MS);
     },
-    [doSync]
+    [saveWithSmartRefetch]
   );
 
   // Cleanup complet
@@ -514,5 +635,6 @@ export function useSeatingSync({
     clearSaveError,
     forceOverwrite,
     tabOverlap,
+    confirmWithServerVersion,
   };
 }
