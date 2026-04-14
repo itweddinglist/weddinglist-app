@@ -60,6 +60,7 @@ function SeatingChartInner({
   clearSaveError,
   onForceOverwrite,
   tabOverlap,
+  onConfirmWithServerVersion,
 }) {
   // ── Layer 1: Camera ──
   const {
@@ -767,6 +768,31 @@ function SeatingChartInner({
           </div>
         </div>
       )}
+      {/* Faza 8: MASSIVE_CONFLICT dialog */}
+      {saveError?.code === "MASSIVE_CONFLICT" && (
+        <div className="sc-overlay">
+          <div className="sc-confirm">
+            <div className="conf-title">Plan actualizat de partener</div>
+            <div className="conf-sub">
+              Am actualizat planul cu modificările partenerului tău. Verifică înainte de a salva.
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                className="conf-cancel"
+                onClick={() => { clearSaveError(); onRevertConfirmed(); }}
+              >
+                Renunță la modificările mele
+              </button>
+              <button
+                className="conf-ok"
+                onClick={() => { onConfirmWithServerVersion(); }}
+              >
+                Salvează cu versiunea actualizată
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Faza 7: tab overlap banner */}
       {tabOverlap && (
         <div style={{
@@ -847,6 +873,7 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
     clearSaveError,
     forceOverwrite,
     tabOverlap,
+    confirmWithServerVersion,
   } = useSeatingSync({
     weddingId,
     eventId,
@@ -875,6 +902,7 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
       clearSaveError={clearSaveError}
       onForceOverwrite={forceOverwrite}
       tabOverlap={tabOverlap}
+      onConfirmWithServerVersion={confirmWithServerVersion}
     />
   );
 }
