@@ -121,6 +121,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
           p_event_id:     eventId,
           p_entity_type:  "guest",
           p_entity_uuids: guestUuids,
+          p_caller_uid:   authResult.ctx.app_user_id,
         }
       );
       if (error) return internalErrorResponse(error, "GET seating/load — allocate guests");
@@ -135,6 +136,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
           p_event_id:     eventId,
           p_entity_type:  "table",
           p_entity_uuids: tableUuids,
+          p_caller_uid:   authResult.ctx.app_user_id,
         }
       );
       if (error) return internalErrorResponse(error, "GET seating/load — allocate tables");

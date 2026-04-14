@@ -25,6 +25,12 @@ import type {
   SeatingIdMapEntry,
 } from "./types";
 
+// SYNC_DEBOUNCE_MS: 1500ms deliberat — seating chart are drag & drop continuu.
+// SPEC §15 menționează 300–500ms pentru rate limiting general (Upstash backend),
+// nu pentru debounce-ul operației de sync seating cu ID bridge + OCC.
+// La 300–500ms, un drag rapid de 3 secunde generează 6–10 request-uri și crește
+// riscul de VERSION_MISMATCH între operații consecutive ale aceluiași user.
+// 1500ms reduce request-urile la 1–2 per sesiune de drag și menține OCC stabil.
 const SYNC_DEBOUNCE_MS = 1500;
 const SYNC_MAX_RETRIES = 3;
 const SYNC_RETRY_BASE_MS = 1000;
