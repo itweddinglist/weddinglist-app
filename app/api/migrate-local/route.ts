@@ -31,15 +31,6 @@ type SeatingTable = {
   rotation: number;
 };
 
-type MigrateLocalRequest = {
-  data: {
-    guests: SeatingGuest[];
-    tables: SeatingTable[];
-    nextId: number;
-    cam: { vx: number; vy: number; z: number };
-  };
-};
-
 type MigrateLocalResponse =
   | { ok: true; status: "completed" | "already_done" | "skipped_has_data" }
   | { ok: false; error: string };
