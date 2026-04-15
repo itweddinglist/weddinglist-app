@@ -87,8 +87,9 @@ export interface SeatingFullSyncRequest {
   event_id: string;
   tables: SeatingTableSyncItem[];
   assignments: SeatingAssignmentSyncItem[];
-  version?: number;        // OCC — revizuirea curentă din DB; -1 sau absent = skip check
-  force_overwrite?: boolean; // true = ignoră VERSION_MISMATCH (logate în audit)
+  version?: number;              // OCC — revizuirea curentă din DB; -1 sau absent = skip check
+  force_overwrite?: boolean;     // true = ignoră VERSION_MISMATCH (logate în audit)
+  client_operation_id?: string;  // Faza 3: idempotency — generat O SINGURĂ DATĂ per intenție de Save
 }
 
 export interface SeatingFullSyncResponse {

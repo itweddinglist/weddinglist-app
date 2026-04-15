@@ -44,19 +44,24 @@ export async function computeRequestHash(
  * Dacă hash-ul există deja în DB, returnează răspunsul cached fără a apela execute.
  *
  * Race condition safe: INSERT ignoră conflictul pe request_hash (UNIQUE).
- * La conflict, alt instanță a inserat primul — citim răspunsul lor.
+ * La conflict, altă instanță a inserat primul — citim răspunsul lor.
  *
- * @param requestHash     SHA-256 hex din computeRequestHash()
- * @param appUserId       UUID-ul utilizatorului autentificat
- * @param weddingId       UUID-ul nunții active
- * @param rpcName         Numele operației (pentru debugging/audit)
- * @param execute         Operația idempotentă de executat
+ * Non-fatal: dacă tabelul idempotency_keys lipsește (ex: DEV fără migrație),
+ * operația se execută oricum și eroarea de INSERT e loggată, nu aruncată.
+ *
+ * @param requestHash        SHA-256 hex din computeRequestHash()
+ * @param appUserId          UUID-ul utilizatorului autentificat
+ * @param weddingId          UUID-ul nunții active
+ * @param rpcName            Numele operației (pentru debugging/audit)
+ * @param clientOperationId  ID generat pe client O SINGURĂ DATĂ per intenție de Save
+ * @param execute            Operația idempotentă de executat
  */
 export async function withIdempotency<T>(
   requestHash: string,
   appUserId: string,
   weddingId: string,
   rpcName: string,
+  clientOperationId: string,
   execute: () => Promise<T>
 ): Promise<T> {
   // 1. Verificăm dacă există un răspuns cached
@@ -73,18 +78,21 @@ export async function withIdempotency<T>(
   // 2. Executăm operația
   const result = await execute();
 
-  // 3. Stocăm răspunsul — ignorăm conflictul dacă altă instanță a rasat
-  await supabaseServer
+  // 3. Stocăm răspunsul — non-fatal dacă tabelul lipsește sau există conflict de UNIQUE
+  const { error: insertError } = await supabaseServer
     .from("idempotency_keys")
     .insert({
-      request_hash: requestHash,
-      client_operation_id: crypto.randomUUID(),
-      app_user_id: appUserId,
-      wedding_id: weddingId,
-      rpc_name: rpcName,
-      response: result as Record<string, unknown>,
-    })
-    .throwOnError();
+      request_hash:        requestHash,
+      client_operation_id: clientOperationId,
+      app_user_id:         appUserId,
+      wedding_id:          weddingId,
+      rpc_name:            rpcName,
+      response:            result as Record<string, unknown>,
+    });
+
+  if (insertError) {
+    console.warn("[Idempotency] insert failed, skipping dedup:", insertError.code);
+  }
 
   return result;
 }

@@ -19,6 +19,7 @@ import {
   errorResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
+import { computeRequestHash, withIdempotency } from "@/lib/supabase/idempotency";
 import type { SeatingFullSyncRequest, SeatingFullSyncResponse } from "@/types/seating";
 
 type RouteContext = { params: Promise<{ weddingId: string }> };
@@ -61,24 +62,63 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
   const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
   if (!access.ok) return access.response;
 
-  try {
-    const { data, error } = await supabaseServer.rpc("sync_seating_editor_state", {
-      p_wedding_id:  access.wedding_id,
-      p_event_id:    body.event_id,
-      p_caller_uid:  authResult.ctx.app_user_id,
-      p_tables:      body.tables,
-      p_assignments: body.assignments,
-      p_version:     body.version     ?? -1,
-      p_force:       body.force_overwrite ?? false,
-    });
+  const rpcParams = {
+    p_wedding_id:  access.wedding_id,
+    p_event_id:    body.event_id,
+    p_caller_uid:  authResult.ctx.app_user_id,
+    p_tables:      body.tables,
+    p_assignments: body.assignments,
+    p_version:     body.version          ?? -1,
+    p_force:       body.force_overwrite  ?? false,
+  };
 
-    if (error) {
-      // Mapează erori business din RPC
-      const mapped = RPC_ERROR_MAP[error.code ?? ""];
-      if (mapped) {
-        return errorResponse(mapped.status, mapped.code, error.message);
+  try {
+    let data: SeatingFullSyncResponse | null = null;
+    let rpcError: { code?: string | null; message?: string | null } | null = null;
+
+    if (body.client_operation_id) {
+      // ── Faza 3: Idempotency — deduplică retry-urile pe aceeași intenție de Save ──
+      const hash = await computeRequestHash(
+        authResult.ctx.app_user_id,
+        access.wedding_id,
+        rpcParams as Record<string, unknown>,
+        body.client_operation_id
+      );
+      try {
+        data = await withIdempotency(
+          hash,
+          authResult.ctx.app_user_id,
+          access.wedding_id,
+          "sync_seating_editor_state",
+          body.client_operation_id,
+          async () => {
+            const { data: d, error: e } = await supabaseServer.rpc(
+              "sync_seating_editor_state",
+              rpcParams
+            );
+            if (e) throw e;
+            return d as SeatingFullSyncResponse;
+          }
+        );
+      } catch (e: unknown) {
+        rpcError = e as { code?: string | null; message?: string | null };
       }
-      return internalErrorResponse(error, "POST seating/sync — RPC");
+    } else {
+      // ── Fără client_operation_id → apel direct (backward compat) ──────────────
+      const { data: d, error: e } = await supabaseServer.rpc(
+        "sync_seating_editor_state",
+        rpcParams
+      );
+      data = d as SeatingFullSyncResponse;
+      rpcError = e;
+    }
+
+    if (rpcError) {
+      const mapped = RPC_ERROR_MAP[rpcError.code ?? ""];
+      if (mapped) {
+        return errorResponse(mapped.status, mapped.code, rpcError.message ?? "");
+      }
+      return internalErrorResponse(rpcError, "POST seating/sync — RPC");
     }
 
     return successResponse<SeatingFullSyncResponse>(data as SeatingFullSyncResponse, 200);

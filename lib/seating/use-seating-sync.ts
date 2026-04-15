@@ -198,6 +198,11 @@ export function useSeatingSync({
   // ── Faza 8: massive conflict server state ──────────────────────────────────
   const massiveConflictServerStateRef = useRef<SeatingLoadResponse | null>(null);
 
+  // ── Faza 3: idempotency — O SINGURĂ dată per intenție de Save ───────────────
+  // Generat la retryCount=0 (intenție nouă), reutilizat la retry-uri automate.
+  // Reset la null după sync reușit — următorul Save primește un ID nou.
+  const operationIdRef = useRef<string | null>(null);
+
   // ── Faza 7: tab overlap detection ─────────────────────────────────────────
   // sessionStorage supraviețuiește reload-ului în același tab dar NU în tab-uri noi.
   // Astfel evităm fals-pozitive la refresh: același tab → același tabSessionId.
@@ -307,6 +312,11 @@ export function useSeatingSync({
     const maps = idMapsRef.current;
     if (!maps) return;
 
+    // Faza 3: intenție nouă → ID nou; retry pe același snapshot → reutilizăm ID-ul
+    if (retryCount === 0) {
+      operationIdRef.current = crypto.randomUUID();
+    }
+
     setSaveStatus("saving");
 
     const tables: SeatingFullSyncRequest["tables"] = snapshot.tables.map((t) => ({
@@ -346,11 +356,12 @@ export function useSeatingSync({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            event_id:       eventId,
+            event_id:             eventId,
             tables,
             assignments,
-            version:        useForce ? -1 : currentVersionRef.current,
-            force_overwrite: useForce,
+            version:              useForce ? -1 : currentVersionRef.current,
+            force_overwrite:      useForce,
+            client_operation_id:  operationIdRef.current ?? undefined,
           }),
         }
       );
@@ -430,6 +441,7 @@ export function useSeatingSync({
         serverConfirmedAt: Date.now(),
       };
       isRetryInProgressRef.current = false;
+      operationIdRef.current = null; // Faza 3: intenție finalizată — următorul Save va primi ID nou
       setSaveError(null);
       setSaveStatus("saved");
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
