@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { rateLimit, getClientIp } from "@/app/lib/rate-limit";
+import {
+  getServerAppContext,
+  requireAuthenticatedContext,
+  requireWeddingAccess,
+} from "@/lib/server-context";
 
 export const runtime = "nodejs";
 
@@ -27,8 +32,6 @@ type SeatingTable = {
 };
 
 type MigrateLocalRequest = {
-  app_user_id: string;
-  wedding_id: string;
   data: {
     guests: SeatingGuest[];
     tables: SeatingTable[];
@@ -42,10 +45,32 @@ type MigrateLocalResponse =
   | { ok: false; error: string };
 
 const MIGRATION_KEY = "localstorage_v1";
+const MAX_GUESTS = 1000;
+const MAX_TABLES = 200;
 
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<MigrateLocalResponse>> {
+  // Auth
+  const ctx = await getServerAppContext(req);
+  const authResult = requireAuthenticatedContext(ctx);
+  if (!authResult.ok) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) {
+    return NextResponse.json(
+      { ok: false, error: "No active wedding or insufficient permissions." },
+      { status: 403 }
+    );
+  }
+
+  const wedding_id = access.wedding_id;
+
   // Rate limiting
   const ip = getClientIp(req);
   const rl = rateLimit(`migrate:${ip}`, RATE_LIMIT);
@@ -56,16 +81,61 @@ export async function POST(
     );
   }
 
+  let body: unknown;
   try {
-    const body = (await req.json()) as MigrateLocalRequest;
-    const { app_user_id, wedding_id, data } = body;
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Request body must be valid JSON." },
+      { status: 400 }
+    );
+  }
 
-    if (!app_user_id || !wedding_id) {
-      return NextResponse.json(
-        { ok: false, error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+  const raw = body as Record<string, unknown>;
+  const data = raw?.data as Record<string, unknown> | undefined;
+
+  if (!data || typeof data !== "object") {
+    return NextResponse.json(
+      { ok: false, error: "Missing 'data' field in request body." },
+      { status: 400 }
+    );
+  }
+
+  const guests = data.guests;
+  const tables = data.tables;
+
+  if (!Array.isArray(guests)) {
+    return NextResponse.json(
+      { ok: false, error: "'data.guests' must be an array." },
+      { status: 400 }
+    );
+  }
+
+  if (!Array.isArray(tables)) {
+    return NextResponse.json(
+      { ok: false, error: "'data.tables' must be an array." },
+      { status: 400 }
+    );
+  }
+
+  if (guests.length > MAX_GUESTS) {
+    return NextResponse.json(
+      { ok: false, error: `Too many guests: max ${MAX_GUESTS} allowed, got ${guests.length}.` },
+      { status: 400 }
+    );
+  }
+
+  if (tables.length > MAX_TABLES) {
+    return NextResponse.json(
+      { ok: false, error: `Too many tables: max ${MAX_TABLES} allowed, got ${tables.length}.` },
+      { status: 400 }
+    );
+  }
+
+  const typedGuests = guests as SeatingGuest[];
+  const typedTables = tables as SeatingTable[];
+
+  try {
 
     // 1. Verifică dacă migrarea a fost deja făcută
     const { data: existingMigration } = await supabaseServer
@@ -101,8 +171,8 @@ export async function POST(
     });
 
     // 4. Migrăm guests
-    if (data.guests?.length > 0) {
-      const guestsToInsert = data.guests.map((g) => ({
+    if (typedGuests.length > 0) {
+      const guestsToInsert = typedGuests.map((g) => ({
         id: String(g.id),
         wedding_id,
         first_name: g.prenume,
@@ -116,8 +186,8 @@ export async function POST(
     }
 
     // 5. Migrăm tables
-    if (data.tables?.length > 0) {
-      const tablesToInsert = data.tables.map((t) => ({
+    if (typedTables.length > 0) {
+      const tablesToInsert = typedTables.map((t) => ({
         id: String(t.id),
         wedding_id,
         name: t.name,
