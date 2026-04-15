@@ -255,6 +255,7 @@ DELETE /api/guests/[id]
 GET  /api/budget/items
 POST /api/budget/items
 GET  /api/dashboard/stats
+GET  /api/dashboard/task-context       ← Faza 12.4: has_location, has_catering, vendors_in_progress, payments_due_soon
 GET  /api/weddings/[id]/seating/load   ← server-side, service_role, returnează tables+guests+idMaps
 POST /api/weddings/[id]/seating/sync
 GET  /api/rsvp/dashboard
@@ -346,3 +347,8 @@ debugAuthEnabled: process.env.NODE_ENV === "development"
 | #132 | docs: actualizeaza status si context - faza 9 done, 92% |
 | #133 | fix(sidebar): elimina module fantoma si adauga rsvp in navigare |
 | #134 | fix(seating): magic fill v2.0 + fix pgrst203 sync overloads |
+| feat/faza10-data-access-layer | Faza 10: RpcError, normalizeRpcError, rpc<T> wrapper cu timing + auto read-only trigger |
+| feat/faza11-security-hardening | Faza 11: SECURITY DEFINER + membership check în allocate_seating_numeric_ids_batch, 32 indexuri idempotente |
+| feat/faza8-silent-refetch | Faza 8: silentRefetch, saveWithSmartRefetch, detectMassiveConflict, MASSIVE_CONFLICT dialog |
+| feat/faza12-dashboard-refactor | Faza 12.4: elimină Supabase client din browser, GET /api/dashboard/task-context, TaskEngineContext din două fetch-uri |
+| fix/rsvp-settings-polish | fix(rsvp): WhatsApp public_link_id corect, manualOverride error handling, polling guard, bulkGenerate Promise.all, filter is_active |

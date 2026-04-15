@@ -1,13 +1,13 @@
 # STATUS.md — WeddingList App
 # Spec version active: V5.4
-# Last synced with SPEC: 2026-04-13
+# Last synced with SPEC: 2026-04-15
 # Rol: Starea curentă a proiectului. Se actualizează la fiecare sesiune.
 
 ---
 
 ## 1. PROGRES REAL
 
-**Evaluare sinceră: ~94% din produs funcțional**
+**Evaluare sinceră: ~97% din produs funcțional**
 
 ---
 
@@ -20,12 +20,12 @@
 | Seating Chart Load | ✅ Funcțional | GET /seating/load server-side, tables din DB |
 | Magic Fill | ✅ Funcțional | V2.0, 6 etape deterministe, testat 600 invitați, 344+ așezați |
 | Listă Invitați | ✅ Funcțional | 600 invitați testați |
-| RSVP Dashboard | ✅ Funcțional | Buguri mici UI/UX |
+| RSVP Dashboard | ✅ Funcțional | Buguri UI/UX fixate (fix/rsvp-settings-polish) |
 | Export JSON | ✅ Fix aplicat | wedding_id din query param, sort_order eliminat |
 | Export PDF | ✅ Fix aplicat | location_name eliminat, filename ASCII, Uint8Array |
 | Budget | ✅ Funcțional | UI complet: CRUD items, payments, state machine |
-| Dashboard | ⚠️ Parțial | Statistici reale via API, Task Engine integrat; auth cu anon key în client — necesită refactor după Faza 10 |
-| Settings | ✅ Vizual | Funcționalitate netestat complet |
+| Dashboard | ✅ Funcțional | Statistici reale via API, Task Engine integrat, auth server-side complet (Faza 12.4) |
+| Settings | ✅ Funcțional | GDPR export + delete cont, link disabled fix |
 | Vendors | ❌ Blocat | Blocat pe Voxel |
 
 ---
@@ -69,7 +69,7 @@ Date: 600 guests + 600 guest_events + 4 guest_groups + 121 tables (deleted_at re
 
 ### Funcții RPC în DEV
 
-- `allocate_seating_numeric_ids_batch` — **există** + migration `20260409000001` adăugată
+- `allocate_seating_numeric_ids_batch` — **există** + migration `20260409000001` + security hardening `20260414000001`
 - `sync_seating_editor_state` — **există** + migration `20260409000002` adăugată
 
 ### `seating_id_maps`
@@ -111,6 +111,11 @@ Noua cheie e în `.env.local` local.
 | #132 | docs: actualizeaza status si context - faza 9 done, 92% | ✅ Merged develop |
 | #133 | fix(sidebar): elimina module fantoma si adauga rsvp in navigare | ✅ Merged develop |
 | #134 | fix(magic-fill): rescriere algoritm v2.0 + fix sync_seating_editor_state pgrst203 | ✅ Merged develop |
+| feat/faza10-data-access-layer | feat(db): faza 10 - normalizerpcrror, rpcerrror class, rpc wrapper cu timing | ✅ Merged develop |
+| feat/faza11-security-hardening | feat(security): faza 11 - membership check security definer, reindexare idempotenta | ✅ Merged develop |
+| feat/faza8-silent-refetch | feat(seating): faza 8 - silent refetch, massive conflict dialog, save with smart refetch | ✅ Merged develop |
+| feat/faza12-dashboard-refactor | feat(dashboard): faza 12 - refactor auth server-side, task context endpoint | ✅ Merged develop |
+| fix/rsvp-settings-polish | fix(rsvp): whatsapp public link id, error handling, polling, bulk progress, filter is_active | ✅ Merged develop |
 
 ---
 
@@ -126,15 +131,15 @@ Noua cheie e în `.env.local` local.
 7. ~~Dev bypass nestructurat în 4 fișiere~~ → **REZOLVAT** (lib/auth/dev-session.ts + Faza 1 completă)
 
 ### Importante
-8. Dashboard auth cu anon key în client — necesită refactor; amânat după Faza 10
-9. Task Engine neintegrat cu date reale
+8. ~~Dashboard auth cu anon key în client~~ → **REZOLVAT** (Faza 12.4: `Promise.all` cookie-auth, zero Supabase client în browser, `GET /api/dashboard/task-context` endpoint nou)
+9. ~~Task Engine neintegrat cu date reale~~ → **REZOLVAT** (Faza 12.4: `TaskEngineContext` calculat din `/stats` + `/task-context`, `generateTasks()` apelat server-side via fetch)
 10. ~~Sidebar cu module fantomă (Checklist, Timeline, Wishlist, Moodboard, Notițe)~~ → **REZOLVAT** (PR #133)
 11. Zoom bug la ZOOM_MIN neconfirmat prin testare reală
-12. `app/guest-list/page.tsx` token guard relaxat local
+12. ~~`app/guest-list/page.tsx` token guard relaxat local~~ → comportament intenționat, auth via cookie (no JWT needed)
 
 ### Pre-launch
 13. `wpBridgeEnabled: true` la launch
-14. Migrații aplicate pe PROD — include `20260413000001`
+14. Migrații aplicate pe PROD — include `20260413000001`, `20260414000001`
 15. `RESEND_API_KEY` în Vercel
 16. `SHADOW_SESSION_SECRET` în Vercel
 17. DNS `app.weddinglist.ro`
@@ -146,8 +151,16 @@ Noua cheie e în `.env.local` local.
 
 ## 8. URMĂTORUL TASK
 
-**Dashboard** — amânat după Faza 10 (necesită refactor auth anon key în client).
-**Faza 10 — Data access layer** sau **Faza 12 — Product completion**.
+**Pre-launch checklist** — toate fazele 0-12 sunt ✅ DONE.
+
+Rămâne:
+- `wpBridgeEnabled: true` în feature-flags (înainte de deploy PROD)
+- Aplicarea migrațiilor `20260413000001` + `20260414000001` pe PROD
+- Verificare env vars în Vercel (RESEND_API_KEY, SHADOW_SESSION_SECRET, NEXT_PUBLIC_APP_URL)
+- DNS `app.weddinglist.ro` → Vercel
+- ToS + Privacy Policy în română
+- RLS reactivat pe DEV
+- `pg_cron` activat pe PROD
 
 ---
 
@@ -163,8 +176,8 @@ Noua cheie e în `.env.local` local.
 | 5 | RPC `allocate_seating_numeric_ids_batch` | ✅ DONE (migration + fix) |
 | 6 | RPC `sync_seating_editor_state` | ✅ DONE (migration + fix) |
 | 7 | Conflict system + client state machine | ✅ DONE (PR #119) |
-| 8 | Silent refetch | ⏳ |
+| 8 | Silent refetch | ✅ DONE (feat/faza8-silent-refetch) |
 | 9 | Audit system tiered | ✅ DONE (PR #131) |
-| 10 | Data access layer | ⏳ |
-| 11 | Security hardening | ⏳ |
-| 12 | Product completion | ⏳ |
+| 10 | Data access layer | ✅ DONE (feat/faza10-data-access-layer) |
+| 11 | Security hardening | ✅ DONE (feat/faza11-security-hardening) |
+| 12 | Product completion | ✅ DONE (feat/faza12-dashboard-refactor + fix/rsvp-settings-polish) |
