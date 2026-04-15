@@ -108,6 +108,7 @@ export interface SeatingFullSyncRequest {
   assignments: SeatingAssignmentSyncItem[];
   version?: number;
   force_overwrite?: boolean;
+  client_operation_id?: string;  // Faza 3: idempotency — generat O SINGURĂ DATĂ per intenție de Save
 }
 
 export interface SeatingFullSyncResponse {

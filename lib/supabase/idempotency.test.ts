@@ -85,7 +85,7 @@ describe("withIdempotency", () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
 
     const execute = makeExecute({ seats: 42 });
-    const result = await withIdempotency("hash-1", APP_USER_ID, WEDDING_ID, RPC_NAME, execute);
+    const result = await withIdempotency("hash-1", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-1", execute);
 
     expect(execute).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ seats: 42 });
@@ -99,7 +99,7 @@ describe("withIdempotency", () => {
     });
 
     const execute = makeExecute({ seats: 99 });
-    const result = await withIdempotency("hash-2", APP_USER_ID, WEDDING_ID, RPC_NAME, execute);
+    const result = await withIdempotency("hash-2", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-2", execute);
 
     expect(execute).not.toHaveBeenCalled();
     expect(result).toEqual({ seats: 99 });
@@ -109,7 +109,7 @@ describe("withIdempotency", () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
 
     const execute = makeExecute({ ok: true });
-    await withIdempotency("hash-3", APP_USER_ID, WEDDING_ID, RPC_NAME, execute);
+    await withIdempotency("hash-3", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-3", execute);
 
     expect(execute).toHaveBeenCalledTimes(1);
     expect(mockInsert).toHaveBeenCalledTimes(1);
@@ -129,7 +129,7 @@ describe("withIdempotency", () => {
     mockMaybeSingle.mockResolvedValue({ data: { response: cached }, error: null });
 
     const execute = makeExecute({ tables: [] });
-    const result = await withIdempotency("hash-4", APP_USER_ID, WEDDING_ID, RPC_NAME, execute);
+    const result = await withIdempotency("hash-4", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-4", execute);
 
     expect(result).toEqual(cached);
     expect(execute).not.toHaveBeenCalled();
