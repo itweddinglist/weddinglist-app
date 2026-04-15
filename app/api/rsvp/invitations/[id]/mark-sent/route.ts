@@ -9,6 +9,7 @@ import { type NextRequest } from "next/server";
 import {
   getServerAppContext,
   requireAuthenticatedContext,
+  requireWeddingAccess,
 } from "@/lib/server-context";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import {
@@ -29,6 +30,9 @@ export async function PATCH(
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
+  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  if (!access.ok) return access.response;
+
   const { id } = await context.params;
 
   let body: unknown;
@@ -46,9 +50,24 @@ export async function PATCH(
   }
 
   try {
+    // 1. Verificăm că invitația există și aparține nunții autentificate
+    const { data: existing, error: fetchError } = await supabaseServer
+      .from("rsvp_invitations")
+      .select("id, wedding_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (fetchError) return internalErrorResponse(fetchError, "PATCH /api/rsvp/invitations/[id]/mark-sent fetch");
+
+    // 404 generic — nu revelăm dacă invitația există sau aparține altcuiva
+    if (!existing || existing.wedding_id !== access.wedding_id) {
+      return errorResponse(404, "NOT_FOUND", "Invitation not found.");
+    }
+
+    // 2. Update cu select pentru a confirma că rândul a fost afectat
     const now = new Date().toISOString();
 
-    const { error } = await supabaseServer
+    const { data: updated, error: updateError } = await supabaseServer
       .from("rsvp_invitations")
       .update({
         delivery_channel: deliveryChannel ?? null,
@@ -56,9 +75,16 @@ export async function PATCH(
         last_sent_at: now,
         updated_at: now,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("wedding_id", access.wedding_id)
+      .select("id");
 
-    if (error) return internalErrorResponse(error, "PATCH /api/rsvp/invitations/[id]/mark-sent");
+    if (updateError) return internalErrorResponse(updateError, "PATCH /api/rsvp/invitations/[id]/mark-sent update");
+
+    // Race condition: rândul a fost șters între SELECT și UPDATE
+    if (!updated || updated.length === 0) {
+      return errorResponse(404, "NOT_FOUND", "Invitation not found.");
+    }
 
     return successResponse({ success: true, invitation_id: id });
 

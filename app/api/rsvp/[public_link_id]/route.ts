@@ -221,30 +221,40 @@ export async function POST(
 
     const { data: validEvents, error: eventsError } = await supabase
       .from("guest_events")
-      .select("id")
+      .select("id, event_id")
       .eq("guest_id", invitation.guest_id)
       .eq("wedding_id", invitation.wedding_id);
 
     if (eventsError) return internalErrorResponse(eventsError, `POST ${route} events`);
 
-    const validEventIds = new Set((validEvents ?? []).map((e: any) => e.id));
+    // guest_event_id → event_id map pentru lookup O(1)
+    const validEventMap = new Map<string, string>(
+      (validEvents ?? []).map((e: any) => [e.id, e.event_id])
+    );
 
-    for (const r of responses) {
-      if (!validEventIds.has(r.guest_event_id)) {
-        return errorResponse(
-          403,
-          "UNAUTHORIZED_GUEST_EVENT",
-          "Nu ai permisiunea să răspunzi pentru acest eveniment."
-        );
+    const validResponses = responses.filter((r) => {
+      if (!validEventMap.has(r.guest_event_id)) {
+        logInternal("RSVP_SKIPPED_INVALID_EVENT", {
+          route,
+          guest_event_id: r.guest_event_id,
+        });
+        return false;
       }
+      return true;
+    });
+
+    if (validResponses.length === 0) {
+      return errorResponse(
+        400,
+        "NO_VALID_GUEST_EVENTS",
+        "No valid guest events found in submission."
+      );
     }
 
     const now = new Date().toISOString();
-    const upsertData = responses.map((r) => ({
+    const upsertData = validResponses.map((r) => ({
       wedding_id: invitation.wedding_id,
-      event_id: validEvents?.find((e: any) => e.id === r.guest_event_id)
-        ? r.guest_event_id
-        : r.guest_event_id,
+      event_id: validEventMap.get(r.guest_event_id) ?? null,
       invitation_id: invitation.id,
       guest_event_id: r.guest_event_id,
       status: r.status,
@@ -270,7 +280,7 @@ export async function POST(
 
     return successResponse({
       success: true,
-      responses_saved: responses.length,
+      responses_saved: validResponses.length,
       invitation_id: invitation.id,
     });
 
