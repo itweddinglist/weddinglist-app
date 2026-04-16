@@ -6,6 +6,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 
 export const runtime = "nodejs";
 
@@ -42,6 +43,10 @@ const MAX_TABLES = 200;
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<MigrateLocalResponse>> {
+  // Origin check — before rate limiting and auth
+  const originCheck = checkOrigin(req);
+  if (originCheck) return originCheck as unknown as NextResponse<MigrateLocalResponse>;
+
   // Auth
   const ctx = await getServerAppContext(req);
   const authResult = requireAuthenticatedContext(ctx);

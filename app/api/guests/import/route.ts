@@ -17,6 +17,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { parseGuestsCsv } from "@/lib/csv/parse-guests";
 import {
@@ -40,6 +41,9 @@ const VALID_CREATE_GROUPS = new Set(["true", "false", "1", "0"]);
 // â"€â"€â"€ POST /api/guests/import â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 export async function POST(request: NextRequest): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   // 1. Authenticate
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);

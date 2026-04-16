@@ -15,6 +15,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateUpdateBudgetItem } from "@/lib/validation/budget-items";
 import { isValidUuid } from "@/lib/sanitize";
@@ -60,6 +61,9 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 // ─── PATCH /api/weddings/[weddingId]/budget/items/[itemId] ───────────────────
 
 export async function PATCH(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { weddingId, itemId } = await context.params;
 
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
@@ -109,6 +113,9 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
 // PRODUCT RULE: items cu status "paid" nu pot fi șterse prin UI.
 
 export async function DELETE(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { weddingId, itemId } = await context.params;
 
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
