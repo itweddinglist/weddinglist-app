@@ -19,6 +19,7 @@ import type {
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const MAX_ROWS = 500;
+const MAX_COLUMNS = 50;
 
 /** Dummy UUID used to satisfy validateCreateGuest()'s wedding_id requirement. */
 const DUMMY_WEDDING_UUID = "00000000-0000-0000-0000-000000000000";
@@ -309,7 +310,17 @@ export function parseGuestsCsv(csvText: string): CsvParseResult {
     return { rows: [], errors, warnings, totalDataRows: 0 };
   }
 
-  // 2. Map headers
+  // 2. Enforce column limit before parsing headers
+  if (rawRows[0].length > MAX_COLUMNS) {
+    errors.push({
+      row: 1,
+      field: "header",
+      message: `Too many columns: max ${MAX_COLUMNS} allowed, found ${rawRows[0].length}.`,
+    });
+    return { rows: [], errors, warnings, totalDataRows: 0 };
+  }
+
+  // 3. Map headers
   const headerResult = mapHeaders(rawRows[0]);
   if ("error" in headerResult) {
     errors.push({ row: 1, field: "header", message: headerResult.error });
@@ -324,7 +335,7 @@ export function parseGuestsCsv(csvText: string): CsvParseResult {
     });
   }
 
-  // 3. Data rows (skip header, skip blank lines)
+  // 4. Data rows (skip header, skip blank lines)
   const dataRows = rawRows.slice(1).filter((row) =>
     row.some((cell) => cell.trim().length > 0)
   );
@@ -340,7 +351,7 @@ export function parseGuestsCsv(csvText: string): CsvParseResult {
     return { rows: [], errors, warnings, totalDataRows: 0 };
   }
 
-  // 4. Enforce row limit
+  // 5. Enforce row limit
   if (totalDataRows > MAX_ROWS) {
     errors.push({
       row: 0,
@@ -350,7 +361,7 @@ export function parseGuestsCsv(csvText: string): CsvParseResult {
     return { rows: [], errors, warnings, totalDataRows };
   }
 
-  // 5. Validate each row via validateCreateGuest() wrapper
+  // 6. Validate each row via validateCreateGuest() wrapper
   const parsedRows: ParsedGuestRow[] = [];
 
   for (let i = 0; i < dataRows.length; i++) {
