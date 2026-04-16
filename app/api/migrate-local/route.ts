@@ -208,11 +208,9 @@ export async function POST(
 
     return NextResponse.json({ ok: true, status: "completed" });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
-
+    console.error("[migrate-local] Unexpected error:", error);
     return NextResponse.json(
-      { ok: false, error: message },
+      { ok: false, error: "An unexpected error occurred." },
       { status: 500 }
     );
   }
