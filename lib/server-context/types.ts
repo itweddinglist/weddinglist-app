@@ -25,11 +25,17 @@ export type WpUnavailableContext = BaseContext & {
 export type ProvisioningPendingContext = BaseContext & {
   status: "provisioning_pending";
   app_user_id: string;
+  wp_user_id: number;
+  email: string;
+  display_name: string;
 };
 
 export type ProvisioningFailedContext = BaseContext & {
   status: "provisioning_failed";
   app_user_id: string;
+  wp_user_id: number;
+  email: string;
+  display_name: string;
 };
 
 export type AuthenticatedContext = BaseContext & {

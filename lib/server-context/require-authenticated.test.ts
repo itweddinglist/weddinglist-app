@@ -35,9 +35,9 @@ function makeCtx(status: ServerAppContext["status"]): ServerAppContext {
     case "wp_unavailable":
       return { ...BASE, status: "wp_unavailable", reason: "timeout" };
     case "provisioning_pending":
-      return { ...BASE, status: "provisioning_pending", app_user_id: "u1" };
+      return { ...BASE, status: "provisioning_pending", app_user_id: "u1", wp_user_id: 42, email: "test@example.com", display_name: "Test User" };
     case "provisioning_failed":
-      return { ...BASE, status: "provisioning_failed", app_user_id: "u1" };
+      return { ...BASE, status: "provisioning_failed", app_user_id: "u1", wp_user_id: 42, email: "test@example.com", display_name: "Test User" };
   }
 }
 

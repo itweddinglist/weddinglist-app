@@ -153,11 +153,25 @@ export async function getServerAppContext(
   const { app_user_id, provisioning_status, user } = data;
 
   if (provisioning_status === "pending") {
-    return { status: "provisioning_pending", app_user_id, request_id };
+    return {
+      status: "provisioning_pending",
+      app_user_id,
+      request_id,
+      wp_user_id: user.wp_user_id,
+      email: user.email,
+      display_name: user.display_name,
+    };
   }
 
   if (provisioning_status === "failed") {
-    return { status: "provisioning_failed", app_user_id, request_id };
+    return {
+      status: "provisioning_failed",
+      app_user_id,
+      request_id,
+      wp_user_id: user.wp_user_id,
+      email: user.email,
+      display_name: user.display_name,
+    };
   }
 
   // provisioning_status === "ready"
