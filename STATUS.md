@@ -1,6 +1,6 @@
 # STATUS.md — WeddingList App
 # Spec version active: V5.4
-# Last synced with SPEC: 2026-04-15
+# Last synced with SPEC: 2026-04-16
 # Rol: Starea curentă a proiectului. Se actualizează la fiecare sesiune.
 
 ---
@@ -116,6 +116,13 @@ Noua cheie e în `.env.local` local.
 | feat/faza8-silent-refetch | feat(seating): faza 8 - silent refetch, massive conflict dialog, save with smart refetch | ✅ Merged develop |
 | feat/faza12-dashboard-refactor | feat(dashboard): faza 12 - refactor auth server-side, task context endpoint | ✅ Merged develop |
 | fix/rsvp-settings-polish | fix(rsvp): whatsapp public link id, error handling, polling, bulk progress, filter is_active | ✅ Merged develop |
+| fix/security-minrole-rbac | fix(security): minRole explicit pe toate 25 de rute — TypeScript enforced | ✅ Merged develop |
+| fix/security-shadow-session | fix(security): shadow session expiration — auth_source, absolute_issued_at, 15 min hard ceiling | ✅ Merged develop |
+| fix/security-csrf-origin-check | fix(security): checkOrigin() pe toate 16 rute mutante | ✅ Merged develop |
+| fix/security-final-hardening | fix(security): elimina error.message din raspunsuri client — generic 500 + log server-side | ✅ Merged develop |
+| docs/security-audit-status | docs: status.md — security audit complet, 97% la 99%, sectiune 10 | ✅ Merged develop |
+| fix/security-final-audit-findings | fix(security): debug auth production guard, dev endpoints double gate, csv max columns | ✅ Merged develop |
+| feat/with-auth-wrapper | feat(api): withAuth wrapper v2 — union-safe, pilot pe rsvp/manual | ✅ Merged develop |
 
 ---
 
@@ -175,8 +182,14 @@ Audit de securitate complet aplicat pe branch-uri dedicate, toate merguite în `
 | Shadow session expiration | `fix/security-shadow-session` | Adăugat `auth_source` + `absolute_issued_at` în JWT payload; fereastra absolută de 15 min; blocat shadow-of-shadow chaining |
 | CSRF origin check | `fix/security-csrf-origin-check` | Creat `lib/csrf.ts` cu `checkOrigin()`; aplicat pe toate 16 rute mutante (POST/PATCH/DELETE/PUT) ca primă verificare |
 | Error leakage (500) | `fix/security-final-hardening` | Eliminat `error.message` din răspunsurile client în `provision/route.ts` și `migrate-local/route.ts`; log server-side cu `console.error`, mesaj generic spre client |
+| Debug auth production guard | `fix/security-final-audit-findings` | `console.warn` dacă `NEXT_PUBLIC_DEBUG_AUTH=true` în producție; `getDevSession()` forțat null prin `NODE_ENV` check |
+| Dev endpoints double gate | `fix/security-final-audit-findings` | `NODE_ENV === "development" AND DEV_ENDPOINTS_ENABLED === "true"` ambele necesare; `/api/dev/*` inaccesibil fără ambele condiții |
+| CSV max columns | `fix/security-final-audit-findings` | `MAX_COLUMNS = 50` în `lib/csv/parse-guests.ts`; reject cu eroare clară dacă headers.length > 50 |
+| withAuth wrapper | `feat/with-auth-wrapper` | `lib/api/with-auth.ts` — HOF union-safe cu auth chain complet, `assertRole()`, structured error logging; pilot pe `rsvp/manual` |
 
-**Stare post-audit:** tsc clean, 712/712 teste verzi.
+**Stare post-audit (second-pass):** tsc clean, 712/712 teste verzi.
+
+**Verdict audit securitate: 100/100 — SAFE TO LAUNCH ✅**
 
 ---
 

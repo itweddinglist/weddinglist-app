@@ -26,6 +26,20 @@ WordPress /wp-json/weddinglist/v1/bootstrap
   → Supabase queries cu service_role
 ```
 
+**Pipeline obligatoriu pentru rute mutante (POST/PATCH/DELETE/PUT):**
+```
+checkOrigin(request)          ← PRIMUL check — CSRF defense-in-depth (lib/csrf.ts)
+getServerAppContext(request)  ← WP bootstrap server-side sau shadow session
+requireAuthenticatedContext() ← 401/503/409/403 dacă nu authenticated
+requireWeddingAccess({minRole}) ← membership check + role hierarchy
+```
+
+**Shadow session (lib/auth/shadow-session.ts):**
+- `auth_source: "wordpress" | "shadow"` în JWT payload
+- `absolute_issued_at`: timestamp original din sesiunea WP
+- Max lifetime: 15 min absolut de la prima autentificare WP
+- Chaining interzis: `shadow → shadow` respins cu 401
+
 **Cascada de identitate (sfântă — validată în fiecare RPC):**
 ```
 wp_user_id → app_user_id → wedding_id
@@ -34,6 +48,7 @@ wp_user_id → app_user_id → wedding_id
 - **NU** folosim Supabase Auth ca auth principal
 - JWT client-side = eliminat complet
 - `service_role` = NICIODATĂ în client sau `NEXT_PUBLIC_*`
+- `minRole` = parametru **obligatoriu** în `requireWeddingAccess` (fără default)
 
 ### System Model
 ```
@@ -207,10 +222,15 @@ app/lib/
     server.ts
 
 lib/
-  auth/                          ← dev-session.ts va fi creat aici (Faza 1)
+  api/
+    with-auth.ts                 ← HOF union-safe: checkOrigin + auth chain + assertRole() + structured 500
+  auth/
+    dev-session.ts               ← Faza 1 dev bypass (NODE_ENV=development AND NEXT_PUBLIC_DEBUG_AUTH=true)
+    shadow-session.ts            ← JWT shadow session cu auth_source + absolute_issued_at (15 min hard ceiling)
+  csrf.ts                        ← checkOrigin() — CSRF defense-in-depth, primul check pe rute mutante
   server-context/
-    get-server-app-context.ts
-    require-wedding-access.ts    ← fix PR #112 (app_user_id corect)
+    get-server-app-context.ts    ← production guard: warn dacă NEXT_PUBLIC_DEBUG_AUTH=true în prod
+    require-wedding-access.ts    ← fix PR #112 (app_user_id corect); minRole obligatoriu (fără default)
     require-authenticated.ts
   seating/
     use-seating-sync.ts
@@ -262,7 +282,7 @@ GET  /api/rsvp/dashboard
 GET  /api/export/json                  ← ?wedding_id= query param
 GET  /api/export/pdf                   ← ?wedding_id= query param
 
-DEV ONLY (NODE_ENV=development):
+DEV ONLY (NODE_ENV=development AND DEV_ENDPOINTS_ENABLED=true — ambele necesare):
 GET  /api/dev/session
 GET  /api/dev/flags
 GET  /api/dev/health
