@@ -93,6 +93,11 @@ export async function getServerAppContext(
   const request_id =
     request.headers.get("x-request-id") ?? crypto.randomUUID();
 
+  // Production safety: warn if debug flag is set but will be ignored
+  if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_DEBUG_AUTH === "true") {
+    console.warn("[SECURITY] debugAuthEnabled ignored in production");
+  }
+
   // Dev bypass — verificat înainte de orice cookie sau apel WP
   const devSession = getDevSession();
   if (devSession && devSession.authenticated && devSession.user && devSession.app_user_id) {

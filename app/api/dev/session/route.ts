@@ -19,7 +19,7 @@ type DevSessionResponse = {
 };
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NODE_ENV !== "development" || process.env.DEV_ENDPOINTS_ENABLED !== "true") {
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
