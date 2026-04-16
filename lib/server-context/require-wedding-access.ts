@@ -14,7 +14,7 @@ import { errorResponse, internalErrorResponse } from "@/lib/api-response";
 type RequireWeddingAccessParams = {
   ctx: AuthenticatedContext;
   requestedWeddingId?: string;
-  minRole?: string;
+  minRole: string;
 };
 
 export type RequireWeddingAccessResult =
@@ -34,7 +34,7 @@ function isMemberRow(data: unknown): data is { role: string } {
 export async function requireWeddingAccess({
   ctx,
   requestedWeddingId,
-  minRole = "viewer",
+  minRole,
 }: RequireWeddingAccessParams): Promise<RequireWeddingAccessResult> {
   const weddingId = requestedWeddingId ?? ctx.active_wedding_id;
 

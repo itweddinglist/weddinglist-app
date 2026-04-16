@@ -30,7 +30,7 @@ export async function PATCH(
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const { id } = await context.params;

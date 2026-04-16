@@ -51,7 +51,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const guestEventId = input.guest_event_id as string;
   const status = input.status as typeof VALID_STATUSES[number];
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
   if (!access.ok) return access.response;
 
   try {

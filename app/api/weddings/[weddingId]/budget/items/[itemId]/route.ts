@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
   if (!access.ok) return access.response;
 
   const { data, error } = await supabaseServer
@@ -69,7 +69,7 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const { data: meta, error: metaError } = await supabaseServer
@@ -118,7 +118,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const { data: meta, error: metaError } = await supabaseServer

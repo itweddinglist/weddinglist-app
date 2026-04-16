@@ -21,7 +21,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   if (!authResult.ok) return authResult.response
 
   // Dashboard uses the session's active wedding — no requestedWeddingId from client
-  const accessResult = await requireWeddingAccess({ ctx: authResult.ctx })
+  const accessResult = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "viewer" })
   if (!accessResult.ok) return accessResult.response
 
   const { wedding_id: weddingId } = accessResult

@@ -1,6 +1,6 @@
 ﻿// =============================================================================
 // app/api/guests/import/route.ts
-// POST /api/guests/import â€” Import guests from CSV file
+// POST /api/guests/import â€" Import guests from CSV file
 //
 // Fixes applied:
 //   FIX 2: Two separate dedup sets (existingDbKeys vs seenCsvKeys)
@@ -31,13 +31,13 @@ import type {
   ParsedGuestRow,
 } from "@/types/guest-import";
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const CHUNK_SIZE = 100;
 const VALID_CREATE_GROUPS = new Set(["true", "false", "1", "0"]);
 
-// â”€â”€â”€ POST /api/guests/import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ POST /api/guests/import â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 export async function POST(request: NextRequest): Promise<Response> {
   // 1. Authenticate
@@ -107,8 +107,8 @@ export async function POST(request: NextRequest): Promise<Response> {
     );
   }
 
-  // 4. Authorize â€” wedding_id comes from active context
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  // 4. Authorize - wedding_id comes from active context
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const weddingId = access.wedding_id;
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     if (existingError) {
       return internalErrorResponse(
         existingError,
-        "POST /api/guests/import â€” fetch existing"
+        "POST /api/guests/import - fetch existing"
       );
     }
 
@@ -166,14 +166,14 @@ export async function POST(request: NextRequest): Promise<Response> {
       const key = dedupKey(row.first_name, row.last_name);
 
       if (existingDbKeys.has(key)) {
-        // FIX 2: DB duplicate â€” distinct message
+        // FIX 2: DB duplicate â€" distinct message
         warnings.push({
           row: row._csvRow,
           message: `Skipped: guest "${row.display_name}" already exists in this wedding.`,
         });
         skippedCount++;
       } else if (seenCsvKeys.has(key)) {
-        // FIX 2: Intra-CSV duplicate â€” distinct message
+        // FIX 2: Intra-CSV duplicate â€" distinct message
         warnings.push({
           row: row._csvRow,
           message: `Skipped: duplicate of another row in this CSV.`,
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         // Whole chunk succeeded
         createdCount += inserted?.length ?? 0;
       } else {
-        // FIX 3: Chunk failed â€” retry each row individually
+        // FIX 3: Chunk failed â€" retry each row individually
         console.warn(
           `[Import] Chunk ${Math.floor(i / CHUNK_SIZE) + 1} failed, retrying row-by-row:`,
           insertError.message
@@ -300,7 +300,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â"€â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 /**
  * Normalizes a string for deduplication:
@@ -345,7 +345,7 @@ async function resolveGroups(
 
   if (fetchError) {
     console.error("[Import] Failed to fetch groups:", fetchError.message);
-    // Return empty map â€” all group rows will become errors (FIX 5)
+    // Return empty map â€" all group rows will become errors (FIX 5)
     return result;
   }
 
@@ -387,7 +387,7 @@ async function resolveGroups(
 
     if (createError) {
       console.error("[Import] Failed to create groups:", createError.message);
-      // Don't add to result map â€” these groups will cause per-row errors (FIX 5)
+      // Don't add to result map â€" these groups will cause per-row errors (FIX 5)
     } else {
       for (const group of created ?? []) {
         result.set(group.name, group.id);

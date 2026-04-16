@@ -39,7 +39,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id query parameter is required.");
   }
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
   if (!access.ok) return access.response;
 
   try {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id, minRole: "editor" });
   if (!access.ok) return access.response;
 
   try {

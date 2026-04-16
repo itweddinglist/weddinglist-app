@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
   if (geLookupError) return internalErrorResponse(geLookupError, "PUT /api/guest-events/[id] — lookup");
   if (!ge?.wedding_id) return notFoundResponse("Guest-event");
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id, minRole: "editor" });
   if (!access.ok) return access.response;
 
   try {
@@ -105,7 +105,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   if (geLookupError) return internalErrorResponse(geLookupError, "DELETE /api/guest-events/[id] — lookup");
   if (!ge?.wedding_id) return notFoundResponse("Guest-event");
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id, minRole: "editor" });
   if (!access.ok) return access.response;
 
   try {

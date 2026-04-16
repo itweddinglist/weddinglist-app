@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
   if (!access.ok) return access.response;
 
   const { searchParams } = new URL(request.url);
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return access.response;
 
   let body: unknown;

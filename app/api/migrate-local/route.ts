@@ -52,7 +52,7 @@ export async function POST(
     );
   }
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
   if (!access.ok) {
     return NextResponse.json(
       { ok: false, error: "No active wedding or insufficient permissions." },
