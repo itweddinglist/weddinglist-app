@@ -52,6 +52,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   const access = await requireWeddingAccess({
     ctx: authResult.ctx,
     requestedWeddingId: weddingId,
+    minRole: "viewer",
   });
   if (!access.ok) return access.response;
 

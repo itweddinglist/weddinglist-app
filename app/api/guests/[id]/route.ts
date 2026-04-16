@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
   if (!weddingId) return notFoundResponse("Guest");
 
   // Verify the authenticated user is a member of this specific wedding
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return notFoundResponse("Guest");
 
   try {
@@ -139,7 +139,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   if (!weddingId) return notFoundResponse("Guest");
 
   // Verify the authenticated user is a member of this specific wedding
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return notFoundResponse("Guest");
 
   try {

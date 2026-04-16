@@ -42,7 +42,7 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return access.response;
 
   // Verifică existență + ownership budget_item

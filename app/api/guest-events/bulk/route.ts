@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id, minRole: "editor" });
   if (!access.ok) return access.response;
 
   try {

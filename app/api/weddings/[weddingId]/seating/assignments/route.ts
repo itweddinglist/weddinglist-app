@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id query parameter is required.");
   }
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
   if (!access.ok) return access.response;
 
   try {

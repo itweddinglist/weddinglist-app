@@ -76,6 +76,7 @@ describe("requireWeddingAccess", () => {
     const result = await requireWeddingAccess({
       ctx: makeCtx(),
       requestedWeddingId: "wedding-1",
+      minRole: "viewer",
     });
 
     expect(result.ok).toBe(false);
@@ -105,6 +106,7 @@ describe("requireWeddingAccess", () => {
     const result = await requireWeddingAccess({
       ctx: makeCtx({ active_wedding_id: null }),
       // requestedWeddingId omis
+      minRole: "viewer",
     });
 
     expect(result.ok).toBe(false);
@@ -161,6 +163,7 @@ describe("requireWeddingAccess", () => {
     const result = await requireWeddingAccess({
       ctx: makeCtx({ active_wedding_id: "wedding-default" }),
       requestedWeddingId: "wedding-specific",
+      minRole: "viewer",
     });
 
     expect(result.ok).toBe(true);
@@ -173,6 +176,7 @@ describe("requireWeddingAccess", () => {
 
     const result = await requireWeddingAccess({
       ctx: makeCtx({ active_wedding_id: "wedding-from-ctx" }),
+      minRole: "viewer",
     });
 
     expect(result.ok).toBe(true);
@@ -189,6 +193,7 @@ describe("requireWeddingAccess", () => {
     const result = await requireWeddingAccess({
       ctx: makeCtx(),
       requestedWeddingId: "wedding-1",
+      minRole: "viewer",
     });
 
     expect(result.ok).toBe(false);

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "viewer" });
   if (!access.ok) return access.response;
 
   const weddingId = access.wedding_id;

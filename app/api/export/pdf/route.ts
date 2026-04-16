@@ -34,6 +34,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const access = await requireWeddingAccess({
     ctx: authResult.ctx,
     requestedWeddingId: weddingIdParam ?? undefined,
+    minRole: "viewer",
   });
   if (!access.ok) return access.response;
 

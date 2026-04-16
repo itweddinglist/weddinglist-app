@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id is required.");
   }
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const rpcParams = {

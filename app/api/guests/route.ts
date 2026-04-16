@@ -27,7 +27,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "viewer" });
   if (!access.ok) return access.response;
 
   try {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const weddingId = access.wedding_id;

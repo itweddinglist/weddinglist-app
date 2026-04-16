@@ -50,7 +50,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const guestId = input.guest_id as string;
   const deliveryChannel = input.delivery_channel as string | undefined;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx });
+  const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
   if (!access.ok) return access.response;
 
   const weddingId = access.wedding_id;
