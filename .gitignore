@@ -49,3 +49,6 @@ supabase-credentials.txt
 weddinglist-bridge/
 weddinglist-bridge-check/
 weddinglist-bridge.zip
+
+# Claude Code local settings (per-developer)
+.claude/settings.local.json
