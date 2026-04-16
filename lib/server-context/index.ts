@@ -27,3 +27,9 @@ export {
   requireWeddingAccess,
   type RequireWeddingAccessResult,
 } from "./require-wedding-access";
+
+export {
+  requireProvisionableContext,
+  type RequireProvisionableResult,
+  type ProvisionableIdentity,
+} from "./require-provisionable-context";
