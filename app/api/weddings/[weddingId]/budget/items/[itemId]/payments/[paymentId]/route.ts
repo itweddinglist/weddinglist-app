@@ -18,6 +18,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import {
@@ -32,6 +33,9 @@ type RouteContext = { params: Promise<{ weddingId: string; itemId: string; payme
 // ─── DELETE /api/weddings/[weddingId]/budget/items/[itemId]/payments/[paymentId]
 
 export async function DELETE(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { weddingId, itemId, paymentId } = await context.params;
 
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");

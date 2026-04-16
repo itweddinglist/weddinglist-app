@@ -10,6 +10,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateUpdateGuestEvent } from "@/lib/validation/guest-events";
 import { isValidUuid } from "@/lib/sanitize";
@@ -27,6 +28,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 // ─── PUT /api/guest-events/[id] ─────────────────────────────────────────────
 
 export async function PUT(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { id: guestEventId } = await context.params;
 
   if (!isValidUuid(guestEventId)) return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
@@ -87,6 +91,9 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
 // ─── DELETE /api/guest-events/[id] ──────────────────────────────────────────
 
 export async function DELETE(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { id: guestEventId } = await context.params;
 
   if (!isValidUuid(guestEventId)) return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");

@@ -12,6 +12,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { validateCreateBudgetItem } from "@/lib/validation/budget-items";
 import { isValidUuid } from "@/lib/sanitize";
@@ -63,6 +64,9 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 // ─── POST /api/weddings/[weddingId]/budget/items ──────────────────────────────
 
 export async function POST(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { weddingId } = await context.params;
 
   if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");

@@ -19,6 +19,7 @@ import { supabaseServer } from "@/app/lib/supabase/server";
 import { rateLimit, getClientIp } from "@/app/lib/rate-limit";
 import { getServerAppContext } from "@/lib/server-context";
 import { requireProvisionableContext } from "@/lib/server-context/require-provisionable-context";
+import { checkOrigin } from "@/lib/csrf";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,10 @@ type ProvisionResponse =
 export async function POST(
   req: NextRequest
 ): Promise<NextResponse<ProvisionResponse>> {
+  // Origin check — before rate limiting and auth
+  const originCheck = checkOrigin(req);
+  if (originCheck) return originCheck as unknown as NextResponse<ProvisionResponse>;
+
   // Rate limiting — before any auth to prevent timing-based enumeration
   const ip = getClientIp(req);
   const rl = rateLimit(`provision:${ip}`, RATE_LIMIT);

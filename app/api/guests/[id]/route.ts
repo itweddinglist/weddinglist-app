@@ -22,6 +22,7 @@ import {
   internalErrorResponse,
 } from "@/lib/api-response";
 import type { GuestWithRelations } from "@/types/guests";
+import { checkOrigin } from "@/lib/csrf";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -126,6 +127,9 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
 // ─── DELETE /api/guests/[id] ────────────────────────────────────────────────
 
 export async function DELETE(request: NextRequest, context: RouteContext): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const { id: guestId } = await context.params;
 
   if (!isValidUuid(guestId)) return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");

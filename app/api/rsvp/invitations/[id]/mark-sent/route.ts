@@ -11,6 +11,7 @@ import {
   requireAuthenticatedContext,
   requireWeddingAccess,
 } from "@/lib/server-context";
+import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import {
   successResponse,
@@ -26,6 +27,9 @@ export async function PATCH(
   request: NextRequest,
   context: RouteContext
 ): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;

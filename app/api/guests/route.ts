@@ -19,6 +19,7 @@ import {
   internalErrorResponse,
 } from "@/lib/api-response";
 import type { GuestWithRelations } from "@/types/guests";
+import { checkOrigin } from "@/lib/csrf";
 
 // ─── GET /api/guests ─────────────────────────────────────────────────────────
 
@@ -50,6 +51,9 @@ export async function GET(request: NextRequest): Promise<Response> {
 // ─── POST /api/guests ────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest): Promise<Response> {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
