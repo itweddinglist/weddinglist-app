@@ -48,6 +48,13 @@ export type AuthenticatedContext = BaseContext & {
   active_wedding_id: string | null;
   active_event_id: string | null;
   weddings: WeddingInfo[];
+  /**
+   * Present only when this context was derived from a shadow session token
+   * (WP was unavailable). Absent when authenticated directly via WP bootstrap.
+   *   "wordpress" = shadow token was originally created from a live WP session
+   *   "shadow"    = shadow token was created from another shadow session (one-hop extension)
+   */
+  shadow_auth_source?: "wordpress" | "shadow";
 };
 
 export type ServerAppContext =
