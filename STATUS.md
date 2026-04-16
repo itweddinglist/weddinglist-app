@@ -7,7 +7,7 @@
 
 ## 1. PROGRES REAL
 
-**Evaluare sinceră: ~97% din produs funcțional**
+**Evaluare sinceră: ~99% din produs funcțional**
 
 ---
 
@@ -138,22 +138,23 @@ Noua cheie e în `.env.local` local.
 12. ~~`app/guest-list/page.tsx` token guard relaxat local~~ → comportament intenționat, auth via cookie (no JWT needed)
 
 ### Pre-launch
-13. `wpBridgeEnabled: true` la launch
-14. Migrații aplicate pe PROD — include `20260413000001`, `20260414000001`
-15. `RESEND_API_KEY` în Vercel
-16. `SHADOW_SESSION_SECRET` în Vercel
-17. DNS `app.weddinglist.ro`
-18. ToS + Privacy Policy în română
-19. RLS reactivat pe DEV după testare
-20. Postgres Cron activat: Dashboard → Database → Extensions → `pg_cron` (cleanup audit logs, migration 20260409000004)
+13. ~~Security audit (RBAC, shadow session, CSRF, error leakage)~~ → **REZOLVAT** (PR #146–#149)
+14. `wpBridgeEnabled: true` la launch
+15. Migrații aplicate pe PROD — include `20260413000001`, `20260414000001`
+16. `RESEND_API_KEY` în Vercel
+17. `SHADOW_SESSION_SECRET` în Vercel
+18. DNS `app.weddinglist.ro`
+19. ToS + Privacy Policy în română
+20. RLS reactivat pe DEV după testare
+21. Postgres Cron activat: Dashboard → Database → Extensions → `pg_cron` (cleanup audit logs, migration 20260409000004)
 
 ---
 
 ## 8. URMĂTORUL TASK
 
-**Pre-launch checklist** — toate fazele 0-12 sunt ✅ DONE.
+**Pre-launch checklist — Infrastructură** — fazele 0-12 + security audit sunt ✅ DONE.
 
-Rămâne:
+Rămâne (infrastructură):
 - `wpBridgeEnabled: true` în feature-flags (înainte de deploy PROD)
 - Aplicarea migrațiilor `20260413000001` + `20260414000001` pe PROD
 - Verificare env vars în Vercel (RESEND_API_KEY, SHADOW_SESSION_SECRET, NEXT_PUBLIC_APP_URL)
@@ -161,6 +162,21 @@ Rămâne:
 - ToS + Privacy Policy în română
 - RLS reactivat pe DEV
 - `pg_cron` activat pe PROD
+
+---
+
+## 10. SECURITY FIXES (2026-04-16)
+
+Audit de securitate complet aplicat pe branch-uri dedicate, toate merguite în `develop`.
+
+| Fix | Branch | Descriere |
+|-----|--------|-----------|
+| RBAC minRole explicit | `fix/security-minrole-rbac` | Eliminat `minRole = "viewer"` default din `requireWeddingAccess`; toate cele 25 de rute primesc acum `minRole` explicit — TypeScript enforced |
+| Shadow session expiration | `fix/security-shadow-session` | Adăugat `auth_source` + `absolute_issued_at` în JWT payload; fereastra absolută de 15 min; blocat shadow-of-shadow chaining |
+| CSRF origin check | `fix/security-csrf-origin-check` | Creat `lib/csrf.ts` cu `checkOrigin()`; aplicat pe toate 16 rute mutante (POST/PATCH/DELETE/PUT) ca primă verificare |
+| Error leakage (500) | `fix/security-final-hardening` | Eliminat `error.message` din răspunsurile client în `provision/route.ts` și `migrate-local/route.ts`; log server-side cu `console.error`, mesaj generic spre client |
+
+**Stare post-audit:** tsc clean, 712/712 teste verzi.
 
 ---
 
