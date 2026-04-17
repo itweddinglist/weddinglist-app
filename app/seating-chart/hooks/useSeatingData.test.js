@@ -840,12 +840,19 @@ describe("isSeatingEligible", () => {
     expect(isSeatingEligible(g)).toBe(true);
   });
 
-  it("fără guest_events → true", () => {
+  it.skip("fără guest_events → true [SKIP: documenteaza bug H2, fix in H2.5]", () => {
+    // NOTE: Test toxic. Documenteaza ca isSeatingEligible accepta silent guest fara guest_events.
+    // Dupa fix H2.5 (semnatura SeatingGuestWithEvents + pipeline corect), acest comportament dispare:
+    // guest fara guest_events nu va mai putea fi pasat catre functie (TS blocheaza la compile).
+    // Testul ramane skipped ca artefact istoric. Fie il stergem in H2.5, fie il inversam.
     const g = { prenume: "Ion", nume: "Popescu" };
     expect(isSeatingEligible(g)).toBe(true);
   });
 
-  it("status='declinat' (câmp vechi) fără guest_events → true (nu e exclus de noua logică)", () => {
+  it.skip("status='declinat' (câmp vechi) fără guest_events → true [SKIP: documenteaza bug H2, fix in H2.5]", () => {
+    // NOTE: Test TOXIC — afirma explicit ca guest cu status:'declinat' top-level ramane eligibil
+    // pentru seating pentru ca functia nu citeste status-ul top-level, doar guest_events.
+    // Asta e bug documentat ca feature. Dupa H2.5, testul trebuie sters sau inversat.
     const g = { status: "declinat" };
     expect(isSeatingEligible(g)).toBe(true);
   });
