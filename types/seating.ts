@@ -51,6 +51,31 @@ export interface SeatingGuest {
   meta?: SeatingGuestMeta
 }
 
+// ── SeatingGuestWithEvents ────────────────────────────────────────────────────
+// SeatingGuest cu guest_events GARANTAT (non-optional).
+// Folosit de consumatori care depind de event context — eligibility, filtering etc.
+// Semnatura explicita force-uiaza apelantul sa demonstreze ca are datele RSVP.
+// Fara aceasta varianta, guest_events? optional pe SeatingGuest permitea silent
+// false-negatives cand pipeline-ul uita sa ataseze datele (bug H2).
+//
+// Nota: folosim Omit pentru a evita mostenirea `meta?` de pe SeatingGuest actual.
+// Dupa ce SeatingGuest devine lean pur (Pasul 4b), Omit-ul ramane ca safety net
+// in caz ca cineva adauga campuri optionale accidental.
+export interface SeatingGuestWithEvents extends Omit<SeatingGuest, 'guest_events' | 'meta'> {
+  guest_events: GuestEvent[]
+}
+
+// ── SeatingGuestUI ────────────────────────────────────────────────────────────
+// SeatingGuest extins cu meta de UI state (isDeclined etc).
+// Meta ramane optional aici — e legitim sa lipseasca in UI state initial,
+// se populeaza lazy pe baza guest_events cand sunt disponibile.
+//
+// Nota: Omit analog — nu vrem ca SeatingGuestUI sa mosteneasca `guest_events?`
+// de pe SeatingGuest actual. Axa UI (meta) e separata de axa events.
+export interface SeatingGuestUI extends Omit<SeatingGuest, 'guest_events' | 'meta'> {
+  meta?: SeatingGuestMeta
+}
+
 export interface SeatingTable {
   id: number
   name: string
