@@ -56,7 +56,8 @@ Frontend          = cache + draft state (NU trusted)
 - NU trust client pentru identitate — `wp_user_id`/`app_user_id`/`wedding_id` vin doar din ServerAppContext
 - NU `service_role` în client sau `NEXT_PUBLIC_*`
 - NU bypass auth în afara `lib/auth/dev-session.ts`
-- NU modifica `SPEC.md`
+- **Ierarhie documente:** `ROADMAP.md` = sursa operationala curenta (prioritizare + scope V1). `SPEC.md` = contract stabil pentru Hard Rules (§1) si contracte tehnice (migrations, auth, RLS), dar scope-ul V1 a divergat de SPEC dupa decizia strategica post-redactare. La conflict: ROADMAP castiga pentru scope/prioritati; SPEC ramane autoritar pentru Hard Rules.
+- NU modifica `SPEC.md` Hard Rules (§1) fara motiv tehnic major. Restul SPEC e istoric — actualizeaza ROADMAP liber.
 - NU atinge Seating Chart CSS (izolat de Tailwind, nerescris)
 - NU folosi `react-window` (incompatibil Turbopack Next.js 16+)
 - NU JWT client-side (eliminat complet)
@@ -192,6 +193,7 @@ Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curg
 - **Teste:** 717/717 verzi + 4 skipped (721 total) pe `develop`
 - **Build:** `npm run build` ✅ verde (Next.js 16.2.2 Turbopack)
 - **Security audit:** 100/100 — SAFE TO LAUNCH
+- **H3 + H4 (domain/rules.ts + E2E Playwright):** scope V1 confirmat prin ROADMAP (SPEC §19 le plasa V2 — decizie suprascrisa post-redactare SPEC).
 
 ### TOP 5 blockers rămase pentru launch
 1. **S9** — Rate limiting pe `/api/guests`, `/api/budget`, `/api/export`
