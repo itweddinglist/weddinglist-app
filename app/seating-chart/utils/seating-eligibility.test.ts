@@ -8,11 +8,12 @@
 
 import { describe, it, expect } from "vitest";
 import { isSeatingEligible } from "./seating-eligibility";
+import { makeGuestEventRow } from "@/lib/seating/test-helpers";
 import type { SeatingGuest, SeatingGuestWithEvents } from "@/types/seating";
 
 describe("isSeatingEligible — contract", () => {
   describe("runtime behaviour", () => {
-    it("returns true cand guest are guest_events confirmed", () => {
+    it("returns true cand guest are guest_events attending", () => {
       const guest: SeatingGuestWithEvents = {
         id: 1,
         prenume: "Test",
@@ -21,7 +22,7 @@ describe("isSeatingEligible — contract", () => {
         meniu: "Standard",
         status: "confirmat",
         tableId: null,
-        guest_events: [{ attendance_status: "confirmed" }],
+        guest_events: [makeGuestEventRow({ attendance_status: "attending" })],
       };
 
       expect(isSeatingEligible(guest)).toBe(true);
@@ -52,7 +53,7 @@ describe("isSeatingEligible — contract", () => {
         meniu: "Standard",
         status: "declinat",
         tableId: null,
-        guest_events: [{ attendance_status: "declined" }],
+        guest_events: [makeGuestEventRow({ attendance_status: "declined" })],
       };
 
       expect(isSeatingEligible(guest)).toBe(false);
@@ -67,7 +68,7 @@ describe("isSeatingEligible — contract", () => {
         meniu: "Standard",
         status: "pending",
         tableId: null,
-        guest_events: [{ attendance_status: "pending" }],
+        guest_events: [makeGuestEventRow({ attendance_status: "pending" })],
       };
 
       expect(isSeatingEligible(guest)).toBe(true);
@@ -83,7 +84,7 @@ describe("isSeatingEligible — contract", () => {
         meniu: "Standard",
         status: "confirmat",
         tableId: null,
-        guest_events: [{ attendance_status: "invited" }],
+        guest_events: [makeGuestEventRow({ attendance_status: "invited" })],
       };
 
       expect(isSeatingEligible(guest)).toBe(true);
@@ -98,7 +99,7 @@ describe("isSeatingEligible — contract", () => {
         meniu: "Standard",
         status: "pending",
         tableId: null,
-        guest_events: [{ attendance_status: null }],
+        guest_events: [makeGuestEventRow({ attendance_status: null })],
       };
 
       expect(isSeatingEligible(guest)).toBe(true);
@@ -117,11 +118,15 @@ describe("isSeatingEligible — contract", () => {
         tableId: null,
       };
 
-      // @ts-expect-error — isSeatingEligible trebuie sa ceara SeatingGuestWithEvents explicit.
-      // Daca @ts-expect-error pica (TS nu mai refuza), inseamna ca semnatura a regresat
-      // la Pick<SeatingGuest, 'guest_events'> sau la orice forma care permite guest fara events.
-      // Acest test e documentatia executabila a contractului H2.
-      isSeatingEligible(leanGuest);
+      // Invariant 1 (compile-time): @ts-expect-error — isSeatingEligible trebuie sa ceara
+      // SeatingGuestWithEvents explicit. Daca directiva pica (TS nu mai refuza), inseamna
+      // ca semnatura a regresat la o forma care permite guest fara guest_events.
+      // Invariant 2 (runtime): apelul TREBUIE sa arunce TypeError — guest_events[0] pe undefined.
+      // Ambele invariants formeaza documentatia executabila completa a contractului H2.5.
+      expect(() => {
+        // @ts-expect-error — contractul H2.5: SeatingGuest fara guest_events e invalid
+        isSeatingEligible(leanGuest);
+      }).toThrow(TypeError);
 
       // Ref la leanGuest pentru a preveni tree-shaking warnings.
       expect(leanGuest.id).toBe(4);

@@ -3,14 +3,9 @@
 // Tipuri centrale UI (Faza 0) + API request/response (Faza 6)
 // =============================================================================
 
-// ── FAZA 0: tipuri centrale seating chart ─────────────────────────────────────
+import type { SeatingEventProjection } from "@/types/guests"
 
-export type AttendanceStatus =
-  | 'confirmed'
-  | 'declined'
-  | 'pending'
-  | 'invited'
-  | null
+// ── FAZA 0: tipuri centrale seating chart ─────────────────────────────────────
 
 // Tipuri reale din geometry.js: round, square, rect, prezidiu, bar
 // (spec inițial avea 'rectangle' și 'oval' — nu există în cod)
@@ -31,10 +26,6 @@ export interface SeatingDimensions {
   height: number
 }
 
-export interface GuestEvent {
-  attendance_status: AttendanceStatus
-}
-
 export interface SeatingGuestMeta {
   isDeclined?: boolean
 }
@@ -47,22 +38,20 @@ export interface SeatingGuest {
   status: string
   meniu: string
   tableId: number | null
-  guest_events?: GuestEvent[]
+  guest_events?: SeatingEventProjection[]
   meta?: SeatingGuestMeta
 }
 
 // ── SeatingGuestWithEvents ────────────────────────────────────────────────────
 // SeatingGuest cu guest_events GARANTAT (non-optional).
 // Folosit de consumatori care depind de event context — eligibility, filtering etc.
-// Semnatura explicita force-uiaza apelantul sa demonstreze ca are datele RSVP.
-// Fara aceasta varianta, guest_events? optional pe SeatingGuest permitea silent
-// false-negatives cand pipeline-ul uita sa ataseze datele (bug H2).
+// Semnatura explicita forteaza apelantul sa demonstreze ca are datele RSVP.
 //
-// Nota: folosim Omit pentru a evita mostenirea `meta?` de pe SeatingGuest actual.
-// Dupa ce SeatingGuest devine lean pur (Pasul 4b), Omit-ul ramane ca safety net
-// in caz ca cineva adauga campuri optionale accidental.
+// Nota arhitecturala: folosim Omit pentru a izola axa "events" de axa "UI meta".
+// Cele doua sunt independente conceptual — un guest poate avea events fara meta,
+// si invers. Omit previne scurgeri intre axe prin mostenire implicita.
 export interface SeatingGuestWithEvents extends Omit<SeatingGuest, 'guest_events' | 'meta'> {
-  guest_events: GuestEvent[]
+  guest_events: SeatingEventProjection[]
 }
 
 // ── SeatingGuestUI ────────────────────────────────────────────────────────────
@@ -70,8 +59,9 @@ export interface SeatingGuestWithEvents extends Omit<SeatingGuest, 'guest_events
 // Meta ramane optional aici — e legitim sa lipseasca in UI state initial,
 // se populeaza lazy pe baza guest_events cand sunt disponibile.
 //
-// Nota: Omit analog — nu vrem ca SeatingGuestUI sa mosteneasca `guest_events?`
-// de pe SeatingGuest actual. Axa UI (meta) e separata de axa events.
+// Nota arhitecturala: Omit analog cu SeatingGuestWithEvents — axa UI (meta) e
+// izolata de axa events. Cele doua variante pot fi combinate explicit daca e
+// nevoie: type X = SeatingGuestWithEvents & { meta?: SeatingGuestMeta }.
 export interface SeatingGuestUI extends Omit<SeatingGuest, 'guest_events' | 'meta'> {
   meta?: SeatingGuestMeta
 }
@@ -96,7 +86,7 @@ export interface CameraState {
 
 export interface SeatingSnapshot {
   tables: SeatingTable[]
-  guests: SeatingGuest[]
+  guests: SeatingGuestWithEvents[]
 }
 
 export type SeatingAction =

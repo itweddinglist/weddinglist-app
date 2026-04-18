@@ -1,6 +1,6 @@
 import { buildTemplate, INITIAL_GUESTS } from "./geometry.ts";
 import { clampCam, getInitialCam } from "./camera.ts";
-import type { SeatingGuest, SeatingTable, CameraState } from "@/types/seating";
+import type { SeatingGuest, SeatingGuestWithEvents, SeatingTable, CameraState } from "@/types/seating";
 
 // Browser-only. Consumă doar din
 // useEffect sau client components.
@@ -31,7 +31,7 @@ export const LEGACY_STORAGE_KEYS: string[] = [
 // ── TIPURI INTERNE ────────────────────────────────────────────────────────────
 
 interface StorageData {
-  guests: SeatingGuest[]
+  guests: SeatingGuestWithEvents[]
   tables: SeatingTable[]
   nextId: number
   cam: CameraState
@@ -123,16 +123,17 @@ export function sanitizeLoadedTables(tables: any): SeatingTable[] {
   return valid;
 }
 
-// TODO: guests: any — boundary cu localStorage; output este SeatingGuest[] validat
-export function sanitizeLoadedGuests(guests: any, tables: SeatingTable[]): SeatingGuest[] {
-  if (!Array.isArray(guests)) return INITIAL_GUESTS.map((g) => ({ ...g }));
+// TODO: guests: any — boundary cu localStorage; output este SeatingGuestWithEvents[] validat
+export function sanitizeLoadedGuests(guests: any, tables: SeatingTable[]): SeatingGuestWithEvents[] {
+  if (!Array.isArray(guests)) return INITIAL_GUESTS.map((g) => ({ ...g, guest_events: Array.isArray(g.guest_events) ? g.guest_events : [] }));
   const tableIds = new Set(tables.map((t) => Number(t.id)));
   const valid = guests.filter(isValidGuest).map((g) => ({
     ...g,
     id: Number(g.id),
     tableId: g.tableId != null && tableIds.has(Number(g.tableId)) ? Number(g.tableId) : null,
+    guest_events: Array.isArray(g.guest_events) ? g.guest_events : [],
   }));
-  if (valid.length === 0) return INITIAL_GUESTS.map((g) => ({ ...g }));
+  if (valid.length === 0) return INITIAL_GUESTS.map((g) => ({ ...g, guest_events: Array.isArray(g.guest_events) ? g.guest_events : [] }));
   return valid;
 }
 
