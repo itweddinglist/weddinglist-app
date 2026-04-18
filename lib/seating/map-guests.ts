@@ -1,9 +1,11 @@
 // =============================================================================
 // lib/seating/map-guests.ts
-// Mapare GuestWithRelations[] → SeatingGuest[] cu numeric IDs din id-bridge.
+// Mapare GuestWithRelations[] → SeatingGuestWithEvents[] cu numeric IDs din id-bridge.
 // =============================================================================
 
-import type { NumericIdMap, SeatingGuest } from "./types";
+import type { NumericIdMap } from "./types";
+import type { SeatingGuestWithEvents } from "@/types/seating";
+import type { SeatingEventProjection } from "@/types/guests";
 
 // Status mapping: guest_events.attendance_status → format intern seating
 const STATUS_MAP: Record<string, string> = {
@@ -24,10 +26,7 @@ export interface GuestWithEventData {
   first_name: string;
   last_name: string | null;
   guest_group?: { name: string } | null;
-  guest_events?: {
-    attendance_status: string | null;
-    meal_choice: string | null;
-  }[] | null;
+  guest_events?: SeatingEventProjection[] | null;
 }
 
 /**
@@ -38,8 +37,8 @@ export interface GuestWithEventData {
 export function mapGuestsToSeating(
   guests: GuestWithEventData[],
   idMaps: NumericIdMap
-): SeatingGuest[] {
-  const result: SeatingGuest[] = [];
+): SeatingGuestWithEvents[] {
+  const result: SeatingGuestWithEvents[] = [];
 
   for (const guest of guests) {
     const numericId = idMaps.guests.get(guest.id);
@@ -58,6 +57,17 @@ export function mapGuestsToSeating(
     // Ia primul guest_event (event activ)
     const guestEvent = guest.guest_events?.[0] ?? null;
 
+    // Fail-soft pentru pipeline inconsistent: daca guest_events lipseste complet,
+    // warn + atasam array gol. Eligibility va returna true (comportament default
+    // pentru guest fara date RSVP). Observabil in logs pentru debugging.
+    if (!guest.guest_events || guest.guest_events.length === 0) {
+      console.warn(
+        `[mapGuests] Guest ${guest.id} (${guest.first_name} ${guest.last_name ?? ''}) ` +
+        `fara guest_events — apare ca eligibil implicit in seating. ` +
+        `Verifica query-ul din /seating/load daca asta nu e asteptat.`
+      );
+    }
+
     result.push({
       id: numericId,
       prenume: guest.first_name,
@@ -66,6 +76,7 @@ export function mapGuestsToSeating(
       meniu: guestEvent?.meal_choice ?? "Standard",
       status: mapStatus(guestEvent?.attendance_status),
       tableId: null, // populat ulterior din seat_assignments
+      guest_events: guest.guest_events ?? [],
     });
   }
 

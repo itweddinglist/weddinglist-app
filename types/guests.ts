@@ -43,6 +43,19 @@ export interface GuestEventRow {
   updated_at: string;
 }
 
+// ── Seating Chart Projection ─────────────────────────────────────────────────
+// Subset de GuestEventRow folosit in seating chart.
+// Reflecta exact campurile selectate in query /api/weddings/[id]/seating/load.
+// Endpoint-ul e hot (se incarca la fiecare intrare in plan) — overfetching-ul
+// e nejustificat pentru campuri neconsumabile in frontend (id, created_at, etc).
+//
+// Daca UI seating incepe sa consume campuri noi (ex: plus_one_label), adauga-le
+// aici SI in query-ul din load route. Contractul trebuie sa ramana aliniat.
+export type SeatingEventProjection = Pick<
+  GuestEventRow,
+  'attendance_status' | 'meal_choice' | 'event_id'
+>;
+
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
 export type GuestSide = "bride" | "groom" | "both" | "other";

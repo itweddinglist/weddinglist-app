@@ -1,4 +1,5 @@
-import type { SeatingTable, SeatingGuest, TableType, Point } from '@/types/seating'
+import type { SeatingTable, SeatingGuestWithEvents, TableType, Point } from '@/types/seating'
+import { makeGuestEventRow } from '@/lib/seating/test-helpers'
 
 // ── CONSTANTE ──
 export const GRID = 20;
@@ -30,19 +31,19 @@ export const GROUP_COLORS: string[] = [
   '#5B8FBE','#E07878','#62B87E','#D4965A','#9B7EC8',
 ];
 
-export const INITIAL_GUESTS: SeatingGuest[] = [
-  { id:1,  prenume:'Ion',    nume:'Popescu',    grup:'Familie Mireasă', status:'confirmat',    meniu:'Standard',    tableId:null },
-  { id:2,  prenume:'Maria',  nume:'Ionescu',    grup:'Familie Mireasă', status:'confirmat',    meniu:'Vegetarian',  tableId:null },
-  { id:3,  prenume:'Elena',  nume:'Constantin', grup:'Familie Mireasă', status:'in_asteptare', meniu:'Standard',    tableId:null },
-  { id:4,  prenume:'Andrei', nume:'Gheorghe',   grup:'Familie Mire',    status:'confirmat',    meniu:'Standard',    tableId:null },
-  { id:5,  prenume:'Ana',    nume:'Popa',       grup:'Familie Mire',    status:'confirmat',    meniu:'Fără gluten', tableId:null },
-  { id:6,  prenume:'Vasile', nume:'Dumitrescu', grup:'Prieteni Comuni', status:'confirmat',    meniu:'Standard',    tableId:null },
-  { id:7,  prenume:'Ioana',  nume:'Marinescu',  grup:'Prieteni Comuni', status:'in_asteptare', meniu:'Vegan',       tableId:null },
-  { id:8,  prenume:'Mihai',  nume:'Stoica',     grup:'Prezidiu',        status:'confirmat',    meniu:'Standard',    tableId:null },
-  { id:9,  prenume:'Carmen', nume:'Florescu',   grup:'Prezidiu',        status:'confirmat',    meniu:'Vegetarian',  tableId:null },
-  { id:10, prenume:'Radu',   nume:'Niculescu',  grup:'Colegi',          status:'in_asteptare', meniu:'Standard',    tableId:null },
-  { id:11, prenume:'Lucia',  nume:'Dragomir',   grup:'Colegi',          status:'confirmat',    meniu:'Standard',    tableId:null },
-  { id:12, prenume:'Dan',    nume:'Cristea',    grup:'Colegi',          status:'confirmat',    meniu:'Standard',    tableId:null },
+export const INITIAL_GUESTS: SeatingGuestWithEvents[] = [
+  { id:1,  prenume:'Ion',    nume:'Popescu',    grup:'Familie Mireasă', status:'confirmat',    meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:2,  prenume:'Maria',  nume:'Ionescu',    grup:'Familie Mireasă', status:'confirmat',    meniu:'Vegetarian',  tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:3,  prenume:'Elena',  nume:'Constantin', grup:'Familie Mireasă', status:'in_asteptare', meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'pending' })] },
+  { id:4,  prenume:'Andrei', nume:'Gheorghe',   grup:'Familie Mire',    status:'confirmat',    meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:5,  prenume:'Ana',    nume:'Popa',       grup:'Familie Mire',    status:'confirmat',    meniu:'Fără gluten', tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:6,  prenume:'Vasile', nume:'Dumitrescu', grup:'Prieteni Comuni', status:'declinat',     meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'declined' })] },
+  { id:7,  prenume:'Ioana',  nume:'Marinescu',  grup:'Prieteni Comuni', status:'in_asteptare', meniu:'Vegan',       tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'pending' })] },
+  { id:8,  prenume:'Mihai',  nume:'Stoica',     grup:'Prezidiu',        status:'confirmat',    meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:9,  prenume:'Carmen', nume:'Florescu',   grup:'Prezidiu',        status:'confirmat',    meniu:'Vegetarian',  tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:10, prenume:'Radu',   nume:'Niculescu',  grup:'Colegi',          status:'in_asteptare', meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'invited' })] },
+  { id:11, prenume:'Lucia',  nume:'Dragomir',   grup:'Colegi',          status:'confirmat',    meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
+  { id:12, prenume:'Dan',    nume:'Cristea',    grup:'Colegi',          status:'confirmat',    meniu:'Standard',    tableId:null, guest_events:[makeGuestEventRow({ attendance_status:'attending' })] },
 ];
 
 export const ALL_GROUPS: string[] = [...new Set(INITIAL_GUESTS.map(g => g.grup))];
@@ -193,7 +194,7 @@ export function buildTemplate(): SeatingTable[] {
   ];
 }
 
-export function generateCateringText(tables: SeatingTable[], guests: SeatingGuest[]): string {
+export function generateCateringText(tables: SeatingTable[], guests: SeatingGuestWithEvents[]): string {
   const real=tables.filter(t=>t.type!=='bar'&&!t.isRing);
   let txt='🍽️ LISTĂ CATERING\n'+'='.repeat(32)+'\n\n';
   real.forEach(t=>{

@@ -1,6 +1,6 @@
 // utils/magicFill.ts — Magic Fill V2.0 (implementare iterativă în 6 etape)
 import { isSeatingEligible } from './seating-eligibility.ts';
-import type { SeatingGuest, SeatingTable } from '@/types/seating';
+import type { SeatingGuest, SeatingGuestWithEvents, SeatingTable } from '@/types/seating';
 
 // ── TIPURI PUBLICE ─────────────────────────────────────────────────────────────
 
@@ -40,12 +40,12 @@ interface TableRef {
 
 // ── FUNCȚII PUBLICE ───────────────────────────────────────────────────────────
 
-export function calculateMagicFill(guests: SeatingGuest[], tables: SeatingTable[]): MagicFillResult {
+export function calculateMagicFill(guests: SeatingGuestWithEvents[], tables: SeatingTable[]): MagicFillResult {
   return calculateMagicFillWithLimits(guests, tables, {});
 }
 
 export function calculateMagicFillWithLimits(
-  guests: SeatingGuest[],
+  guests: SeatingGuestWithEvents[],
   tables: SeatingTable[],
   _opts: MagicFillOpts = {}
 ): MagicFillResult {

@@ -9,7 +9,7 @@ function makeTable(id, seats, type = "round") {
 }
 
 function makeGuest(id, grup, status = "confirmat") {
-  return { id, prenume: `P${id}`, nume: `N${id}`, grup, status, meniu: "Standard", tableId: null };
+  return { id, prenume: `P${id}`, nume: `N${id}`, grup, status, meniu: "Standard", tableId: null, guest_events: [] };
 }
 
 // ── Test 1: Grup încape într-o singură masă ───────────────────────────────────

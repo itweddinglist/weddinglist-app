@@ -5,6 +5,10 @@ import { loadStorageState } from "../utils/storage.js";
 import { calculateMagicFill } from "../utils/magicFill.js";
 import { useSeatingData, isSeatingEligible } from "./useSeatingData.js";
 
+// H2.5: Vasile (id:6, declined) e filtrat din unassigned — INITIAL_GUESTS are 12 intrari,
+// dar doar 11 sunt eligibile. ELIGIBLE_COUNT e sursa de adevar pentru testele de unassigned count.
+const ELIGIBLE_COUNT = INITIAL_GUESTS.filter((g) => isSeatingEligible(g)).length;
+
 vi.mock("../utils/storage.js", () => ({
   loadStorageState: vi.fn(() => ({ data: {}, ok: true, source: "default" })),
   saveStorageState: vi.fn(() => ({ ok: true, error: null })),
@@ -712,7 +716,7 @@ describe("useSeatingData — stats", () => {
 
   it("guestMeta.unseated = number of unassigned guests", () => {
     const { result } = renderData();
-    expect(result.current.guestMeta.unseated).toBe(INITIAL_GUESTS.length);
+    expect(result.current.guestMeta.unseated).toBe(ELIGIBLE_COUNT);
   });
 
   it("guestMeta.groups include grupurile unice", () => {
@@ -725,13 +729,13 @@ describe("useSeatingData — stats", () => {
 
   it("unassigned = toți invitații când neatribuiți", () => {
     const { result } = renderData();
-    expect(result.current.unassigned.length).toBe(INITIAL_GUESTS.length);
+    expect(result.current.unassigned.length).toBe(ELIGIBLE_COUNT);
   });
 
   it("unassigned scade după assignGuest", () => {
     const { result } = renderData();
     act(() => { result.current.assignGuest(1, 3); });
-    expect(result.current.unassigned.length).toBe(INITIAL_GUESTS.length - 1);
+    expect(result.current.unassigned.length).toBe(ELIGIBLE_COUNT - 1);
   });
 });
 
@@ -740,13 +744,13 @@ describe("useSeatingData — stats", () => {
 describe("useSeatingData — filteredUnassigned", () => {
   it("string gol → toți neatribuiții", () => {
     const { result } = renderData();
-    expect(result.current.filteredUnassigned("").length).toBe(INITIAL_GUESTS.length);
+    expect(result.current.filteredUnassigned("").length).toBe(ELIGIBLE_COUNT);
   });
 
   it("null/undefined → toți neatribuiții", () => {
     const { result } = renderData();
-    expect(result.current.filteredUnassigned(null).length).toBe(INITIAL_GUESTS.length);
-    expect(result.current.filteredUnassigned(undefined).length).toBe(INITIAL_GUESTS.length);
+    expect(result.current.filteredUnassigned(null).length).toBe(ELIGIBLE_COUNT);
+    expect(result.current.filteredUnassigned(undefined).length).toBe(ELIGIBLE_COUNT);
   });
 
   it("query pe prenume → rezultate filtrate", () => {
@@ -840,22 +844,12 @@ describe("isSeatingEligible", () => {
     expect(isSeatingEligible(g)).toBe(true);
   });
 
-  it.skip("fără guest_events → true [SKIP: documenteaza bug H2, fix in H2.5]", () => {
-    // NOTE: Test toxic. Documenteaza ca isSeatingEligible accepta silent guest fara guest_events.
-    // Dupa fix H2.5 (semnatura SeatingGuestWithEvents + pipeline corect), acest comportament dispare:
-    // guest fara guest_events nu va mai putea fi pasat catre functie (TS blocheaza la compile).
-    // Testul ramane skipped ca artefact istoric. Fie il stergem in H2.5, fie il inversam.
-    const g = { prenume: "Ion", nume: "Popescu" };
-    expect(isSeatingEligible(g)).toBe(true);
-  });
-
-  it.skip("status='declinat' (câmp vechi) fără guest_events → true [SKIP: documenteaza bug H2, fix in H2.5]", () => {
-    // NOTE: Test TOXIC — afirma explicit ca guest cu status:'declinat' top-level ramane eligibil
-    // pentru seating pentru ca functia nu citeste status-ul top-level, doar guest_events.
-    // Asta e bug documentat ca feature. Dupa H2.5, testul trebuie sters sau inversat.
-    const g = { status: "declinat" };
-    expect(isSeatingEligible(g)).toBe(true);
-  });
+  // NOTE H2.5: cele 2 teste .skip() care documentau bug-ul H2 (isSeatingEligible accepta
+  // silent guest fara guest_events) au fost sterse in H2.5. Bug-ul a fost remediat:
+  // - isSeatingEligible accepta acum exclusiv SeatingGuestWithEvents (guest_events required)
+  // - pipeline-ul map-guests.ts ataseaza guest_events la output garantat
+  // - @ts-expect-error guardrail in seating-eligibility.test.ts previne regresia
+  // Artefact istoric: branch fix/h2-5-pipeline-and-signature
 });
 
 // ── Test 16 — unassigned filtrare RSVP declined ───────────────────────────────
@@ -916,7 +910,7 @@ describe("useSeatingData — unassigned filtrare RSVP", () => {
   });
 
   it("fără guest_events → apare în unassigned", () => {
-    const noEventsGuest = makeGuest({ id: 99, tableId: null });
+    const noEventsGuest = makeGuest({ id: 99, tableId: null, guest_events: [] });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [noEventsGuest], tables: buildTemplate(), nextId: 10 },
       ok: true, source: "storage",

@@ -13,7 +13,7 @@ import {
 import { loadStorageState, saveStorageState } from "../utils/storage.ts";
 import { calculateMagicFill } from "../utils/magicFill.ts";
 import { isSeatingEligible } from "../utils/seating-eligibility.ts";
-import type { SeatingGuest, SeatingTable, CameraState, TableType, SeatingSnapshot, ChangeReason } from "@/types/seating";
+import type { SeatingGuest, SeatingGuestWithEvents, SeatingTable, CameraState, TableType, SeatingSnapshot, ChangeReason } from "@/types/seating";
 
 export { isSeatingEligible };
 
@@ -21,10 +21,10 @@ export { isSeatingEligible };
 
 type SaveStatus = "saving" | "saved" | "error"
 
-type SeatingGuestWithMeta = SeatingGuest & { meta: { isDeclined: boolean } }
+type SeatingGuestWithMeta = SeatingGuestWithEvents & { meta: { isDeclined: boolean } }
 
 interface HistoryEntry {
-  guests: SeatingGuest[]
+  guests: SeatingGuestWithEvents[]
   tables: SeatingTable[]
 }
 
@@ -52,7 +52,7 @@ interface SeatingStateChangedData {
 
 interface UseSeatingDataOptions {
   onSaveStatusChange?: ((status: SaveStatus) => void) | null
-  initialGuests?: SeatingGuest[] | null
+  initialGuests?: SeatingGuestWithEvents[] | null
   initialTables?: SeatingTable[] | null
   onSeatingStateChanged?: ((data: SeatingStateChangedData) => void) | null
 }
@@ -155,7 +155,7 @@ export function useSeatingData(
   { onSaveStatusChange, initialGuests, initialTables, onSeatingStateChanged }: UseSeatingDataOptions = {}
 ) {
   // ── STATE ──
-  const [guests, setGuests] = useState<SeatingGuest[]>(() => (initialGuests ?? INITIAL_GUESTS).map((g) => ({ ...g })));
+  const [guests, setGuests] = useState<SeatingGuestWithEvents[]>(() => (initialGuests ?? INITIAL_GUESTS).map((g) => ({ ...g })));
   const [tables, setTables] = useState<SeatingTable[]>(() =>
     initialTables ? initialTables.map((t) => ({ ...t } as SeatingTable)) : buildTemplate()
   );
@@ -165,7 +165,7 @@ export function useSeatingData(
 
   // ── REFS ──
   const tablesRef = useRef<SeatingTable[]>(tables);
-  const guestsRef = useRef<SeatingGuest[]>(guests);
+  const guestsRef = useRef<SeatingGuestWithEvents[]>(guests);
   const historyRef = useRef<HistoryEntry[]>([]);
   const spawnCounterRef = useRef<number>(0);
   const onSaveStatusChangeRef = useRef<((status: SaveStatus) => void) | null | undefined>(onSaveStatusChange);
@@ -282,14 +282,14 @@ export function useSeatingData(
         if (!map[g.tableId]) map[g.tableId] = [];
         map[g.tableId].push({
           ...g,
-          meta: { isDeclined: g.guest_events?.[0]?.attendance_status === 'declined' },
+          meta: { isDeclined: g.guest_events[0]?.attendance_status === 'declined' },
         } as SeatingGuestWithMeta);
       }
     });
     return map;
   }, [guests]);
 
-  const guestById = useMemo(() => new Map<number, SeatingGuest>(guests.map((g) => [g.id, g])), [guests]);
+  const guestById = useMemo(() => new Map<number, SeatingGuestWithEvents>(guests.map((g) => [g.id, g])), [guests]);
   const tableById = useMemo(() => new Map<number, SeatingTable>(tables.map((t) => [t.id, t])), [tables]);
 
   const realTables = useMemo(() => tables.filter((t) => t.type !== "bar" && !t.isRing), [tables]);
@@ -581,7 +581,7 @@ export function useSeatingData(
   }, []);
 
   // ── FILTERED UNASSIGNED ──
-  const filteredUnassigned = useCallback((searchQuery?: string | null): SeatingGuest[] => {
+  const filteredUnassigned = useCallback((searchQuery?: string | null): SeatingGuestWithEvents[] => {
     const base = guests.filter((g) => g.tableId == null && isSeatingEligible(g));
     if (!searchQuery) return base;
     const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
