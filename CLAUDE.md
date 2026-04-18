@@ -39,7 +39,7 @@ Cascada de identitate: `wp_user_id → app_user_id → wedding_id` (validată î
 - `lib/supabase/db.ts` — `rpc<T>()` wrapper cu timing + auto read-only trigger
 - `lib/supabase/idempotency.ts` — hash determinist (chei sortate)
 - `lib/system/read-only.ts` — Faza 4
-- `app/seating-chart/*` — **LOCKED, nu se atinge**
+- `app/seating-chart/` (CSS + geometry layout) — **LOCKED**. Hooks, utils, components — editabile pentru bug fix / refactor tipuri, NU pentru feature nou.
 
 ### System Model
 ```
@@ -83,7 +83,7 @@ Frontend          = cache + draft state (NU trusted)
 - **Commit format:** lowercase, commitlint enforced (ex: `fix(seating): elimina json.stringify din parametrii rpc`)
 - **Înainte de commit OBLIGATORIU:**
   - `npx tsc --noEmit` (tsc clean)
-  - `npx vitest run` (vitest — 712/712 verzi + 4 skipped)
+  - `npx vitest run` (vitest — 717/717 verzi + 4 skipped)
   - `npm run build` (Next.js Turbopack verde)
 - **Migrations:** `supabase/migrations/YYYYMMDDHHMMSS_descriere.sql` — schema changes EXCLUSIV aici
 - **Fișiere `.js` din seating/teste:** rămân `.js` intenționat, NU migrezi la TS
@@ -108,6 +108,8 @@ Orice rută mutantă care omite un pas = bug critic. Fără excepții.
 
 ## 5. PATTERN-URI DE COD
 
+### 5a. AUTH / INFRA PATTERNS
+
 ### withAuth wrapper (`lib/api/with-auth.ts`)
 HOF union-safe care rulează întreg auth chain + `assertRole()` + structured error logging + generic 500. Pilot pe `rsvp/manual`. De extins pe 6 endpoint-uri simple: `rsvp/invitations`, `guests (POST)`, `guest-events (POST)`, `guest-events/bulk`, `budget/items (POST)`, `guests/import`. Endpoint-urile cu `weddingId` în URL params (`seating/sync`, `budget/items/[itemId]`) — după E2E tests.
 
@@ -130,6 +132,37 @@ Timing automat: >300ms warn, >2000ms trigger read-only. `normalizeRpcError()` + 
 
 ### Idempotency hash
 `sha256(app_user_id + wedding_id + JSON.stringify(payload, Object.keys(payload).sort()) + client_operation_id)`. Chei sortate = obligatoriu. `client_operation_id` generat **o singură dată** per intenție Save.
+
+### 5b. TYPESCRIPT & DATA INTEGRITY PATTERNS
+
+#### Projection types pentru query-uri partiale
+Cand query-ul DB selecteaza doar cateva campuri dintr-un row, tipul TypeScript reflecta EXACT acele campuri — nu tipul complet al tabelului. Pattern: `Pick<TableRow, 'field1' | 'field2'>` co-localizat cu tipul canonic.
+Exemplu: `SeatingEventProjection = Pick<GuestEventRow, 'attendance_status' | 'meal_choice' | 'event_id'>` in `types/guests.ts`. Endpoint-ul `/seating/load` selecteaza doar 3 campuri — tipul le reflecta exact. Zero overfetch, zero cast-uri care mint.
+
+#### Spread order in object literals
+Spread primul, overrides la final: `{ ...source, overrides }`. NU invers.
+Daca pui override-urile inainte de spread, `...source` le suprascrie silent, anuland defensive-ul.
+Bug subtil, greu de gasit la review. Standard TypeScript/React.
+
+#### Guardrail tests — doua invariants explicite
+Cand un contract e atat compile-time cat si runtime, testul guardrail le documenteaza pe ambele:
+- Compile-time: `@ts-expect-error` suprima eroarea TS pe apel invalid
+- Runtime: `expect(() => ...).toThrow(TypeError)` afirma ca bypass-ul crash-uieste
+Daca oricare invariant pica, PR-ul viitor primeste review explicit pe regresie.
+
+#### Derived constants in teste, nu magic numbers
+Cand un test verifica o proprietate derivata din date, extrage constanta la nivelul fisierului cu logica explicita:
+`const ELIGIBLE_COUNT = INITIAL_GUESTS.filter(isSeatingEligible).length`
+NU hardcoda `11` cu comentariu. Daca datele se schimba, calcul automat.
+
+#### Defensive coding EXCLUSIV la boundary real
+Hydration defensive (`g.field ?? []`) merita DOAR la granita cu untrusted input:
+- `JSON.parse` peste localStorage — boundary real
+- State tipat propagat din pipeline — boundary inventat, NU defensive
+Produsul pe develop fara useri reali NU justifica backward-compat pentru date care nu exista. Tipul reflecta realitatea, nu frica.
+
+#### Tipurile reflecta shape-ul real al datelor
+Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curge prin pipeline-ul tau. Cand tipul diverge de realitate, bug-uri silent apar la boundary-uri.
 
 ---
 
@@ -156,7 +189,7 @@ Timing automat: >300ms warn, >2000ms trigger read-only. `normalizeRpcError()` + 
 
 - **Progres:** ~99% funcțional
 - **Faze 0–12:** toate ✅ DONE
-- **Teste:** 712/712 verzi + 4 skipped (716 total) pe `develop`
+- **Teste:** 717/717 verzi + 4 skipped (721 total) pe `develop`
 - **Build:** `npm run build` ✅ verde (Next.js 16.2.2 Turbopack)
 - **Security audit:** 100/100 — SAFE TO LAUNCH
 
@@ -206,7 +239,23 @@ GET /api/dev/health    — supabase/wordpress/isReadOnly status
 ### Producție — verificări OBLIGATORII absente
 `NEXT_PUBLIC_DEBUG_AUTH` și `DEV_ENDPOINTS_ENABLED` NU există în env vars Vercel prod. Production guard: `console.warn` + `getDevSession()` forțat `null`.
 
+### 8a. AI WORKFLOW RULES
+
+Reguli de lucru pentru sesiuni AI pe acest proiect:
+
+1. **Commit messages scurte, PR descriptions complete.** Subject line < 72 chars, imperativ. Context arhitectural + rationale decizii merg in PR description (markdown, editable). Zero duplicare in git log.
+
+2. **Aprobare per comanda.** Niciodata optiunea "yes, don't ask again" la prompt-uri de confirmare pentru bash/edit. Disciplina costa 30 secunde, previne erori catastrofice.
+
+3. **Verify on disk.** Preview-urile AI au artefacte vizuale consecvente (duplicari, corupții text, linii reordonate). Pentru continut critic (commit messages, tipuri, migrations): verificare cu `cat -n`, `grep -c`, `wc -l` + markeri unici inainte de confirmare.
+
+4. **Nu presupune ca testele existente sunt corecte doar pentru ca trec.** Cand bug-ul rezolvat ar fi trebuit sa pice teste, verifica DE CE nu au picat — probabil testele documentau bug-ul ca feature.
+
+5. **La contradictie intre cod, teste si documentatie — STOP implementare, re-evalueaza contractul.** Nu alege una dintre cele 3 versiuni; gaseste sursa adevarata.
+
+6. **Second opinion extern (ChatGPT/Gemini) pe decizii arhitecturale majore.** Nu pentru validare oarba — pentru a expune presupuneri pe care AI-ul curent le face implicit.
+
 ---
 
-*Onboarding version: 1.0 — Aprilie 2026*
+*Onboarding version: 1.1 — Aprilie 2026 (H2.5 — TypeScript & Data Integrity patterns + AI Workflow Rules)*
 *Sursă de adevăr pentru reguli: SPEC V5.4 (nu se modifică).*
