@@ -7,6 +7,7 @@
 
 import { describe, it, expect } from "vitest";
 import { isRsvpAccepted, isRsvpDeclined, isRsvpMaybe, isRsvpPending } from "./rsvp.rules";
+import type { RsvpAttendanceStatus } from "@/types/rsvp";
 
 describe("isRsvpAccepted", () => {
   it("returneaza true pentru accepted", () => {
@@ -77,5 +78,64 @@ describe("isRsvpPending", () => {
   });
   it("returneaza false pentru null", () => {
     expect(isRsvpPending(null)).toBe(false);
+  });
+});
+
+/**
+ * Type narrowing — predicatele sunt declarate ca type guards (`status is "..."`).
+ *
+ * Pe branch pozitiv: compilarea fara eroare e dovada ca narrowing functioneaza
+ * (asignare la literal type concret). Pe branch negativ: @ts-expect-error
+ * confirma ca narrowing-ul NU se propaga in afara if-ului — daca semnatura
+ * regreseaza la `boolean`, @ts-expect-error devine la randul lui eroare TS.
+ */
+describe("type narrowing", () => {
+  it("isRsvpAccepted narrows la literal 'accepted' in branch pozitiv", () => {
+    const s: RsvpAttendanceStatus | null = "accepted";
+    if (isRsvpAccepted(s)) {
+      const literal: "accepted" = s;
+      expect(literal).toBe("accepted");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'accepted'");
+    }
+  });
+
+  it("isRsvpAccepted NU narrows in branch negativ", () => {
+    const s: RsvpAttendanceStatus | null = "declined";
+    if (!isRsvpAccepted(s)) {
+      // @ts-expect-error — s nu e narrow-at la "accepted" aici
+      const literal: "accepted" = s;
+      expect(literal).not.toBe("accepted");
+    }
+  });
+
+  it("isRsvpDeclined narrows la literal 'declined' in branch pozitiv", () => {
+    const s: RsvpAttendanceStatus | null = "declined";
+    if (isRsvpDeclined(s)) {
+      const literal: "declined" = s;
+      expect(literal).toBe("declined");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'declined'");
+    }
+  });
+
+  it("isRsvpMaybe narrows la literal 'maybe' in branch pozitiv", () => {
+    const s: RsvpAttendanceStatus | null = "maybe";
+    if (isRsvpMaybe(s)) {
+      const literal: "maybe" = s;
+      expect(literal).toBe("maybe");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'maybe'");
+    }
+  });
+
+  it("isRsvpPending narrows la literal 'pending' in branch pozitiv", () => {
+    const s: RsvpAttendanceStatus | null = "pending";
+    if (isRsvpPending(s)) {
+      const literal: "pending" = s;
+      expect(literal).toBe("pending");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'pending'");
+    }
   });
 });

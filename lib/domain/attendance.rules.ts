@@ -14,18 +14,26 @@
 
 import type { AttendanceStatus } from "@/types/guests";
 
-export function isAttendanceAttending(status: AttendanceStatus | null | undefined): boolean {
+export function isAttendanceAttending(
+  status: AttendanceStatus | null | undefined,
+): status is Extract<AttendanceStatus, "attending"> {
   return status === "attending";
 }
 
-export function isAttendanceDeclined(status: AttendanceStatus | null | undefined): boolean {
+export function isAttendanceDeclined(
+  status: AttendanceStatus | null | undefined,
+): status is Extract<AttendanceStatus, "declined"> {
   return status === "declined";
 }
 
-export function isAttendanceMaybe(status: AttendanceStatus | null | undefined): boolean {
+export function isAttendanceMaybe(
+  status: AttendanceStatus | null | undefined,
+): status is Extract<AttendanceStatus, "maybe"> {
   return status === "maybe";
 }
 
-export function isAttendancePending(status: AttendanceStatus | null | undefined): boolean {
+export function isAttendancePending(
+  status: AttendanceStatus | null | undefined,
+): status is Extract<AttendanceStatus, "pending"> {
   return status === "pending";
 }
