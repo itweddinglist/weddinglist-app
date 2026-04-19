@@ -30,6 +30,9 @@ export interface RsvpInvitationRow {
   event_id: string;
   guest_id: string | null;
   token_hash: string;
+  // Identificator public stabil pentru URL-ul /rsvp/{public_link_id}.
+  // NOT NULL în DB — adăugat de migration 20260405000001_add_public_link_id_rsvp.
+  public_link_id: string;
   status: string;
   delivery_channel: RsvpDeliveryChannel | null;
   delivery_status: RsvpDeliveryStatus;
@@ -114,6 +117,36 @@ export interface RsvpSubmitResult {
   success: true;
   responses_saved: number;
   invitation_id: string;
+}
+
+/**
+ * GET /api/rsvp/dashboard — shape returnat pentru fiecare invitat.
+ * Obiect ad-hoc construit server-side prin join între guest_events,
+ * rsvp_responses și rsvp_invitations. Consumat de app/rsvp/page.tsx.
+ *
+ * `rsvp_status: ... | null` — păstrat nullable pentru compatibilitate cu
+ * defensive checks existente în consumatori. Runtime, route-ul garantează
+ * fallback la "pending" — strângerea tipului e planificată în refactor ulterior.
+ */
+export interface RsvpDashboardGuest {
+  guest_id: string;
+  display_name: string;
+  first_name: string;
+  guest_event_id: string;
+  event_id: string;
+  event_name: string;
+  rsvp_status: RsvpAttendanceStatus | null;
+  meal_choice: RsvpMealChoice | null;
+  dietary_notes: string | null;
+  responded_at: string | null;
+  rsvp_source: RsvpResponseSource | null;
+  invitation_id: string | null;
+  public_link_id: string | null;
+  delivery_channel: RsvpDeliveryChannel | null;
+  delivery_status: RsvpDeliveryStatus | null;
+  opened_at: string | null;
+  last_sent_at: string | null;
+  is_active: boolean | null;
 }
 
 // ─── Token ────────────────────────────────────────────────────────────────────

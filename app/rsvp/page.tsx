@@ -11,31 +11,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "@/app/lib/auth/session/use-session";
 import { getTranslations } from "@/lib/rsvp/rsvp-translations";
 import { getPublicRsvpUrl } from "@/lib/rsvp/get-public-rsvp-url";
+import type { RsvpDashboardGuest } from "@/types/rsvp";
 
 const t = getTranslations("ro");
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface RsvpGuestRow {
-  guest_id: string;
-  display_name: string;
-  first_name: string;
-  guest_event_id: string;
-  event_id: string;
-  event_name: string;
-  rsvp_status: "pending" | "accepted" | "declined" | "maybe" | null;
-  meal_choice: "standard" | "vegetarian" | null;
-  dietary_notes: string | null;
-  responded_at: string | null;
-  rsvp_source: "guest_link" | "couple_manual" | "import" | null;
-  invitation_id: string | null;
-  public_link_id: string | null;
-  delivery_channel: string | null;
-  delivery_status: string | null;
-  opened_at: string | null;
-  last_sent_at: string | null;
-  is_active: boolean | null;
-}
 
 interface RsvpStats {
   total: number;
@@ -55,7 +35,7 @@ type FilterStatus = "all" | "accepted" | "declined" | "pending" | "maybe" | "ope
 
 export default function RsvpDashboard() {
   const sessionState = useSession();
-  const [guests, setGuests] = useState<RsvpGuestRow[]>([]);
+  const [guests, setGuests] = useState<RsvpDashboardGuest[]>([]);
   const [stats, setStats] = useState<RsvpStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +125,7 @@ export default function RsvpDashboard() {
   };
 
   const sendWhatsApp = async (
-    guest: RsvpGuestRow,
+    guest: RsvpDashboardGuest,
     publicLinkId: string,
     invitationId: string
   ) => {
@@ -477,7 +457,7 @@ function GuestRow({
   manualOpen,
   onToggleManual,
 }: {
-  guest: RsvpGuestRow;
+  guest: RsvpDashboardGuest;
   onGenerate: () => void;
   onWhatsApp: () => void;
   onManual: (status: "accepted" | "declined" | "maybe") => void;
