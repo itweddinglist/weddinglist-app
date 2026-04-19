@@ -17,6 +17,42 @@ import {
   successResponse,
   internalErrorResponse,
 } from "@/lib/api-response";
+import type {
+  RsvpResponseRow,
+  RsvpInvitationRow,
+  RsvpDashboardGuest,
+} from "@/types/rsvp";
+
+// Projection locală — reflectă exact câmpurile selectate în query-ul rsvp_invitations.
+type InvitationProjection = Pick<
+  RsvpInvitationRow,
+  | "id"
+  | "guest_id"
+  | "delivery_channel"
+  | "delivery_status"
+  | "opened_at"
+  | "last_sent_at"
+  | "is_active"
+  | "public_link_id"
+>;
+
+// Shape-ul rândurilor returnate de query-ul guest_events cu join-uri !inner.
+// Supabase returnează obiecte (nu array) pentru relații one-to-one prin FK direct.
+interface GuestEventJoinRow {
+  id: string;
+  guest_id: string;
+  event_id: string;
+  guests: {
+    id: string;
+    display_name: string;
+    first_name: string;
+    last_name: string | null;
+  };
+  events: {
+    id: string;
+    name: string;
+  };
+}
 
 export async function GET(request: NextRequest): Promise<Response> {
   const ctx = await getServerAppContext(request);
@@ -30,7 +66,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   try {
     // ── Fetch guests + guest_events ────────────────────────────────────────
-    const { data: guestEvents, error: geError } = await supabaseServer
+    const { data: guestEventsRaw, error: geError } = await supabaseServer
       .from("guest_events")
       .select(`
         id,
@@ -51,6 +87,23 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (geError) return internalErrorResponse(geError, "GET /api/rsvp/dashboard — guest_events");
 
+    // Supabase JS client fără Database generic type inferă relațiile !inner
+    // ca array {...}[] — heuristică greșită pentru FK direct 1-to-1.
+    // Runtime garantat obiect (evidence: app/api/export/pdf/route.ts,
+    // app/api/rsvp/[public_link_id]/route.ts consumă .display_name/.name
+    // direct, rulează în prod).
+    //
+    // Double cast via `unknown` necesar: TS2352 blochează cast direct între
+    // guests: {...}[] (inferred) și guests: {...} (real) — "neither type
+    // sufficiently overlaps". `unknown` e bridge-ul canonic pentru
+    // conversie între tipuri fără intersecție, dar cu realitate runtime
+    // cunoscută.
+    //
+    // TODO(post-launch): elimină cast-ul după generarea types Supabase
+    // cu `supabase gen types typescript` → types/supabase.ts. Task de
+    // roadmap separat, nu în H3/Hardening Week.
+    const guestEvents = guestEventsRaw as unknown as GuestEventJoinRow[] | null;
+
     // ── Fetch rsvp_responses ───────────────────────────────────────────────
     const { data: responses, error: respError } = await supabaseServer
       .from("rsvp_responses")
@@ -70,15 +123,15 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     // ── Build maps ────────────────────────────────────────────────────────
     const responseByGuestEventId = new Map(
-      (responses ?? []).map((r: any) => [r.guest_event_id, r])
+      (responses ?? []).map((r: RsvpResponseRow) => [r.guest_event_id, r])
     );
 
     const invitationByGuestId = new Map(
-      (invitations ?? []).map((i: any) => [i.guest_id, i])
+      (invitations ?? []).map((i: InvitationProjection) => [i.guest_id, i])
     );
 
     // ── Build guest rows ──────────────────────────────────────────────────
-    const guests = (guestEvents ?? []).map((ge: any) => {
+    const guests: RsvpDashboardGuest[] = (guestEvents ?? []).map((ge: GuestEventJoinRow): RsvpDashboardGuest => {
       const response = responseByGuestEventId.get(ge.id);
       const invitation = invitationByGuestId.get(ge.guest_id);
 
