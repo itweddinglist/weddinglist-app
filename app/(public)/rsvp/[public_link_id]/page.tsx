@@ -8,19 +8,19 @@
 
 import { useState, useEffect } from "react";
 import { getTranslations } from "@/lib/rsvp/rsvp-translations";
+import { isRsvpAccepted, isRsvpDeclined, isRsvpMaybe } from "@/lib/domain";
+import {
+  getMealChoiceForSubmit,
+  hasAnyAccepted,
+  getSharedDietaryNotes,
+  applyDietaryNotesToAccepted,
+  type EventAnswer,
+} from "@/lib/rsvp/rsvp-form-helpers";
 import type { RsvpPageData, RsvpAttendanceStatus, RsvpMealChoice } from "@/types/rsvp";
 
 const t = getTranslations("ro");
 
 type PageState = "loading" | "ready" | "error" | "submitted";
-
-interface EventAnswer {
-  guest_event_id: string;
-  status: RsvpAttendanceStatus | null;
-  meal_choice: RsvpMealChoice | null;
-  dietary_notes: string;
-  note: string;
-}
 
 export default function RsvpPage({
   params,
@@ -95,7 +95,7 @@ export default function RsvpPage({
       const responses = Object.values(answers).map((a) => ({
         guest_event_id: a.guest_event_id,
         status: a.status,
-        meal_choice: a.status === "accepted" ? a.meal_choice : null,
+        meal_choice: getMealChoiceForSubmit(a),
         dietary_notes: a.dietary_notes || null,
         note: a.note || null,
       }));
@@ -178,8 +178,6 @@ export default function RsvpPage({
   // ── Render: Ready ──────────────────────────────────────────────────────────
   if (!pageData) return null;
 
-  const hasAnyAccepted = Object.values(answers).some((a) => a.status === "accepted");
-
   return (
     <div style={styles.page}>
       {/* Header */}
@@ -231,16 +229,16 @@ export default function RsvpPage({
                       ...(answer.status === status ? styles.statusBtnActive(status) : {}),
                     }}
                   >
-                    {status === "accepted" && "✓ "}
-                    {status === "declined" && "✗ "}
-                    {status === "maybe" && "? "}
+                    {isRsvpAccepted(status) && "✓ "}
+                    {isRsvpDeclined(status) && "✗ "}
+                    {isRsvpMaybe(status) && "? "}
                     {t.status[status]}
                   </button>
                 ))}
               </div>
 
               {/* Meal choice — doar dacă accepted */}
-              {answer.status === "accepted" && (
+              {isRsvpAccepted(answer.status) && (
                 <div style={{ marginTop: "1rem" }}>
                   <p style={styles.label}>{t.response.heading_meal}</p>
                   <div style={styles.statusButtons}>
@@ -265,25 +263,16 @@ export default function RsvpPage({
         })}
 
         {/* Dietary notes — dacă cel puțin un accepted */}
-        {hasAnyAccepted && (
+        {hasAnyAccepted(answers) && (
           <div style={{ marginTop: "1.5rem" }}>
             <label style={styles.label}>{t.response.notes_label}</label>
             <textarea
               placeholder={t.response.notes_placeholder}
               rows={3}
-              value={Object.values(answers).find((a) => a.status === "accepted")?.dietary_notes ?? ""}
-              onChange={(e) => {
-                // Aplică dietary_notes pe toate evenimentele accepted
-                setAnswers((prev) => {
-                  const updated = { ...prev };
-                  for (const key of Object.keys(updated)) {
-                    if (updated[key].status === "accepted") {
-                      updated[key] = { ...updated[key], dietary_notes: e.target.value };
-                    }
-                  }
-                  return updated;
-                });
-              }}
+              value={getSharedDietaryNotes(answers)}
+              onChange={(e) =>
+                setAnswers((prev) => applyDietaryNotesToAccepted(prev, e.target.value))
+              }
               style={styles.textarea}
             />
           </div>
