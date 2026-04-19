@@ -10,6 +10,7 @@
 
 import { describe, it, expect } from "vitest";
 import { isAttendanceAttending, isAttendanceDeclined, isAttendanceMaybe, isAttendancePending } from "./attendance.rules";
+import type { AttendanceStatus } from "@/types/guests";
 
 describe("isAttendanceAttending", () => {
   it("returneaza true pentru attending", () => {
@@ -104,5 +105,64 @@ describe("isAttendancePending", () => {
   });
   it("returneaza false pentru undefined", () => {
     expect(isAttendancePending(undefined)).toBe(false);
+  });
+});
+
+/**
+ * Type narrowing — predicatele sunt declarate ca type guards (`status is "..."`).
+ *
+ * Pe branch pozitiv: compilarea fara eroare e dovada ca narrowing functioneaza
+ * (asignare la literal type concret). Pe branch negativ: @ts-expect-error
+ * confirma ca narrowing-ul NU se propaga in afara if-ului — daca semnatura
+ * regreseaza la `boolean`, @ts-expect-error devine la randul lui eroare TS.
+ */
+describe("type narrowing", () => {
+  it("isAttendanceAttending narrows la literal 'attending' in branch pozitiv", () => {
+    const s: AttendanceStatus | null | undefined = "attending";
+    if (isAttendanceAttending(s)) {
+      const literal: "attending" = s;
+      expect(literal).toBe("attending");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'attending'");
+    }
+  });
+
+  it("isAttendanceAttending NU narrows in branch negativ", () => {
+    const s: AttendanceStatus | null | undefined = "declined";
+    if (!isAttendanceAttending(s)) {
+      // @ts-expect-error — s nu e narrow-at la "attending" aici
+      const literal: "attending" = s;
+      expect(literal).not.toBe("attending");
+    }
+  });
+
+  it("isAttendanceDeclined narrows la literal 'declined' in branch pozitiv", () => {
+    const s: AttendanceStatus | null | undefined = "declined";
+    if (isAttendanceDeclined(s)) {
+      const literal: "declined" = s;
+      expect(literal).toBe("declined");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'declined'");
+    }
+  });
+
+  it("isAttendanceMaybe narrows la literal 'maybe' in branch pozitiv", () => {
+    const s: AttendanceStatus | null | undefined = "maybe";
+    if (isAttendanceMaybe(s)) {
+      const literal: "maybe" = s;
+      expect(literal).toBe("maybe");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'maybe'");
+    }
+  });
+
+  it("isAttendancePending narrows la literal 'pending' in branch pozitiv", () => {
+    const s: AttendanceStatus | null | undefined = "pending";
+    if (isAttendancePending(s)) {
+      const literal: "pending" = s;
+      expect(literal).toBe("pending");
+    } else {
+      throw new Error("Narrowing trebuia sa reuseasca pentru 'pending'");
+    }
   });
 });
