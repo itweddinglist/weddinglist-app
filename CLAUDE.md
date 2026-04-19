@@ -193,7 +193,24 @@ Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curg
 - **Teste:** 717/717 verzi + 4 skipped (721 total) pe `develop`
 - **Build:** `npm run build` ✅ verde (Next.js 16.2.2 Turbopack)
 - **Security audit:** 100/100 — SAFE TO LAUNCH
-- **H3 + H4 (domain/rules.ts + E2E Playwright):** scope V1 confirmat prin ROADMAP (SPEC §19 le plasa V2 — decizie suprascrisa post-redactare SPEC).
+
+### Hardening Week status
+
+| # | Task (ROADMAP) | Status | Progres granular |
+|---|----------------|--------|------------------|
+| H1 | CLAUDE.md în repo | ✅ DONE | PR #156 |
+| H2 | Duplicate tip SeatingGuest rezolvat | ✅ DONE | PR #158 (Step 1 type hardening) + PR #159 (H2.5 pipeline + filtrare declined) |
+| H3 | Business rules centralizate în lib/domain/ | 🟡 IN PROGRESS | Etapa 1/3 ✅ PR #162 — infrastructura (13 predicate + 68 teste). Etapa 2/3 next — refactor consumatori RSVP. Etapa 3/3 — Budget + Attendance + consolidare isSeatingEligible. |
+| H4 | E2E testing Playwright | ⏳ pending H3 complete | — |
+| H5 | Re-audit securitate după sprint major | ⏳ pending | — |
+| H6 | Manual critical flow end-to-end | ⏳ pending | — |
+| H7 | Design tokens centralizați | ⏳ pending | — |
+
+**Decizii auxiliare executate (nu sunt in ROADMAP ca task-uri distincte):**
+- CLAUDE.md v1.1 — TypeScript patterns + AI workflow rules (PR #160)
+- CLAUDE.md hierarchy — ierarhie ROADMAP > SPEC pentru scope V1 (PR #161)
+
+**Scope clarificat:** H3 + H4 = V1 conform ROADMAP (SPEC §19 le plasa V2 — decizie suprascrisa post-redactare SPEC).
 
 ### TOP 5 blockers rămase pentru launch
 1. **S9** — Rate limiting pe `/api/guests`, `/api/budget`, `/api/export`
@@ -259,5 +276,5 @@ Reguli de lucru pentru sesiuni AI pe acest proiect:
 
 ---
 
-*Onboarding version: 1.1 — Aprilie 2026 (H2.5 — TypeScript & Data Integrity patterns + AI Workflow Rules)*
-*Sursă de adevăr pentru reguli: SPEC V5.4 (nu se modifică).*
+*Onboarding version: 1.2 — Aprilie 2026 (H3 Etapa 1 merged — lib/domain/ infrastructura + Hardening Week status table)*
+*Scope V1: ROADMAP.md (operational). Hard Rules §1 + contracte tehnice: SPEC V5.4 (istoric dar autoritar).*
