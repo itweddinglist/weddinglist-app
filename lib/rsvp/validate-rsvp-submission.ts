@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { sanitizeText, isValidUuid } from "../../lib/sanitize";
+import { isRsvpAccepted } from "@/lib/domain";
 import type {
   SubmitRsvpInput,
   RsvpEventResponse,
@@ -81,7 +82,7 @@ export function validateRsvpSubmission(body: unknown): SubmitRsvpValidation {
     const status = r.status as RsvpAttendanceStatus;
 
     // meal_choice — obligatoriu dacă accepted
-    if (status === "accepted") {
+    if (isRsvpAccepted(status)) {
       if (r.meal_choice !== undefined && r.meal_choice !== null) {
         if (!VALID_MEAL_CHOICES.includes(r.meal_choice as RsvpMealChoice)) {
           errors.push({
