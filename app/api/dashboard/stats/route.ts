@@ -12,6 +12,7 @@ import {
   successResponse,
   internalErrorResponse,
 } from "@/lib/api-response"
+import { isRsvpAccepted, isRsvpDeclined, isRsvpMaybe } from "@/lib/domain"
 import type { DashboardStats } from "@/types/dashboard"
 
 export async function GET(request: NextRequest): Promise<Response> {
@@ -66,9 +67,9 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const guests_total = guestsResult.data?.length ?? 0
     const rsvpRows = rsvpResult.data ?? []
-    const rsvp_accepted = rsvpRows.filter((r) => r.status === "accepted").length
-    const rsvp_declined = rsvpRows.filter((r) => r.status === "declined").length
-    const rsvp_maybe    = rsvpRows.filter((r) => r.status === "maybe").length
+    const rsvp_accepted = rsvpRows.filter((r) => isRsvpAccepted(r.status)).length
+    const rsvp_declined = rsvpRows.filter((r) => isRsvpDeclined(r.status)).length
+    const rsvp_maybe    = rsvpRows.filter((r) => isRsvpMaybe(r.status)).length
     const rsvp_pending  = guests_total - (rsvp_accepted + rsvp_declined + rsvp_maybe)
     const response_rate =
       guests_total === 0
