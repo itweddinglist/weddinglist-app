@@ -15,6 +15,7 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
+import { getStatusLabel, getStatusColorHex } from "@/lib/rsvp/rsvp-presentation";
 
 // ─── Font cu diacritice ───────────────────────────────────────────────────────
 
@@ -242,24 +243,6 @@ const styles = StyleSheet.create({
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
-function statusLabel(status: string | null): string {
-  switch (status) {
-    case "accepted": return "Confirmat";
-    case "declined": return "Refuzat";
-    case "maybe": return "Poate";
-    default: return "În așteptare";
-  }
-}
-
-function statusColor(status: string | null): string {
-  switch (status) {
-    case "accepted": return "#48BB78";
-    case "declined": return "#E53E3E";
-    case "maybe": return "#ECC94B";
-    default: return "#9DA3BC";
-  }
-}
-
 function mealLabel(meal: string | null): string {
   if (meal === "vegetarian") return "Vegetarian";
   if (meal === "standard") return "Standard";
@@ -302,19 +285,19 @@ export function WeddingPdfDocument({ data }: { data: PdfData }) {
               <Text style={styles.statLabel}>Total</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: "#48BB78" }]}>{data.stats.accepted}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("accepted") }]}>{data.stats.accepted}</Text>
               <Text style={styles.statLabel}>Confirmați</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: "#E53E3E" }]}>{data.stats.declined}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("declined") }]}>{data.stats.declined}</Text>
               <Text style={styles.statLabel}>Refuzați</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: "#9DA3BC" }]}>{data.stats.pending}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("pending") }]}>{data.stats.pending}</Text>
               <Text style={styles.statLabel}>În așteptare</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: "#ECC94B" }]}>{data.stats.maybe}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("maybe") }]}>{data.stats.maybe}</Text>
               <Text style={styles.statLabel}>Poate</Text>
             </View>
             <View style={styles.statCard}>
@@ -383,8 +366,8 @@ export function WeddingPdfDocument({ data }: { data: PdfData }) {
           {data.guests.map((g, i) => (
             <View key={i} style={styles.guestRow} wrap={false}>
               <Text style={styles.guestName}>{g.display_name}</Text>
-              <Text style={[styles.guestStatus, { color: statusColor(g.rsvp_status) }]}>
-                {statusLabel(g.rsvp_status)}
+              <Text style={[styles.guestStatus, { color: getStatusColorHex(g.rsvp_status ?? "pending") }]}>
+                {getStatusLabel(g.rsvp_status ?? "pending")}
               </Text>
               <Text style={styles.guestMeal}>{mealLabel(g.meal_choice)}</Text>
               <Text style={styles.guestTable}>{g.table_name ?? "—"}</Text>
