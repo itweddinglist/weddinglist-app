@@ -387,19 +387,19 @@ const styles = {
     fontFamily: "var(--font-body)",
   },
   statusBtnActive: (status: RsvpAttendanceStatus) => ({
-    background: status === "accepted"
+    background: isRsvpAccepted(status)
       ? "rgba(72,187,120,0.12)"
-      : status === "declined"
+      : isRsvpDeclined(status)
       ? "rgba(229,62,62,0.12)"
       : "rgba(236,201,75,0.12)",
-    borderColor: status === "accepted"
+    borderColor: isRsvpAccepted(status)
       ? "var(--green)"
-      : status === "declined"
+      : isRsvpDeclined(status)
       ? "var(--red)"
       : "var(--yellow)",
-    color: status === "accepted"
+    color: isRsvpAccepted(status)
       ? "var(--green)"
-      : status === "declined"
+      : isRsvpDeclined(status)
       ? "var(--red)"
       : "var(--yellow)",
     fontWeight: 500,
