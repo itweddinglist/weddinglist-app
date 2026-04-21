@@ -274,6 +274,74 @@ Reguli de lucru pentru sesiuni AI pe acest proiect:
 
 6. **Second opinion extern (ChatGPT/Gemini) pe decizii arhitecturale majore.** Nu pentru validare oarba — pentru a expune presupuneri pe care AI-ul curent le face implicit.
 
+## 9. MULTI-SESSION COLLABORATION (pattern "echipă ștafetă")
+
+Proiectul WeddingList funcționează **permanent** în model echipă ștafetă cross-timezone între sesiuni Claude.ai multiple (conturi diferite, sesiuni diferite în timp). Nu există "Claude.ai-ul principal" — fiecare sesiune e un contribuitor egal care preia context, continuă munca, documentează ce a făcut, predă ștafeta următoarei sesiuni.
+
+### 9a. DOCUMENTE CANONICE
+
+| Fișier                 | Scop                                                |
+|------------------------|-----------------------------------------------------|
+| `HANDOFF.md`           | Log operațional: stare proiect, decizii LOCKED, open items, protocol schimb de tură. Citit la început de tură, actualizat la sfârșit. |
+| `PRE_LAUNCH_AUDIT.md`  | Listă acumulativă bugs/observații pentru H6 Manual Flow Walkthrough. Fiecare PR care descoperă o problemă conexă adaugă aici. |
+| `CLAUDE.md` (acesta)   | Convenții & reguli permanente. Rar modificat.       |
+| `ROADMAP.md`           | Plan temporal strategic.                            |
+| `CONTEXT.md`           | Architectura proiect high-level.                    |
+| `SPEC.md`              | Specificație produs + Hard Rules.                   |
+
+### 9b. OBLIGAȚII LA START DE TURĂ
+
+Fiecare sesiune Claude.ai nou pornită TREBUIE să:
+
+1. Citească `HANDOFF.md` integral înainte de orice task
+2. Consulte `CLAUDE.md` (acest fișier) pentru convenții
+3. Consulte `ROADMAP.md` pentru context strategic, dacă e relevant pentru task
+4. Respecte decizii LOCKED din HANDOFF.md — NU le re-deschide pentru dezbatere decât dacă user-ul cere explicit
+
+### 9c. OBLIGAȚII LA SFÂRȘIT DE TURĂ
+
+Înainte de a închide sesiunea (voluntar sau forced de rate limit), TREBUIE update `HANDOFF.md` cu minim:
+
+1. Timestamp + motiv handoff în secțiunea 1
+2. Stare proiect la zi (commit SHA, baseline teste, branch-uri deschise) în secțiunea 2
+3. PR-uri merged în tură în secțiunea 3
+4. Decizii LOCKED noi (dacă există) în secțiunea 4
+5. Open items noi/rezolvate în secțiunea 5
+6. Prompt-uri produse/folosite în secțiunea 6
+
+Detaliile complete sunt în `HANDOFF.md` secțiunea 9 — Protocol sfârșit de tură.
+
+### 9d. UPDATE DOCS CANONICE PRIN PR
+
+Toate update-urile la `HANDOFF.md`, `PRE_LAUNCH_AUDIT.md`, `CLAUDE.md`, `ROADMAP.md`, `CONTEXT.md` trec prin PR, fără excepție. Motiv: disciplină uniformă, CI, history traceability, rollback trivial.
+
+Branch convention docs:
+- `docs/handoff-update-YYYYMMDD` — update operațional
+- `docs/audit-update-YYYYMMDD` — bugs adăugate
+- `docs/<subject>` — update tematic (ex: `docs/roadmap-h3-complete`)
+
+Excepție: dacă update-ul docs e parte natural dintr-un PR feature/refactor care oricum rulează CI, merge în același PR — un singur push, un singur merge.
+
+### 9e. STYLE INTERACȚIUNE (FIXAT)
+
+- **Claude.ai:** planner arhitectural. Propune, analizează, aprobă strategii.
+- **Claude Code:** executant tehnic. Rulează cod, edit files, raportează.
+- **User:** curier. Operează 3 canale paralel (Claude.ai browser + Claude Code terminal + PowerShell extern). Transferă rapoarte între canale.
+
+Claude.ai NU are acces direct la repo local. Toate modificările fișiere trec prin user → Claude Code sau user → PowerShell extern.
+
+### 9f. CONTINUITATE LA RATE LIMITS
+
+Rate limits Claude Pro sunt frecvente în proiect (sesiuni lungi, tokens consumați pe PR-uri arhitecturale cu discuții lungi). NU sunt excepție — sunt regulă.
+
+Când tokens sunt aproape de limite, contribuitorul curent:
+
+1. Finalizează task-ul curent dacă e aproape gata (nu lasă PR deschis la jumătate)
+2. Actualizează `HANDOFF.md` (obligație 9c) cu stare exactă + next steps
+3. Predă explicit ștafeta în conversație ("tokens approaching limit, HANDOFF updated, next session please continue from [specific step]")
+
+Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul contribuitor citește ultima conversație, ultima versiune `HANDOFF.md`, identifică unde s-a oprit, reia.
+
 ---
 
 *Onboarding version: 1.2 — Aprilie 2026 (H3 Etapa 1 merged — lib/domain/ infrastructura + Hardening Week status table)*
