@@ -24,10 +24,10 @@
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-04-21 (prima versiune — introducere pattern)
+- **Data:** 2026-04-26 (PR #173a — restructurare docs)
 - **Contribuitor:** Claude Opus 4.7 (session Claude.ai, user: itweddinglist@gmail.com)
-- **Motiv handoff:** Introducere oficială a protocolului de colaborare multi-sesiune. Prima instanță a pattern-ului.
-- **Next contribuitor așteptat:** alt cont Claude.ai (rol planner arhitectural) când tokens actuali se termină, sau același cont după reset weekly (duminică 6:00 AM).
+- **Motiv handoff:** Restructurare docs (5 → 4 active: HANDOFF, ROADMAP, CHANGELOG nou, CLAUDE; STATUS + PRE_LAUNCH_AUDIT deveniți REDIRECT). PR #172 H3 Etapa 3/3 Budget refactor merged ca 48b95b9 anterior (vezi CHANGELOG.md).
+- **Next contribuitor așteptat:** continuare cu PR #173b (content update — datorii tehnice + decizii LOCKED L15-L19 + 17 open items consolidați) sau orice sesiune Claude.ai cu acces la noul stack docs.
 
 ---
 
@@ -55,28 +55,15 @@
 
 ---
 
-## 3. PR-uri merged recent (relevante pentru context)
+## 3. PR-uri merged recent
 
-### Mini-secvența H3 Etapa 2/3 — COMPLETĂ (6/6)
-
-| PR   | Title                                               | SHA       | Teste |
-|------|-----------------------------------------------------|-----------|-------|
-| #164 | feat(domain): type guards cu Extract/Exclude        | d7a988a   | +16   |
-| #165 | fix(rsvp): eliminate any + RsvpDashboardGuest       | 0d1611e   | 0     |
-| #166 | refactor(rsvp): stats + validate cu predicate       | 1f38d44   | 0     |
-| #167 | refactor(rsvp-public): extract form helpers         | 74da17b   | +25   |
-| #168 | feat(rsvp): presentation helpers (labels + hex)     | b3603b0   | +11   |
-| #169 | refactor(export): use presentation helpers in pdf   | bbf58dd   | 0     |
-
-**Cumulative:** +52 teste noi (801 -> 837 baseline), zero regresii, zero datorie tehnică nouă.
-
-### Post mini-secvență
-
-| PR   | Title                                                        | SHA       | Teste |
-|------|--------------------------------------------------------------|-----------|-------|
-| #170 | fix(styles): define semantic color aliases used across pages | 795911d   | 0     |
-
-PR #170 a rezolvat bug vizual real în producție: 3 pagini (app/rsvp/page.tsx, app/settings/page.tsx, app/export/page.tsx) foloseau 12 CSS variables nedefinite. Fix cross-page cu un singur edit pe app/globals.css. Pus foundation pentru H7 Design Tokens.
+> **Migrat în CHANGELOG.md la PR #173a (2026-04-26).**
+>
+> Pentru istoricul complet (cu date, types, hash-uri merge), vezi
+> [CHANGELOG.md](./CHANGELOG.md):
+> - SECȚIUNEA ACTIVĂ — Hardening Week PRs #164-#172
+> - ARHIVĂ — pre-#164 (PR# numerotate + branch-only entries)
+> - SECURITY FIXES — audit 2026-04-16
 
 ---
 
@@ -314,17 +301,22 @@ Prompt-urile sunt în output-ul Claude.ai (sesiunea care le-a produs). Pentru pr
 
 ## 11. Quick reference — surse adevăr proiect
 
-| Fișier               | Scop                                                              |
-|----------------------|-------------------------------------------------------------------|
-| CLAUDE.md            | Convenții și reguli de lucru permanente                           |
-| ROADMAP.md           | Plan temporal (H1-H7, HWE1, pre-launch)                           |
-| CONTEXT.md           | Context proiect + architectura la high level                      |
-| SPEC.md              | Specification produs + Hard Rules (SPEC #7 = no business logic in UI/hooks) |
-| HANDOFF.md (acest)   | Schimb de tură între sesiuni Claude.ai                            |
-| PRE_LAUNCH_AUDIT.md  | Listă acumulativă bugs/observații pre-launch                      |
-| STATUS.md            | Status curent snapshots (probabil outdated)                       |
+| Fișier | Scop | Stare |
+|--------|------|-------|
+| **HANDOFF.md** (acest) | Schimb de tură între sesiuni Claude.ai | ACTIV — log operațional |
+| **CLAUDE.md** | Convenții și reguli de lucru permanente + arhitectură | ACTIV — regulile jocului |
+| **ROADMAP.md** | Plan temporal (H1-H7, HWE0.5+, pre-launch) | ACTIV — direcția strategică |
+| **CHANGELOG.md** | Istoric PR-uri merge-uite | ACTIV — single source PR history |
+| **CONTEXT.md** | Referință arhitecturală stabilă (system, schema DB, lib structure) | ACTIV — referință permanentă |
+| **SPEC.md** | Specification produs + Hard Rules (LOCKED) | ACTIV — source of truth Hard Rules |
+| ~~STATUS.md~~ | Snapshots stare proiect | **REDIRECT** — migrat în HANDOFF + CHANGELOG (PR #173a) |
+| ~~PRE_LAUNCH_AUDIT.md~~ | Bugs/observații pre-launch | **REDIRECT** — rescriere fresh în PR #173b |
 
-Toate aceste documente sunt în rădăcina repo. Când citești HANDOFF.md, citește și CLAUDE.md + ROADMAP.md activ la sesiune start. HANDOFF e log operațional, CLAUDE e regulile jocului, ROADMAP e direcția strategică.
+Toate aceste documente sunt în rădăcina repo. **La sesiune start citește:**
+1. **HANDOFF.md** (acest fișier) — stare curentă
+2. **CLAUDE.md** — reguli AI workflow
+3. **ROADMAP.md** — direcția strategică
+4. **CHANGELOG.md** — last PR(s) merge-uite
 
 ---
 
