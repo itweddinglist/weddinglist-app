@@ -6,12 +6,19 @@
 // indiferent de currency. has_mixed_currencies semnalează UI-ul să afișeze warning.
 // =============================================================================
 
-import type { BudgetSummary } from "../../types/budget";
+import type { BudgetSummary, BudgetItemStatus } from "../../types/budget";
+import {
+  isBudgetItemActive,
+  isBudgetItemPaid,
+  isBudgetItemPlanned,
+  isBudgetItemConfirmed,
+  isBudgetItemCancelled,
+} from "../domain/budget.rules";
 
 export interface BudgetItemForSummary {
   estimated_amount: number;
   actual_amount: number | null;
-  status: string;
+  status: BudgetItemStatus;
   currency: string;
 }
 export interface PaymentForSummary {
@@ -22,7 +29,7 @@ export function calculateBudgetSummary(
   items: BudgetItemForSummary[],
   payments: PaymentForSummary[]
 ): BudgetSummary {
-  const activeItems = items.filter((i) => i.status !== "cancelled");
+  const activeItems = items.filter(isBudgetItemActive);
 
   const total_estimated = activeItems.reduce((sum, i) => sum + (i.estimated_amount ?? 0), 0);
   const total_actual = activeItems
@@ -32,10 +39,10 @@ export function calculateBudgetSummary(
   const total_remaining = Math.max(0, Math.round((total_estimated - total_paid) * 100) / 100);
 
   const items_by_status = {
-    planned:   items.filter((i) => i.status === "planned").length,
-    confirmed: items.filter((i) => i.status === "confirmed").length,
-    paid:      items.filter((i) => i.status === "paid").length,
-    cancelled: items.filter((i) => i.status === "cancelled").length,
+    planned:   items.filter(isBudgetItemPlanned).length,
+    confirmed: items.filter(isBudgetItemConfirmed).length,
+    paid:      items.filter(isBudgetItemPaid).length,
+    cancelled: items.filter(isBudgetItemCancelled).length,
   };
 
   // Currency detection
