@@ -15,13 +15,29 @@
   --green: #48bb78;
   --red: #e53e3e;
   --yellow: #ecc94b;
+  --blue: #4299e1;
+  --blue-dark: #2b6cb0;
+  --green-dark: #276749;
+  --yellow-dark: #92700a;
+  --muted-dark: #718096;
+  --gray: #a0aec0;
+  --gray-dark: #718096;
   --font-display: "Cormorant Garamond", serif;
   --font-body: "DM Sans", sans-serif;
 
   /* Semantic color aliases (consumed by UI components).
      Primitives above (--green, --red, --rose, etc.) stay as
      source of truth. Dark mode: override via @media query.
-     H7 roadmap: full design tokens system. */
+     H7 roadmap: full design tokens system.
+
+     Naming convention:
+     --color-{semantic}      → background/main color (badge bg, button bg)
+     --color-{semantic}-text → text/dark variant (contrast pe soft bg)
+     --color-{semantic}-soft → background tint (rgba cu 0.12 alpha)
+
+     Mapping budget status: success=plătit, info=confirmat,
+     warning=planificat, neutral=anulat.
+     Consumat de lib/budget/budget-presentation.ts (status badge/buton). */
   --color-bg: var(--ivory);
   --color-text: var(--navy);
   --color-text-muted: var(--muted);
@@ -30,8 +46,18 @@
   --color-accent: var(--rose);
   --color-accent-soft: var(--rose-light);
   --color-success: var(--green);
+  --color-success-text: var(--green-dark);
+  --color-success-soft: rgba(72, 187, 120, 0.12);
   --color-danger: var(--red);
   --color-warning: var(--yellow);
+  --color-warning-text: var(--yellow-dark);
+  --color-warning-soft: rgba(236, 201, 75, 0.12);
+  --color-info: var(--blue);
+  --color-info-text: var(--blue-dark);
+  --color-info-soft: rgba(66, 153, 225, 0.12);
+  --color-neutral: var(--gray);
+  --color-neutral-text: var(--gray-dark);
+  --color-neutral-soft: rgba(160, 174, 192, 0.12);
   --shadow-sm: 0 1px 2px rgba(19, 23, 46, 0.06);
   --shadow-md: 0 4px 12px rgba(19, 23, 46, 0.12);
 }
