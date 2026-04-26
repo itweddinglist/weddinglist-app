@@ -25,39 +25,24 @@ import type {
   BudgetSummary,
   BudgetItemStatus,
 } from "@/types/budget";
-
-// ─── Status config ─────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
-  BudgetItemStatus,
-  { label: string; color: string; bg: string }
-> = {
-  planned:   { label: "Planificat", color: "#92700a",  bg: "rgba(236,201,75,0.12)"   },
-  confirmed: { label: "Confirmat",  color: "#2b6cb0",  bg: "rgba(66,153,225,0.12)"   },
-  paid:      { label: "Plătit",     color: "#276749",  bg: "rgba(72,187,120,0.12)"   },
-  cancelled: { label: "Anulat",     color: "#718096",  bg: "rgba(160,174,192,0.12)"  },
-};
+import {
+  isBudgetItemPaid,
+  isBudgetItemPlanned,
+  isBudgetItemConfirmed,
+  isBudgetItemCancelled,
+} from "@/lib/domain/budget.rules";
+import {
+  getBudgetStatusLabel,
+  getBudgetStatusColorVar,
+  getBudgetStatusTransitions,
+} from "@/lib/budget/budget-presentation";
 
 // ─── State machine transitions ─────────────────────────────────────────────────
-// planned → confirmed | cancelled
-// confirmed → paid | cancelled
-// paid, cancelled → terminal
-
-const TRANSITIONS: Record<
-  BudgetItemStatus,
-  { to: BudgetItemStatus; label: string; color: string }[]
-> = {
-  planned:   [
-    { to: "confirmed", label: "Confirmă",         color: "#2b6cb0" },
-    { to: "cancelled", label: "Anulează",          color: "#718096" },
-  ],
-  confirmed: [
-    { to: "paid",      label: "Marchează plătit", color: "#276749" },
-    { to: "cancelled", label: "Anulează",          color: "#718096" },
-  ],
-  paid:      [],
-  cancelled: [],
-};
+// State machine + status colors implementate în lib/budget/budget-presentation.ts.
+// Reguli business (source of truth):
+//   planned → confirmed | cancelled
+//   confirmed → paid | cancelled
+//   paid, cancelled → terminal
 
 // ─── Toast system ──────────────────────────────────────────────────────────────
 
@@ -152,7 +137,7 @@ function ToastStack({
 // ─── StatusBadge ───────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: BudgetItemStatus }) {
-  const cfg = STATUS_CONFIG[status];
+  const cfg = getBudgetStatusColorVar(status);
   return (
     <span
       style={{
@@ -162,11 +147,11 @@ function StatusBadge({ status }: { status: BudgetItemStatus }) {
         borderRadius: "999px",
         fontSize: "0.72rem",
         fontWeight: 500,
-        color: cfg.color,
+        color: cfg.text,
         background: cfg.bg,
       }}
     >
-      {cfg.label}
+      {getBudgetStatusLabel(status)}
     </span>
   );
 }
@@ -226,7 +211,7 @@ function ItemModal({
   onClose: () => void;
 }) {
   const isEdit = item !== null;
-  const isPaid = item?.status === "paid";
+  const isPaid = item ? isBudgetItemPaid(item) : false;
 
   const [form, setForm] = useState<ItemFormState>({
     name:             item?.name                               ?? "",
@@ -371,13 +356,13 @@ function ItemModal({
           {isPaid && (
             <div
               style={{
-                background: "rgba(72,187,120,0.08)",
+                background: "var(--color-success-soft)",
                 border: "1px solid rgba(72,187,120,0.3)",
                 borderRadius: "8px",
                 padding: "0.75rem 1rem",
                 marginBottom: "1rem",
                 fontSize: "0.82rem",
-                color: "#276749",
+                color: "var(--color-success-text)",
               }}
             >
               Itemul este marcat ca plătit și nu poate fi modificat.
@@ -1078,7 +1063,7 @@ export default function BudgetPage() {
         setItems((prev) =>
           prev.map((i) => (i.id === item.id ? json.data! : i))
         );
-        addToast("success", `Status: ${STATUS_CONFIG[toStatus].label}`);
+        addToast("success", `Status: ${getBudgetStatusLabel(toStatus)}`);
       } catch {
         addToast("error", "Eroare de rețea.");
       }
@@ -1090,7 +1075,7 @@ export default function BudgetPage() {
 
   const handleDeleteItem = useCallback(
     async (item: BudgetItemRow) => {
-      if (item.status === "paid") {
+      if (isBudgetItemPaid(item)) {
         addToast("error", "Un item plătit nu poate fi șters.");
         return;
       }
@@ -1376,10 +1361,10 @@ export default function BudgetPage() {
                 marginTop: "0.75rem",
                 padding: "0.6rem 1rem",
                 borderRadius: "8px",
-                background: "rgba(236,201,75,0.1)",
+                background: "var(--color-warning-soft)",
                 border: "1px solid rgba(236,201,75,0.4)",
                 fontSize: "0.78rem",
-                color: "#92700a",
+                color: "var(--color-warning-text)",
               }}
             >
               ⚠ Ai cheltuieli în valute diferite — totalurile sunt calculate
@@ -1456,9 +1441,9 @@ export default function BudgetPage() {
               const isExpanded = expandedItemId === item.id;
               const payments = paymentsMap[item.id] ?? [];
               const payLoading = loadingPayments[item.id] ?? false;
-              const transitions = TRANSITIONS[item.status];
+              const transitions = getBudgetStatusTransitions(item.status);
               const canAddPayment =
-                item.status === "planned" || item.status === "confirmed";
+                isBudgetItemPlanned(item) || isBudgetItemConfirmed(item);
 
               return (
                 <div
@@ -1469,10 +1454,10 @@ export default function BudgetPage() {
                     boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
                     overflow: "hidden",
                     border:
-                      item.status === "cancelled"
+                      isBudgetItemCancelled(item)
                         ? "1px solid rgba(160,174,192,0.3)"
                         : "1px solid transparent",
-                    opacity: item.status === "cancelled" ? 0.7 : 1,
+                    opacity: isBudgetItemCancelled(item) ? 0.7 : 1,
                   }}
                 >
                   {/* Item row */}
@@ -1592,32 +1577,35 @@ export default function BudgetPage() {
                         }}
                       >
                         {/* Status transitions */}
-                        {transitions.map((t) => (
-                          <button
-                            key={t.to}
-                            onClick={() =>
-                              void handleStatusTransition(item, t.to)
-                            }
-                            style={{
-                              padding: "0.3rem 0.75rem",
-                              borderRadius: "999px",
-                              fontSize: "0.72rem",
-                              fontWeight: 500,
-                              border: `1px solid ${t.color}`,
-                              color: t.color,
-                              background: "transparent",
-                              cursor: "pointer",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = `${t.color}18`;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                          >
-                            {t.label}
-                          </button>
-                        ))}
+                        {transitions.map((t) => {
+                          const tColor = getBudgetStatusColorVar(t.to);
+                          return (
+                            <button
+                              key={t.to}
+                              onClick={() =>
+                                void handleStatusTransition(item, t.to)
+                              }
+                              style={{
+                                padding: "0.3rem 0.75rem",
+                                borderRadius: "999px",
+                                fontSize: "0.72rem",
+                                fontWeight: 500,
+                                border: `1px solid ${tColor.border}`,
+                                color: tColor.border,
+                                background: "transparent",
+                                cursor: "pointer",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = tColor.bg;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                              }}
+                            >
+                              {t.label}
+                            </button>
+                          );
+                        })}
 
                         {/* Add payment */}
                         {canAddPayment && (
@@ -1640,7 +1628,7 @@ export default function BudgetPage() {
                         </IconBtn>
 
                         {/* Delete */}
-                        {item.status !== "paid" && (
+                        {!isBudgetItemPaid(item) && (
                           <IconBtn
                             onClick={() => void handleDeleteItem(item)}
                             title="Șterge"

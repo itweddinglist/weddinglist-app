@@ -6,10 +6,11 @@
 import { describe, it, expect } from "vitest";
 import { calculateBudgetSummary } from "./calculate-summary";
 import type { BudgetItemForSummary, PaymentForSummary } from "./calculate-summary";
+import type { BudgetItemStatus } from "../../types/budget";
 
 const item = (
   estimated: number,
-  status: string,
+  status: BudgetItemStatus,
   currency = "RON",
   actual: number | null = null
 ): BudgetItemForSummary => ({
