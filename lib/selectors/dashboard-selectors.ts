@@ -6,6 +6,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { TaskEngineContext } from "@/lib/task-engine"
+import { isRsvpAccepted, isRsvpDeclined, isRsvpMaybe } from "@/lib/domain/rsvp.rules"
 
 /**
  * Agregă toate datele necesare pentru Task Engine într-un singur batch.
@@ -75,9 +76,9 @@ export async function buildTaskEngineContext(
 
     // ── RSVP ──────────────────────────────────────────────────────────────────
     const rsvpRows = rsvpResult.data ?? []
-    const rsvpAccepted = rsvpRows.filter((r) => r.status === "accepted").length
-    const rsvpDeclined = rsvpRows.filter((r) => r.status === "declined").length
-    const rsvpMaybe    = rsvpRows.filter((r) => r.status === "maybe").length
+    const rsvpAccepted = rsvpRows.filter((r) => isRsvpAccepted(r.status)).length
+    const rsvpDeclined = rsvpRows.filter((r) => isRsvpDeclined(r.status)).length
+    const rsvpMaybe    = rsvpRows.filter((r) => isRsvpMaybe(r.status)).length
     const rsvpSentCount = rsvpAccepted + rsvpDeclined + rsvpMaybe
     const rsvpPending   = guestsTotal - rsvpSentCount
 
