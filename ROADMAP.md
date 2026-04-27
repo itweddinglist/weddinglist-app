@@ -37,15 +37,15 @@
 ## SECȚIUNEA 0 — THE HARDENING WEEK
 > Primele task-uri de făcut, în ordine. Fiecare o deblochează pe următoarea.
 
-| Ord | Task | ROI | Complexitate | Note |
-|-----|------|-----|--------------|------|
-| H1 | CLAUDE.md în repo | 5 | Mică | Orice sesiune AI viitoare știe regulile fără explicații. Fișier cu arhitectură, decizii locked, reguli absolute, workflow standard |
-| H2 | Duplicate tip SeatingGuest rezolvat | 4 | Medie | `types/seating.ts` vs `lib/seating/types.ts` — previne Heisenbugs la useri reali |
-| H3 | Business rules centralizate în `domain/rules.ts` | 4 | Medie | Mută logica din hooks — SPEC Hard Rule #7. Permite E2E tests |
-| H4 | E2E testing pe critical flows | 5 | Mare | Auth, save seating, RSVP submit. Playwright. Posibil doar după H3 |
-| H5 | Re-audit securitate după fiecare sprint major | 4 | Mică | Rulează security audit prompt. Zero critical + zero high = condiție de merge în main |
-| H6 | Manual critical flow end-to-end | 5 | Mică | Testare manuală completă înainte de launch — login, seating, RSVP, export |
-| H7 | Design tokens centralizați | 3 | Mică | Culorile, fonturile, spacing în `tailwind.config.ts`. Nu blocker pentru launch, dar important pentru consistență vizuală pe termen lung |
+| Ord | Task | ROI | Complexitate | Status | Note |
+|-----|------|-----|--------------|--------|------|
+| H1 | CLAUDE.md în repo | 5 | Mică | ✅ DONE | Orice sesiune AI viitoare știe regulile fără explicații. Fișier cu arhitectură, decizii locked, reguli absolute, workflow standard |
+| H2 | Duplicate tip SeatingGuest rezolvat | 4 | Medie | ✅ DONE | `types/seating.ts` vs `lib/seating/types.ts` — previne Heisenbugs la useri reali |
+| H3 | Business rules centralizate în `lib/domain/` | 4 | Medie | ✅ DONE PR #162-#172 | Mută logica din hooks — SPEC Hard Rule #7. Permite E2E tests |
+| H4 | E2E testing pe critical flows | 5 | Mare | ⏳ TODO | Auth, save seating, RSVP submit. Playwright. Posibil doar după H3 |
+| H5 | Re-audit securitate după fiecare sprint major | 4 | Mică | ⏳ TODO | Rulează security audit prompt. Zero critical + zero high = condiție de merge în main |
+| H6 | Manual critical flow end-to-end | 5 | Mică | ⏳ TODO | Testare manuală completă înainte de launch — login, seating, RSVP, export |
+| H7 | Design tokens centralizați | 3 | Mică | 🟡 STARTED PR #170 + #172 | Culorile, fonturile, spacing în `tailwind.config.ts`. Nu blocker pentru launch, dar important pentru consistență vizuală pe termen lung |
 
 ---
 
@@ -381,11 +381,14 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 
 ## SUMARUL PRIORITĂȚILOR BEFORE LAUNCH
 
+**✅ Completed (Hardening Week):**
+`H3` — closed PR #162-#172 (Etapele 1/3 + 2/3 + 3/3)
+
 **Blochează launch absolut:**
 `S9, S13, D1, D2, D3, Z1, I9, H1, H6, I1-I8, I13-I14, G1, G2, R2, M6, Q4`
 
 **Critic pentru experiența utilizatorului:**
-`H2, H3, P1, P2, P3, P11, Z2, Z3, S10, S11, F5, Q1, M3, M10`
+`H2, P1, P2, P3, P11, Z2, Z3, S10, S11, F5, Q1, M3, M10`
 
 **Important dar nu blocant:**
 `H4, H5, H7, F2, F3, D4, D6, P4-P13, Z4-Z5, S12, S17, G3-G7, M1-M9, Q2-Q3, Q5, I10-I12, R1, R3, ME1, ME2`
