@@ -52,3 +52,17 @@ weddinglist-bridge.zip
 
 # Claude Code local settings (per-developer)
 .claude/settings.local.json
+
+# editor backups (vim, emacs, generic)
+*.bak
+*~
+*.swp
+*.swo
+
+# temp files
+*.tmp
+*.temp
+
+# Windows OS metadata
+Thumbs.db
+desktop.ini
