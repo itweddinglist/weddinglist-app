@@ -82,11 +82,17 @@ Frontend          = cache + draft state (NU trusted)
 - **Push direct pe `main`/`develop`:** INTERZIS (branch protection activă)
 - **Deploy prod:** PR din `develop` → `main`
 - **Commit format:** lowercase, commitlint enforced (ex: `fix(seating): elimina json.stringify din parametrii rpc`)
+  - Subject: lowercase obligatoriu, sub 100 chars
+  - Body lines: max 100 chars per linie
+  - Pentru subject cu acronime sau body multiline → foloseste `git commit -F .git/COMMIT_MSG_TMP.txt` (scrie message in fisier temp, apoi commit cu `-F` flag, apoi `rm` fisierul)
+  - **NEVER `--no-verify`** — Husky pre-commit (ESLint full) + commit-msg (commitlint) ruleaza obligatoriu pe fiecare commit
+  - **Auto-link bug in chat preview:** cand lipesti text in Claude Code prin browser, file names cu extensie pot fi convertite in link-uri Markdown false. Pentru content scris pe disk → foloseste wording "X file" (`changelog file`, `handoff file`) in loc de pattern literal cu extensie. Validat la PR #173a/#173b.
+  - **Heredoc PowerShell + non-ASCII = double-encoding pe Windows.** Pentru fisiere noi cu emoji/diacritice, evita `@'...'@` heredoc. Solutia: Claude Code creeaza direct fisierul cu `Write` tool (UTF-8 nativ), PowerShell doar citeste/insereaza. Validat la PR #173b recovery.
 - **Înainte de commit OBLIGATORIU:**
   - `npx tsc --noEmit` (tsc clean)
-  - `npx vitest run` (vitest — 717/717 verzi + 4 skipped)
+  - `npx vitest run` (vitest — 879/879 verzi + 4 skipped)
   - `npm run build` (Next.js Turbopack verde)
-- **Migrations:** `supabase/migrations/YYYYMMDDHHMMSS_descriere.sql` — schema changes EXCLUSIV aici
+- **Migrations:** `supabase/migrations/YYYYMMDDHHMMSS_descriere.sql` — schema changes EXCLUSIV aici, NICIODATĂ direct prin Supabase UI
 - **Fișiere `.js` din seating/teste:** rămân `.js` intenționat, NU migrezi la TS
 
 ---
@@ -169,20 +175,18 @@ Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curg
 
 ## 6. DECIZII LOCKED (nu se rediscută fără motiv tehnic solid)
 
+Constants tehnice și boundary statements. Pentru deciziile cumulative LX evolutive (procedural + arhitectural cronologic), vezi fișierul HANDOFF secțiunea 4.
+
 - **STORAGE_KEY seating:** `wedding_seating_v14` (incrementează DOAR la breaking changes)
 - **SYNC_DEBOUNCE_MS:** `1500ms` (deliberat pentru drag & drop continuu)
 - **SVG vs Canvas:** V1 = SVG; V2 = Canvas DOAR dacă FPS < 45
 - **Seating Chart CSS:** izolat de Tailwind, NERESCRIS
 - **react-window:** INTERZIS
 - **revalidateTag:** nu se aplică (client-side fetching)
-- **party_id (Group RSVP):** amânat după launch, validat cu useri reali
-- **Multi-event V1:** un singur event activ per wedding; schema suportă multiple, UI nu
 - **UNIQUE constraint `(wedding_id, first_name, last_name)`:** NU adăugăm
-- **Schema changes:** DOAR prin migrations, niciodată Supabase UI
 - **DB la conflict localStorage vs DB:** DB wins
 - **Shadow session TTL:** 15 min absolute ceiling (nu 24h)
 - **Rate limiting:** 60 req/min per user_id, 20/min per IP fallback, 429 + `Retry-After`
-- **Security audit:** 100/100 — SAFE TO LAUNCH (apr 2026)
 
 ---
 
@@ -190,7 +194,7 @@ Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curg
 
 - **Progres:** ~99% funcțional
 - **Faze 0–12:** toate ✅ DONE
-- **Teste:** 717/717 verzi + 4 skipped (721 total) pe `develop`
+- **Teste:** 879/879 verzi + 4 skipped (883 total) pe `develop`
 - **Build:** `npm run build` ✅ verde (Next.js 16.2.2 Turbopack)
 - **Security audit:** 100/100 — SAFE TO LAUNCH
 
@@ -200,11 +204,11 @@ Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curg
 |---|----------------|--------|------------------|
 | H1 | CLAUDE.md în repo | ✅ DONE | PR #156 |
 | H2 | Duplicate tip SeatingGuest rezolvat | ✅ DONE | PR #158 (Step 1 type hardening) + PR #159 (H2.5 pipeline + filtrare declined) |
-| H3 | Business rules centralizate în lib/domain/ | 🟡 IN PROGRESS | Etapa 1/3 ✅ PR #162 — infrastructura (13 predicate + 68 teste). Etapa 2/3 next — refactor consumatori RSVP. Etapa 3/3 — Budget + Attendance + consolidare isSeatingEligible. |
+| H3 | Business rules centralizate în lib/domain/ | ✅ DONE PR #162-#172 | Etapele 1/3 (#162) + 2/3 (#164-#169) + 3/3 (#172) toate complete |
 | H4 | E2E testing Playwright | ⏳ pending H3 complete | — |
 | H5 | Re-audit securitate după sprint major | ⏳ pending | — |
 | H6 | Manual critical flow end-to-end | ⏳ pending | — |
-| H7 | Design tokens centralizați | ⏳ pending | — |
+| H7 | Design tokens centralizați | 🟡 STARTED | Foundation parțial PR #170 (12 semantic aliases) + PR #172 (7 primitives + 9 semantic). Continuă la H7 milestone. |
 
 **Decizii auxiliare executate (nu sunt in ROADMAP ca task-uri distincte):**
 - CLAUDE.md v1.1 — TypeScript patterns + AI workflow rules (PR #160)
@@ -283,7 +287,7 @@ Proiectul WeddingList funcționează **permanent** în model echipă ștafetă c
 | Fișier                 | Scop                                                |
 |------------------------|-----------------------------------------------------|
 | `HANDOFF.md`           | Log operațional: stare proiect, decizii LOCKED, open items, protocol schimb de tură. Citit la început de tură, actualizat la sfârșit. |
-| `PRE_LAUNCH_AUDIT.md`  | Listă acumulativă bugs/observații pentru H6 Manual Flow Walkthrough. Fiecare PR care descoperă o problemă conexă adaugă aici. |
+| `CHANGELOG.md`         | Istoric PR-uri merged în develop (single source-of-truth). Adăugat la PR #173a. |
 | `CLAUDE.md` (acesta)   | Convenții & reguli permanente. Rar modificat.       |
 | `ROADMAP.md`           | Plan temporal strategic.                            |
 | `CONTEXT.md`           | Architectura proiect high-level.                    |
@@ -313,7 +317,7 @@ Detaliile complete sunt în `HANDOFF.md` secțiunea 9 — Protocol sfârșit de 
 
 ### 9d. UPDATE DOCS CANONICE PRIN PR
 
-Toate update-urile la `HANDOFF.md`, `PRE_LAUNCH_AUDIT.md`, `CLAUDE.md`, `ROADMAP.md`, `CONTEXT.md` trec prin PR, fără excepție. Motiv: disciplină uniformă, CI, history traceability, rollback trivial.
+Toate update-urile la `HANDOFF.md`, `CHANGELOG.md`, `CLAUDE.md`, `ROADMAP.md`, `CONTEXT.md` trec prin PR, fără excepție. Motiv: disciplină uniformă, CI, history traceability, rollback trivial.
 
 Branch convention docs:
 - `docs/handoff-update-YYYYMMDD` — update operațional

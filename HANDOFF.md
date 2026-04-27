@@ -69,6 +69,8 @@
 
 ## 4. Decizii LOCKED (nu re-deschide)
 
+Pentru constants tehnice si boundary statements (STORAGE_KEY seating, SVG vs Canvas, react-window INTERZIS, schema constraints), vezi fisierul CLAUDE sectiunea 6. Aici sunt deciziile cumulative LX in ordine cronologica (L1, L2, ... L19+).
+
 ### Arhitecturale
 
 **L1. Supabase JS client untyped + !inner joins -> double cast via unknown.**  
@@ -115,6 +117,32 @@ Dacă Claude Code descoperă bug în timpul unui PR scope-ul original, raporteaz
 **L14. Decizii arhitecturale -> Claude.ai propune opțiuni cu trade-offs, NU decide singur.**  
 Minim 2-3 opțiuni (A/B/C sau Sub-opțiuni). User aprobă explicit. Dacă decizia afectează multiple PR-uri future (ex: presentation layer), documentat ca LOCKED după aprobare.
 
+**L15. Pre-rescriere TS — separare strictă logic vs UI.**  
+Înainte de orice rescriere `.tsx`/`.jsx` în TypeScript, mută toată logica de business + presentation în `lib/`. Componenta UI rămâne thin layer care consumă predicate + helpers. Rescrierea TS atinge doar UI, NU logica. Reduce risc rescriere de 80% — predicate + presentation sunt deja TypeScript curate.
+
+**L16. Design tokens semantici pentru toate consumatorii DOM.**  
+Hex hardcoded în `.tsx`/`.jsx` consumatori = datorie tehnică automată. Toate culorile DOM trec prin `var(--*)` (CSS vars). Hex literal NUMAI pentru consumatori non-DOM (react-pdf, email rendering — pattern L4 Sub-opțiunea B). Validat în PR #170 (12 vars semantic aliases) + PR #172 (7 primitives + 9 semantic).
+
+**L17. Pre-rescriere fișiere — extracție completă logic + presentation.**  
+Orice fișier programat pentru rescriere TS în viitor, înainte de rescriere se extrage:
+1. Toată logica business → `lib/domain/<domain>.rules.ts` (predicate + funcții pure)
+2. Toată prezentarea → `lib/<domain>/<domain>-presentation.ts` (labels, colors, transitions)
+3. Componenta UI rămâne thin layer
+
+Rescrierea TS NU atinge logic + presentation, ele sunt deja TypeScript curate. Aplicat cu success în PR #172 (`app/budget/page.tsx` 1898 linii pregătit pentru HWE0.5).
+
+**L18. Hover pattern `-soft` alias acceptabil pentru CSS vars.**  
+La migrare hex hardcoded → CSS vars, dacă valoarea originală era `bg + alpha 9%` și `--color-X-soft` are alpha 12%, diferența e imperceptibilă vizual. Folosim direct `var(--color-X-soft)` în loc de generare nouă a valorii alpha exacte. Zero churn, foundation curată.
+
+**L19. Investigație pre-edit obligatorie pentru fișiere mari (>1000 linii).**  
+Înainte de Edit-uri pe fișier > 1000 linii (ex: `page.tsx` 1898 linii), obligatoriu PAS X.X.1 audit complet:
+1. Citește integral fișierul (NU doar zone vizate)
+2. Cataloghează TOATE ocurențele pattern-ului target
+3. Identifică zone out-of-scope explicit cu justificare
+4. Verify dependencies între zone (ex: hover pattern depinde de presence `-soft` alias)
+
+Aplicat cu success în PR #172 PAS 2.3.1 — descoperite 6 inline checks + 4 hex în warning boxes + 3 zone out-of-scope catalogate.
+
 ---
 
 ## 5. Open items (priority-ordered)
@@ -143,14 +171,41 @@ Post PR #170, dashboard (app/rsvp/page.tsx) are încă statusLabels + badgeColor
 
 - H4 — E2E Playwright: plasa de siguranță înainte de HWE1 seating TS migration. Setup infra + scenarios critice.
 - H5 — Re-audit securitate: post-H3, post-H4, pre-launch.
-- H6 — Manual flow walkthrough: folosește PRE_LAUNCH_AUDIT.md ca start point.
+- H6 — Manual flow walkthrough: folosește datoriile catalogate cu tag pre-launch din sub-section "Datorii tehnice catalogate" (de mai jos) ca start point.
 - H7 — Design tokens + typography polish: extindere pattern început la PR #170.
 
 ### Long-term backlog
 
 - HWE1 — Seating chart TS migration (sprint dedicat post-H7, pre-launch)
 - Supabase types cleanup (generare types, elimină cast-uri)
-- Cleanup backlog în PRE_LAUNCH_AUDIT.md
+- Cleanup backlog: vezi "Datorii tehnice catalogate" (sub-section de mai jos) cu tag pre-launch
+
+### Datorii tehnice catalogate (PR #173b)
+
+| ID | Datorie | Severitate | Scope target | Cost | Notă |
+|---|---|---|---|---|---|
+| TD-01 | Browser support matrix nu stabilit oficial | 🔴 Critical | Pre-launch (HWE3) | 1-2h discuție | Blochează decizii CSS modern (color-mix, has, container queries). Influențează deja PR #172 (am ales rgba conservator vs color-mix). |
+| TD-02 | vendor.rules placeholder gol fără test/plan | 🟡 Medium | HWE0.5 | 30 min decizie + 1-2h | Decide: implementăm vendor predicate concrete SAU ștergem fișierul. |
+| TD-03 | GitHub Actions Node.js 20 deprecated warning | 🟡 Medium | PR mic dedicat | 15-30 min | actions/checkout v4 + setup-node v4 rulează pe Node 20. GitHub forțează Node 24 default. |
+| TD-04 | Hierarchy docs neclarificată oficial | 🟡 Medium | HWE0.5 | 30 min | Adăugare sectiune 0 în CLAUDE cu Doc hierarchy + scope per fisier. |
+| TD-05 | CONTEXT sectiunea 14 PR list overlap mare cu CHANGELOG ARHIVĂ | 🟡 Medium | HWE0.5 | 1h | CONTEXT are 33 PR entries (#66-#134) — istoric mai bogat decât CHANGELOG ARHIVĂ. |
+| TD-06 | CONTEXT sectiunea 13 DECIZII LOCKED overlap cu CLAUDE 6 + HANDOFF 4 | 🟡 Medium | HWE0.5 | 1h | Audit consolidare la HWE0.5. |
+| TD-07 | Squash vs True Merge inconsistency (PR-uri #164-#172) | 🟡 Medium | PR mic dedicat | 15 min verificare | Toate 9 PR-uri au 2 parents (true merge), GitHub afișa Squash and merge buton verde. |
+| TD-08 | app/budget/page.tsx 1898 linii — programat rescriere TS | 🟡 Medium | HWE0.5 | 4-6h | Conform L17: pre-rescriere extracție DEJA făcută în PR #172. Risk redus 80%. |
+| TD-09 | gitignore lipsește pattern *.bak | 🟢 Low | PR mic dedicat | 10 min | Descoperit la PR #173a. Posibil lipsesc și *.tmp, *.swp, *~, .DS_Store. |
+| TD-10 | Outdated references (HANDOFF L146/L153, CLAUDE L286/L316) | 🟢 Low | PR #173b (acest PR) | inclusă | Fix în Edit-urile actuale. |
+| TD-11 | Border tokens lipsesc (color-X-border) | 🟢 Low | H7 Design Tokens | 1h | Foundation pentru complete design system. |
+| TD-12 | color-danger-soft + color-danger-text lipsesc | 🟢 Low | H7 Design Tokens | 30 min | Necesare pentru danger pattern complet (page.tsx l.515-807). |
+| TD-13 | Domain rules Pick vs direct import inconsistency | 🟢 Low | H7+ refactor | 1h | budget.rules folosește Pick BudgetItemRow vs attendance/rsvp import direct. |
+| TD-14 | Domain rules NU re-exportă status types | ⚪ Convention | Acceptat | 0 (decizie) | Toate 4 fișiere consistent — accept ca convenție explicită. |
+| TD-15 | Husky pre-commit + commitlint rules nedocumentate explicit | 🟢 Low | PR #173b (acest PR) | inclusă | Fix în CLAUDE sectiunea 3 — paragraf nou commitlint + Husky ESLint detalii. |
+| TD-16 | Visual zone l.189 navy overlay 45% (page.tsx) excluse din PR #172 | ⚪ Out of scope | Eventual H7 | 30 min | Out of scope conform investigation PR #172. |
+| TD-17 | Visual zone l.515-807 danger 8%/30% (page.tsx) — depinde TD-12 | ⚪ Out of scope | După TD-12 | 1h | Necesită mai întâi color-danger-soft/-text. |
+| TD-18 | Visual zone l.1467-1473 cancelled card non-status colors | ⚪ Out of scope | Acceptat | 0 | Out of scope per investigation PR #172 — non-status semantic. |
+| TD-19 | STATUS marker outdated în HANDOFF sectiunea 11 | ✅ Resolved | PR #173a | DONE | Rezolvat prin restructurare docs PR #173a. |
+
+**Sumar severitate:** 1 Critical, 7 Medium, 5 Low, 4 Out-of-scope/Convention, 2 Resolved-tracking.
+
 
 ---
 
