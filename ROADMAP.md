@@ -42,7 +42,7 @@
 | H1 | CLAUDE.md în repo | 5 | Mică | ✅ DONE | Orice sesiune AI viitoare știe regulile fără explicații. Fișier cu arhitectură, decizii locked, reguli absolute, workflow standard |
 | H2 | Duplicate tip SeatingGuest rezolvat | 4 | Medie | ✅ DONE | `types/seating.ts` vs `lib/seating/types.ts` — previne Heisenbugs la useri reali |
 | H3 | Business rules centralizate în `lib/domain/` | 4 | Medie | ✅ DONE PR #162-#172 | Mută logica din hooks — SPEC Hard Rule #7. Permite E2E tests |
-| H4 | E2E testing pe critical flows | 5 | Mare | ⏳ TODO | Auth, save seating, RSVP submit. Playwright. Posibil doar după H3 |
+| H4 | E2E testing pe critical flows | 5 | Mare | 🟡 STARTED PR #177 | H4.1 ✅ smoke + Playwright scaffold. H4.2 (auth fixtures + flows), H4.3 (CI integration) pending. Auth, save seating, RSVP submit. |
 | H5 | Re-audit securitate după fiecare sprint major | 4 | Mică | ⏳ TODO | Rulează security audit prompt. Zero critical + zero high = condiție de merge în main |
 | H6 | Manual critical flow end-to-end | 5 | Mică | ⏳ TODO | Testare manuală completă înainte de launch — login, seating, RSVP, export |
 | H7 | Design tokens centralizați | 3 | Mică | 🟡 STARTED PR #170 + #172 | Culorile, fonturile, spacing în `tailwind.config.ts`. Nu blocker pentru launch, dar important pentru consistență vizuală pe termen lung |

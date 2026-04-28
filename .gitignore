@@ -66,3 +66,10 @@ weddinglist-bridge.zip
 # Windows OS metadata
 Thumbs.db
 desktop.ini
+
+# Playwright (E2E test artefacts + auth fixtures)
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/fixtures/users/
+tests/e2e/fixtures/storage-states/
