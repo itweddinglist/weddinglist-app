@@ -47,6 +47,19 @@
 | H6 | Manual critical flow end-to-end | 5 | Mică | ⏳ TODO | Testare manuală completă înainte de launch — login, seating, RSVP, export |
 | H7 | Design tokens centralizați | 3 | Mică | 🟡 STARTED PR #170 + #172 | Culorile, fonturile, spacing în `tailwind.config.ts`. Nu blocker pentru launch, dar important pentru consistență vizuală pe termen lung |
 
+### HWE0.5 — Post-Hardening Week Consolidation
+> Blocked by: H4 (E2E) + H7 (Design tokens) complete. Cleanup major + page.tsx rewrite când foundation e ready.
+
+| Ord | Task | ROI | Complexitate | Status | Note |
+|-----|------|-----|--------------|--------|------|
+| HWE0.5-A | page.tsx 1898 linii TS rewrite | 4 | Mare | ⏳ TODO | TD-08 — split components, type safety, după H7 design tokens |
+| HWE0.5-B | Hierarchy docs clarificare | 2 | Mică | ⏳ TODO | TD-04 — 30 min, clarificare relație docs canonice |
+| HWE0.5-C | CONTEXT §14 PR list overlap CHANGELOG | 3 | Medie | ⏳ TODO | TD-05 — 1h, elimin overlap, single source CHANGELOG |
+| HWE0.5-D | CONTEXT §13 DECIZII LOCKED overlap CLAUDE/HANDOFF | 3 | Medie | ⏳ TODO | TD-06 — 1h, consolidare DECIZII într-un singur fișier |
+| HWE0.5-E | vendor.rules.ts decision + impl | 3 | Medie | ⏳ TODO | TD-02 — 30 min decizie + 1-2h impl |
+
+Total estimat HWE0.5: 7-10h efectiv.
+
 ---
 
 ## SECȚIUNEA 1 — BEFORE LAUNCH
