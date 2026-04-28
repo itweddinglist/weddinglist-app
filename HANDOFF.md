@@ -203,8 +203,12 @@ Post PR #170, dashboard (app/rsvp/page.tsx) are încă statusLabels + badgeColor
 | TD-17 | Visual zone l.515-807 danger 8%/30% (page.tsx) — depinde TD-12 | ⚪ Out of scope | După TD-12 | 1h | Necesită mai întâi color-danger-soft/-text. |
 | TD-18 | Visual zone l.1467-1473 cancelled card non-status colors | ⚪ Out of scope | Acceptat | 0 | Out of scope per investigation PR #172 — non-status semantic. |
 | TD-19 | STATUS marker outdated în HANDOFF sectiunea 11 | ✅ Resolved | PR #173a | DONE | Rezolvat prin restructurare docs PR #173a. |
+| TD-24 | ROADMAP HWE0.5 section missing | ✅ Resolved | PR #176 | DONE | Adăugare ### HWE0.5 sub-section în ROADMAP §0 + cross-reference HANDOFF section 5. Rezolvat înainte de H4.1. |
+| TD-25 | Pre-existing npm audit findings (7 vulnerabilities) | 🔴 Critical | HWE0.5-F sau security sprint | 1-3h | 1 Critical (protobufjs RCE GHSA-xq3m-2v4x-88gg via posthog→otel), 2 High (next DoS, vite path traversal), 4 Moderate (dompurify XSS, postcss XSS, uuid bounds, @sentry/webpack via uuid). ZERO contribuție Playwright @1.59.1 — pre-existente în baseline d8bd194. Discovered PR #177 PAS 2.1. |
+| TD-26 | Root redirect strategy lipsă (404 la /) | 🟡 Medium | HWE0.5-F sau PR mic dedicat pre-launch | 15-30 min implementare + 5 min smoke test update | App rulează pe subdomeniu (app.weddinglist.ro), domeniu principal e WordPress + Voxel marketing. GET / returnează 404 (no app/page.tsx). Target: redirect / → /login (sau /dashboard authenticated). Smoke test în PR #177 documentează 404 cu `toBeLessThan(500)` — toBe(200) după fix. |
+| TD-27 | CHANGELOG missing entries pentru PR #173-#176 | 🟡 Medium | PR mic dedicat docs sau HWE0.5 | 30-45 min | Single source of truth break — PR #173, #174, #175, #176 nu apar în CHANGELOG SECȚIUNEA ACTIVĂ. Discovered PR #177 PAS 6.B. |
 
-**Sumar severitate:** 1 Critical, 7 Medium, 4 Low, 4 Out-of-scope/Convention, 3 Resolved-tracking.
+**Sumar severitate:** 2 Critical, 9 Medium, 4 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---
