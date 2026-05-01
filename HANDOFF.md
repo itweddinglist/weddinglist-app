@@ -24,20 +24,20 @@
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-04-26 (PR #173a — restructurare docs)
-- **Contribuitor:** Claude Opus 4.7 (session Claude.ai, user: itweddinglist@gmail.com)
-- **Motiv handoff:** Restructurare docs (5 → 4 active: HANDOFF, ROADMAP, CHANGELOG nou, CLAUDE; STATUS + PRE_LAUNCH_AUDIT deveniți REDIRECT). PR #172 H3 Etapa 3/3 Budget refactor merged ca 48b95b9 anterior (vezi CHANGELOG.md).
-- **Next contribuitor așteptat:** continuare cu PR #173b (content update — datorii tehnice + decizii LOCKED L15-L19 + 17 open items consolidați) sau orice sesiune Claude.ai cu acces la noul stack docs.
+- **Data:** 2026-04-29 (PR #178 — H4.2.A E2E auth foundation)
+- **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
+- **Motiv handoff:** PR #178 H4.2.A E2E auth foundation ready for merge — DEV bypass via `NEXT_PUBLIC_DEBUG_AUTH` validated end-to-end, helper composite probe + spec smoke pe `/dashboard`, data-testid convention introdus pe AppShell sidebar + Dashboard module grid.
+- **Next contribuitor așteptat:** H4.2.B (RSVP flow E2E) sau H4.2.C/D — auth foundation deblochează scenarii business cu DEV mock identity.
 
 ---
 
 ## 2. Stare proiect
 
 - **Branch default:** develop
-- **Ultimul commit pe develop:** 795911d — Merge PR #170 (fix CSS vars cross-page)
-- **Baseline teste:** 837 passed + 4 skipped (Vitest)
-- **Last build:** SUCCESS (Next.js 16.2.2 Turbopack, ~6.4s)
-- **Branch-uri deschise:** docs/handoff-audit-session-protocol (curent, pentru PR #171). După merge, zero.
+- **Ultimul commit pe develop:** b9aecd7 — Merge PR #177 (H4.1 E2E Playwright Setup) — PR #178 pending merge
+- **Baseline teste:** 879 passed + 4 skipped (Vitest, 40 test files) + 4 E2E Playwright (smoke 2 + auth 2)
+- **Last build:** SUCCESS (Next.js 16.2.2 Turbopack)
+- **Branch-uri deschise:** feat/h4-e2e-auth-setup (curent, pentru PR #178).
 
 ### Stack tehnic
 
@@ -143,6 +143,12 @@ La migrare hex hardcoded → CSS vars, dacă valoarea originală era `bg + alpha
 
 Aplicat cu success în PR #172 PAS 2.3.1 — descoperite 6 inline checks + 4 hex în warning boxes + 3 zone out-of-scope catalogate.
 
+**L20. `.next/` cache corruption recovery — STANDARD procedure, NU patch.**  
+Cand `tsc --noEmit` raporteaza errors EXCLUSIV in `.next/dev/types/*` (e.g., `routes.d.ts` cu duplicate fragmente, JSDoc trunchiate, unterminated template literals) si zero errors in source files: cauza root e Next.js dev type generator interrupted la mijlocul scrierii (HMR collision). Recovery procedure: revert orice diagnostic edits temp, `rm -rf .next/`, retry. Next.js regenereaza la urmatorul `next dev` start. NU patch source files — cache corruption nu indica bug aplicatie. Aplicat cu success in PR #178 PAS 6.4-RECOVERY (heading "Se incarca..." stuck timeout + 4 routes.d.ts errors → ambele rezolvate prin cleanup).
+
+**L21. HMR + E2E race condition — cleanup `.next/` dupa modificari component pre-E2E run.**  
+Edit-uri component (`*.tsx`/`*.jsx`) DURING dev server live + `next dev` HMR + Playwright E2E run = potential interrupted type regeneration. Simptome: tests care PASS la prima rulare fail dupa edit minor (e.g., adaugare `data-testid` attribute). Workflow recomandat: dupa edit-uri component pre-E2E, `rm -rf .next/` inainte de Playwright run, garanteaza fresh state. Aplicat in PR #178 dupa adaugare `data-testid` pe Link components in AppShell + Dashboard.
+
 ---
 
 ## 5. Open items (priority-ordered)
@@ -207,8 +213,10 @@ Post PR #170, dashboard (app/rsvp/page.tsx) are încă statusLabels + badgeColor
 | TD-25 | Pre-existing npm audit findings (7 vulnerabilities) | 🔴 Critical | HWE0.5-F sau security sprint | 1-3h | 1 Critical (protobufjs RCE GHSA-xq3m-2v4x-88gg via posthog→otel), 2 High (next DoS, vite path traversal), 4 Moderate (dompurify XSS, postcss XSS, uuid bounds, @sentry/webpack via uuid). ZERO contribuție Playwright @1.59.1 — pre-existente în baseline d8bd194. Discovered PR #177 PAS 2.1. |
 | TD-26 | Root redirect strategy lipsă (404 la /) | 🟡 Medium | HWE0.5-F sau PR mic dedicat pre-launch | 15-30 min implementare + 5 min smoke test update | App rulează pe subdomeniu (app.weddinglist.ro), domeniu principal e WordPress + Voxel marketing. GET / returnează 404 (no app/page.tsx). Target: redirect / → /login (sau /dashboard authenticated). Smoke test în PR #177 documentează 404 cu `toBeLessThan(500)` — toBe(200) după fix. |
 | TD-27 | CHANGELOG missing entries pentru PR #173-#176 | 🟡 Medium | PR mic dedicat docs sau HWE0.5 | 30-45 min | Single source of truth break — PR #173, #174, #175, #176 nu apar în CHANGELOG SECȚIUNEA ACTIVĂ. Discovered PR #177 PAS 6.B. |
+| TD-28 | Next.js 16.2.2 "middleware" file convention deprecation | 🟡 Medium | PR dedicat (rename middleware.ts → proxy.ts + update conventions) | 30-60 min | Next.js emite ⚠ "middleware" convention deprecated, use "proxy" instead. Apare la `npm run dev` startup. NU breaks build/runtime, dar future Next.js version va remove suport. Discovered PR #178 PAS 4.2 webServer logs. |
+| TD-29 | HMR `.next/` corruption pattern — automated cleanup hook lipsă | 🟢 Low | Eventual sprint dedicate DX | 1-2h | Pattern recognition: dupa edit-uri component live + E2E run, `.next/dev/types/*` poate avea fragmente duplicate trunchiate (cauza HMR interruption). Manual recovery prin `rm -rf .next/` documentat L20 + L21. Eventual: pre-test hook automatizat sau Playwright globalSetup cleanup. Side-note: testele E2E observa și DNS errors (Supabase/WP unreachable din mediu sandboxed) — environment limitation, NU TD separat. Discovered PR #178 PAS 6.4-DEBUG. |
 
-**Sumar severitate:** 2 Critical, 9 Medium, 4 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+**Sumar severitate:** 2 Critical, 10 Medium, 5 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---

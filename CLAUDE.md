@@ -173,6 +173,45 @@ Nu shape-ul complet al tabelului DB. Nu shape-ul ideal. Shape-ul EXACT care curg
 
 ---
 
+### 5c. E2E TESTING CONVENTIONS
+
+#### data-testid pattern pentru selector contracts
+
+Pentru E2E tests Playwright, prefera `getByTestId` peste `getByRole({ name })` cand pagina contine repetari semantice (ex: aceleași `MODULES` array randate atat in sidebar nav cat si in module grid). Role-based selectors colide pe accessible name dublu, declanseaza Playwright strict mode violation.
+
+**Naming scheme adoptat (PR #178):**
+- `nav-link-{id}` pentru sidebar nav links (AppShell.jsx persistent)
+- `module-card-{id}` pentru dashboard module grid (page-local)
+
+`{id}` = identifier stabil din `MODULES` array (ex: `seating-chart`, `guest-list`, `budget`). Doua prefix-uri distincte = zero ambiguity intre nav vs page content.
+
+#### Composite probe pentru DEV bypass auth
+
+Cand un E2E test verifica auth-gated routes cu `NEXT_PUBLIC_DEBUG_AUTH`, foloseste **composite probe** via `/api/dev/session` inainte de navigation:
+- Status 200 → DEV_ENDPOINTS_ENABLED gate satisfied
+- `body.status === "authenticated"` → NEXT_PUBLIC_DEBUG_AUTH propagated
+- `body.app_user_id === MOCK_UUID` → dev-session.ts mock data integritate
+
+Probe orthogonal pe field `source` din `/api/dev/session` e UNRELIABLE — reflecta doar `NODE_ENV`, NU bypass active. Vezi `tests/e2e/helpers/auth.ts` pentru implementare canonica.
+
+#### Playwright webServer.env explicit pentru determinism CI
+
+`playwright.config.ts` `webServer.env` trebuie sa seteze TOATE env vars critice explicit (nu mosteneste tacit din shell):
+- `NODE_ENV: "development"` — Playwright nu forteaza, Next.js pastreaza valoarea existing cu warning daca difera
+- `NEXT_PUBLIC_DEBUG_AUTH: "true"` — pentru DEV bypass client + server
+- `DEV_ENDPOINTS_ENABLED: "true"` — pentru `/api/dev/*` endpoints (CLAUDE.md §8 double gate)
+
+CI runners pot avea `NODE_ENV=test` global → fara override explicit, DEV bypass guard fail silent.
+
+#### Recovery procedure pentru E2E cache corruption
+
+Dacă tests pass o dată și pică ulterior fără modificări la source code:
+1. `rm -rf .next/` (cleanup Next.js dev cache)
+2. Restart Playwright run (Playwright spawn fresh `next dev`)
+3. Pattern documentat în HANDOFF section 4 L20-L21 (HMR + E2E race condition)
+
+---
+
 ## 6. DECIZII LOCKED (nu se rediscută fără motiv tehnic solid)
 
 Constants tehnice și boundary statements. Pentru deciziile cumulative LX evolutive (procedural + arhitectural cronologic), vezi fișierul HANDOFF secțiunea 4.
