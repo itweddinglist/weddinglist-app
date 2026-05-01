@@ -435,7 +435,12 @@ export default function Dashboard() {
         gap: "1rem",
       }}>
         {MODULES.map((m) => (
-          <Link key={m.id} href={m.path} style={{ textDecoration: "none" }}>
+          <Link
+            key={m.id}
+            href={m.path}
+            data-testid={`module-card-${m.id}`}
+            style={{ textDecoration: "none" }}
+          >
             <div
               style={{
                 background: "white",

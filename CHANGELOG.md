@@ -14,7 +14,8 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
-| #177 | 2026-04-28 | feat | H4.1 E2E Playwright Setup — smoke 2/2 + scaffold | (pending) |
+| #178 | 2026-04-29 | feat | H4.2.A E2E auth foundation — DEV bypass helper + smoke /dashboard + data-testid convention | (pending) |
+| #177 | 2026-04-28 | feat | H4.1 E2E Playwright Setup — smoke 2/2 + scaffold | b9aecd7 |
 | #172 | 2026-04-26 | feat | H3 Etapa 3/3 — Budget predicates + presentation layer + RSVP fix | 48b95b9 |
 | #171 | 2026-04-21 | docs | Multi-session handoff protocol setup | 538b458 |
 | #170 | 2026-04-20 | fix | Define semantic color aliases used across pages (12 vars) | 795911d |
@@ -30,6 +31,7 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 - H3 Etapa 3/3 (#172): +42 teste (837 → 879 baseline)
 - Misc (#170-#171): docs + tokens fix, 0 teste delta
 - H4.1 E2E setup (#177): foundation Playwright + 2 smoke tests E2E, vitest baseline preserved (879/4 unchanged)
+- H4.2.A E2E auth foundation (#178): +1 E2E test (auth.spec.ts), data-testid contract pattern, NEXT_PUBLIC_DEBUG_AUTH composite probe, vitest baseline preserved (879/4 unchanged)
 
 ---
 

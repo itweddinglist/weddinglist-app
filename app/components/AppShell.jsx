@@ -195,6 +195,7 @@ export default function AppShell({ children }) {
               <Link
                 key={m.id}
                 href={m.path}
+                data-testid={`nav-link-${m.id}`}
                 style={{
                   display: "flex",
                   alignItems: "center",

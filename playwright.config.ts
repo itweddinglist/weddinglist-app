@@ -54,5 +54,16 @@ export default defineConfig({
         timeout: 120000,
         stdout: "ignore",
         stderr: "pipe",
+        // Explicit env override — research H4.2.A confirmă:
+        // - Playwright NU forțează NODE_ENV (moștenește din parent shell)
+        // - next dev păstrează NODE_ENV existing (nu override)
+        // - CI runners pot avea NODE_ENV=test → DEV bypass guard fail silent
+        // - DEV_ENDPOINTS_ENABLED gate /api/dev/* endpoints (CLAUDE.md §8)
+        // Setăm toate explicit pentru determinism + portabilitate CI/staging.
+        env: {
+          NODE_ENV: "development",
+          NEXT_PUBLIC_DEBUG_AUTH: "true",
+          DEV_ENDPOINTS_ENABLED: "true",
+        },
       },
 });
