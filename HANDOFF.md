@@ -388,3 +388,108 @@ Toate aceste documente sunt în rădăcina repo. **La sesiune start citește:**
 ---
 
 *End of HANDOFF.md. Noroc cu tura!*
+
+
+# HANDOFF.md — Adăugări post-audit (Mai 2026)
+
+> Aceste secțiuni se adaugă la `HANDOFF.md` existent.
+
+---
+
+## Header update (înlocuiește header-ul curent)
+
+**Status proiect:** 🔴 **NOT LAUNCHABLE** (post-audit empirical Mai 2026)
+**Faze complete:** 0-12 ✅
+**Faza activă:** 13 — Pre-launch Hardening (9 launch blockers confirmate empirical)
+**Detalii audit:** `/docs/audit/2026-05-pre-launch.md`
+
+### Verdict empirical
+
+WeddingList NU este lansabil în starea actuală. Audit empirical efectuat 2026-05-04 a confirmat:
+- 9 launch blockers (S1, S2, C1, C3, C5, C6, C7, C8, C11)
+- 7 violations GDPR cumulative
+- Pattern systemic schema drift (cauza rădăcină a 9 bugs)
+- RSVP feature complet nefuncțional
+
+### Acțiune curentă
+
+Faza 13.0 (Infrastructure) — schema drift prevention pipeline. PRECONDIȚIE pentru orice fix individual.
+
+---
+
+## Lessons noi L27-L32 (post-audit)
+
+### L27 — Audit empirical, NU "audit de pe documentație"
+
+**Lesson:** Audit-uri pe baza documentației + comments + arhitecturii declarate au valoare ZERO. **Toate 14 puncte din audit nou + 6 din audit original au necesitat verificare empirică prin grep + read pe fișiere reale.**
+
+**Pattern descoperit:** comentarii care mint:
+- `lib/rsvp/token.ts` declară "One-time: used_at setat la primul submit valid" — codul nu o face
+- `lib/supabase/idempotency.ts:46` declară "Race condition safe" — protejează doar înregistrarea, nu execuția
+- `public/privacy.html` declară "Nu utilizăm cookie-uri de tracking" — PostHog rulează necondiționat
+
+**Rule:** când investighez un audit, IGNOR comentariile + documentation declarată. Verific empirical. Comentariu vs realitate divergent → BUG separat de raportat.
+
+### L28 — Schema drift e cauza rădăcină pe care o suspectăm dar nu o verificăm
+
+**Lesson:** 9 bugs din 14 puncte audit confirmate au aceeași cauză rădăcină. Pattern: schema migrations + application code divergent + tipuri Supabase neregenerate post-migration + tests rulează pe mock-uri.
+
+**Recognize early:** dacă văd `column does not exist` sau `null value violates not-null constraint` la runtime în orice handler → **NU e bug izolat, e simptom al pattern-ului**. Pivot direct la verificare structurală pe alte consumers.
+
+**Fix structural:** schema-guard runtime + types regenerate la fiecare migration + integration tests cu DB reală. **NU bug-by-bug.**
+
+### L29 — Tests verzi pe mock-uri = false confidence
+
+**Lesson:** 879/879 tests verzi nu au prins niciun din cele 9 schema drift bugs. Mock-urile reflectă schema declarată în code, NU schema reală în DB.
+
+**Rule:** orice consumer DB nou trebuie să aibă **integration test cu Supabase DEV real**. Unit test cu mock = doar pentru logica pură (validation, transformation, etc.).
+
+**CI gate:** integration tests obligatorii înainte de merge la `develop`.
+
+### L30 — Vulnerabilități compuse > suma componentelor
+
+**Lesson:** S1 (RLS open) + S2 (PostHog leak) + S3 (Referrer-Policy missing) = vulnerabilitate exponențial mai gravă decât oricare individual.
+
+**Lanț de leak descoperit:**
+1. PostHog mount root layout → captures `$pageview` cu `public_link_id`
+2. Trimis la PostHog Inc. (US-hosted possibly)
+3. Atacator cu acces dashboard PostHog → are toate public_link_id
+4. Cu RLS open (S1) → exfiltrare totală + falsificare RSVP
+
+**Rule:** investighez vulnerabilități individual + **interacțiunea dintre ele**. Threat modeling cu lanțuri compuse.
+
+### L31 — Audit nou poate fi greșit pe severity, NU pe existence
+
+**Lesson:** Audit nou avea S5 (CSRF gaps) marcat Critical. Realitate empirică: Medium (account)/Low (shadow-session — idempotent refresh, no useful exploit).
+
+**DAR audit nou A RATAT:** import/json POST cu același gap (3rd endpoint). Plus al 4-lea: ratificat C9 ("autosave seating ignoră event_id") ca Critical, realitatea = LOW (edge case 1500ms).
+
+**Rule:** audit external = punct de pornire valoros, **NU sursă de adevăr**. Verific severity empirical + caut bonus findings (pattern: "dacă audit-ul a găsit asta, sunt alte locuri similare?"). În acest audit am descoperit ~20 bonus findings nedocumentate.
+
+### L32 — Time investment în audit empirical = 100% return
+
+**Lesson:** ~2 zile intensive (verificat 14 puncte cu grep + analiză) au prevenit:
+- Launch fail public + reputational damage
+- GDPR fines (5,000-50,000 RON sau până la 4% turnover)
+- Bug-uri din clasa schema drift care reapar lunar
+- Vendor lock-in user (export broken)
+- Account deletion blocking global
+
+**ROI:** comparativ cu 174-276h fix work, audit-ul a costat ~16h. Return: previne ~10x cost recovery + reputation + legal risk.
+
+**Rule:** pentru orice produs B2C cu PII, **audit empirical pre-launch e investiție, NU cheltuială.** Repetabil pre-fiecare major release.
+
+---
+
+## Decizii LOCKED noi (post-audit)
+
+Toate adăugate în CLAUDE.md §10. Highlights:
+
+- Schema-code consistency: types regenerate + schema-guard + integration tests
+- RSVP architecture: anon zero acces, pivot table, shadow invitation, history tracking, sync trigger
+- Atomicity: stored procedures cu BEGIN/COMMIT, NU HTTP-uri independente
+- Audit log per-step (NU doar success/failure)
+- GDPR: consent gate, privacy aliniat cu realitate, GDPR rights endpoints
+- Security: headers OWASP complete, CSP report-only, PostHog off pe rute publice
+- Idempotency: pattern atomic INSERT ON CONFLICT, adopt universal
+- RLS: `is_wedding_role` (role-aware) NU `is_wedding_member` (role-blind)
