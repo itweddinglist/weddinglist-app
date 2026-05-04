@@ -554,3 +554,50 @@ Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul 
 - **Total estimat:** 174-276h focused work
 - **6 faze** structurate (0: Infrastructure → 1: RSVP → 2: GDPR → 3: Security → 4: Data → 5: Integrity → 6: Polish)
 - **Faza 0 PRIMA** — fără infrastructure, restul fixurilor sunt construit pe nisip
+
+
+---
+
+## §12 — Stack tooling disponibil (multi-model collaboration)
+
+User-ul are acces la **4 canale paralele**:
+
+### Claude.ai (planning + audit)
+- **Rol:** planner arhitectural, audit, decizii LOCKED, documentation
+- **Cum funcționează:** chat web, sesiuni separate, context zero între ele (excepție: HANDOFF.md + CLAUDE.md + ROADMAP.md = sync mechanism)
+- **Plan user:** Pro
+
+### Claude Code (primary executant)
+- **Rol:** execuție tehnică în terminal pe codul real
+- **Validat:** PR #178 (H4.2.A E2E auth foundation) — funcționează bine
+- **Recomandat:** taskuri lungi cu mult context cross-file, refactor multi-file, migrations + RPCs
+
+### ChatGPT (second opinion)
+- **Plan user:** Plus
+- **Modele disponibile:** GPT-5.3 Instant (default) + GPT-5.5 Thinking
+- **Rol:** validare cross-model pe decizii arhitecturale critice, detectare blind spots
+- **Pattern:** Claude.ai produce plan → user paste în ChatGPT 5.5 Thinking cu prompt critic → feedback → reconsiderare dacă necesar
+- **NU folosim pentru:** întrebări factuale despre stack proprietar, decizii LOCKED settled, documentation
+
+### Codex (backup executant)
+- **Rol:** alternativă la Claude Code când rate-limited
+- **Recomandat:** taskuri scurte, izolate (un fișier, refactor mic)
+- **NU recomandat:** taskuri cu mult context cross-file (Claude Code mai bun acolo)
+
+### Workflow recomandat pentru Faza 13
+
+Pentru decizii arhitecturale critice (RSVP reconstruction, account deletion atomic, schema-guard design):
+
+1. Claude.ai generează plan + decizii LOCKED + prompts Claude Code
+2. User paste plan în ChatGPT 5.5 Thinking cu prompt critic structurat
+3. User aduce feedback ChatGPT înapoi la Claude.ai
+4. Claude.ai ajustează planul dacă feedback e valid; explică dacă nu
+5. User execută cu Claude Code prompt-uri ajustate
+6. La PR review: user paste diff în ChatGPT pentru second opinion
+7. User aduce review înapoi la Claude.ai pentru decizie merge/iterate
+
+### Decizie LOCKED tooling
+
+- **Multi-model validation pe decizii arhitecturale critice = OBLIGATORIE**
+- **Documentation update prin PR (Claude.ai planuiește, Claude Code/Codex execută)**
+- **Audit empirical pre-launch = repetabil pentru fiecare major release** (vezi /docs/audit/)
