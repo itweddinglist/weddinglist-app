@@ -389,3 +389,168 @@ Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul 
 
 *Onboarding version: 1.2 — Aprilie 2026 (H3 Etapa 1 merged — lib/domain/ infrastructura + Hardening Week status table)*
 *Scope V1: ROADMAP.md (operational). Hard Rules §1 + contracte tehnice: SPEC V5.4 (istoric dar autoritar).*
+
+
+
+# CLAUDE.md — Adăugări post-audit (Mai 2026)
+
+> Aceste secțiuni se adaugă la `CLAUDE.md` existent. Detalii complete: `/docs/audit/2026-05-pre-launch.md`.
+
+---
+
+## §10 — Decizii LOCKED post-audit pre-launch (2026-05)
+
+### §10.1 Schema-code consistency (preventive)
+
+**Cauza rădăcină a 7+ bugs blocking confirmate empirical:** schema migrations + application code divergente. Fix structural OBLIGATORIU înainte de orice fix individual.
+
+- **TypeScript types Supabase regenerate OBLIGATORIU** după fiecare migration (Husky pre-commit hook):
+  ```bash
+  npx supabase gen types typescript --local > types/database.ts
+  ```
+- **Supabase JS client cu strict typing**: `createClient<Database>(...)` — NU `createClient(...)` generic
+- **Schema-guard runtime** (`lib/db/schema-guard.ts`): app refuze să pornească dacă DB schema diferă de schema declarată
+- **Migrations CI**: up + down + up testat pe fiecare PR (verifică rollback + idempotency)
+- **Niciun ALTER TABLE în Supabase UI** (deja LOCKED, reafirmat — accent zero tolerance)
+
+### §10.2 Tests integration cu DB reală (preventive)
+
+- **Tests unit pe mock-uri = INSUFICIENT.** Pentru orice consumer DB, OBLIGATORIU integration test cu Supabase DEV real.
+- **Vitest profile separat** (`vitest.integration.config.ts`) contra Supabase DEV.
+- **CI pipeline**: integration tests obligatorii înainte de merge la `develop`.
+- **Roundtrip tests** pentru export/import — every PR retests end-to-end.
+
+### §10.3 RSVP architecture
+
+- **Anon zero acces RSVP via Supabase JS direct.** Toate operațiile RSVP trec prin Next.js API routes cu `service_role` server-side.
+- **`rsvp_invitations.event_id` rămâne NOT NULL** — invitation = `(guest, event)` pereche, NU `(guest, wedding)`.
+- **Pivot table `rsvp_invitation_events`** pentru un link unic cu multiple events.
+- **Shadow invitation pattern** pentru manual override (invitation cu `delivery_channel='couple_manual'`, `is_active=false`) — NU `invitation_id: null`.
+- **History tracking obligatoriu** — `rsvp_response_versions` + trigger `BEFORE UPDATE`.
+- **Sync trigger `AFTER INSERT/UPDATE`** pe `rsvp_responses` → `guest_events.attendance_status` cu mapping enum (`accepted → attending`).
+- **Email confirmare guest** la fiecare RSVP submit (defense împotriva link forwarding takeover).
+- **`wedding.rsvp_modifiable BOOLEAN`** — host poate configura comportament re-submit (default `true` cu warning + email host la modificare).
+
+### §10.4 Atomicity by default
+
+- **Toate operațiile multi-step → PostgreSQL stored procedures cu BEGIN/COMMIT.** NU HTTP-uri independente prin Supabase JS.
+- **Account deletion** via `delete_account_atomic()` RPC.
+- **Import wedding** via `import_wedding_v2()` RPC.
+- **RSVP submit** rămâne atomic via UPSERT, dar audit log per-step adăugat.
+
+### §10.5 Audit log per-step
+
+- **`wl_audit` apelat OBLIGATORIU** pe:
+  - Account deletion (per-step, NU doar requested/completed/failed)
+  - RSVP submit (cu before/after pentru overwrite detection)
+  - Manual RSVP override
+  - Wedding member add/remove/role-change
+  - Bulk operations (CSV import, JSON import, bulk RSVP)
+  - Privacy ops (export, role changes, account state changes)
+- **NICIODATĂ doar `console.warn`** pentru evenimente de audit. Trebuie persistat în `audit_logs`.
+
+### §10.6 GDPR compliance
+
+- **Consent gate înainte de PostHog init.** Banner UI-only theater = forbidden.
+- **Privacy policy must reflect realitate empirică.** Niciun "Nu utilizăm cookie-uri de tracking" dacă PostHog rulează.
+- **Toate processors declarate în privacy §5** + DPA semnat verificat.
+- **GDPR rights endpoints obligatorii**: `/api/gdpr/access`, `/api/gdpr/erasure`, `/api/gdpr/object`.
+- **Placeholders privacy.html (`[NUME COMPANIE]`, `[EMAIL CONTACT]`, `[DOMENIU]`) NU pot rămâne necompletate** post-launch — checklist pre-deploy.
+- **Schrems II compliance**: PostHog instanță EU prefer, sau SCC + TIA documentat dacă US.
+
+### §10.7 Security headers
+
+- **Toate routes mutating → `checkOrigin` obligatoriu** (CI check enforce — assert via test).
+- **Headers OWASP standard pe toate response-urile** (CSP, HSTS, X-Frame-Options, Referrer-Policy, X-Content-Type-Options, COOP/CORP).
+- **CSP report-only mode 1 săptămână** înainte de enforce — colectează violations.
+- **`Cache-Control: no-store`** pe toate API routes care return PII.
+- **PostHog dezactivat pe rute publice** (`/rsvp/*`) — minimize public_link_id leak surface + privacy guests anon.
+- **Referrer-Policy `no-referrer`** specifică pe rute publice (override global).
+
+### §10.8 Rate limiting
+
+- **Rate limit fail-CLOSED** — refuse requests dacă Redis down + monitoring alert.
+- **Per-endpoint rate limits granulare**:
+  - RSVP submit: 5/min/IP+token
+  - Account delete: 1/hour/user
+  - Export: 10/hour/user
+  - Bulk operations: 1/minute/user
+- **Audit log pe rate limit hits** (cu IP + user + endpoint).
+
+### §10.9 Idempotency framework
+
+- **Pattern atomic `INSERT ON CONFLICT DO NOTHING RETURNING`** — NU `SELECT-then-INSERT` clasic (race-prone).
+- **Adopt în toate 20 endpoints mutating** (NU doar 1):
+  - RSVP submit, manual override, invitations
+  - Guests POST/PATCH/DELETE
+  - Guest-events bulk
+  - Budget items + payments
+  - Migrate-local
+  - Import JSON
+- **PG Cron cleanup TTL 24h** pe `idempotency_keys` (sau Edge Function scheduled).
+- **Audit log pe race detection** — când CONFLICT apare, log "idempotency_race".
+
+### §10.10 RLS roluri (defense-in-depth)
+
+- **`is_wedding_role(_wedding_id, _min_role)`** în loc de `is_wedding_member` (role-blind).
+- **RLS policies UPDATE/DELETE pe 14 tabele operaționale** folosesc `is_wedding_role(wedding_id, 'editor')`.
+- **Decizie: Supabase Auth integration NU se introduce încă** — dacă/când se introduce, RLS role-aware e precondiție.
+
+### §10.11 Documentation discipline
+
+- **Comentarii cod = OBLIGATORIU să reflecte realitatea.** Niciun "One-time: used_at setat la primul submit valid" dacă codul nu o face.
+- **Single source of truth** pentru fiecare decizie arhitecturală: schema + code + comments aliniate.
+- **Code review check**: dacă comentariu declară comportament, verifică empirical că cod-ul îl implementează.
+- **Comentarii MISLEADING = SEVERE.** Audit a descoperit `idempotency.ts:46` "Race condition safe" care era tehnic adevărat dar ascundea gap-ul real.
+
+### §10.12 Pattern recognition: schema drift e cauza rădăcină
+
+**Bug-uri din clasa "TS verde, runtime DB broken" identificate empirical:**
+
+| Bug | Coloana fantomă / NOT NULL violation |
+|-----|--------------------------------------|
+| C4 Dashboard stats | `seat_assignments.guest_id` (corect = `guest_event_id`) |
+| C5 Export tables | `tables.deleted_at` (fantomă) |
+| C5 Import wedding | `weddings.location_name` + `owner_user_id` NOT NULL |
+| C5 Import events | `events.ends_at` (fantomă) |
+| C5 Import guests | `guests.email`, `phone`, `group_id` (fantomă) |
+| C5 Import tables | `tables.type` (fantomă, corect = `table_type`) |
+| C7 RSVP invitations | `event_id` NOT NULL (lipsă în INSERT) |
+| C8 Manual RSVP | `invitation_id` NOT NULL (set null) |
+| C11 Account DELETE | `app_users.status` (fantomă) |
+
+**Toate au aceeași cauză:** TS strict NU verifică schema Supabase + tests rulează pe mock-uri.
+
+**Probably mai există bugs din aceeași clasă** în alte consumers neverificați. **Faza 0 (schema-code consistency pipeline) e PRECONDIȚIE** pentru orice fix individual — altfel reparăm bugs care reapar.
+
+---
+
+## §11 — Status post-audit pre-launch (2026-05)
+
+### Verdict empirical
+
+**WeddingList NU este lansabil în starea actuală.** 9 launch blockers confirmate empirical:
+
+| # | Issue | Categorie | Severity |
+|---|-------|-----------|----------|
+| S1 | RLS RSVP open la anon | Security | 🔴 Critical |
+| S2 | PostHog tracking fără consent + privacy false | GDPR | 🔴 Critical |
+| C1 | RSVP nu sincronizează guest_events | Logic | 🔴 Critical |
+| C3 | RSVP modificabil fără identity check | GDPR Art. 5 | 🔴 Critical |
+| C5 | Import JSON 0% functional | GDPR Art. 20 | 🔴 Critical |
+| C6 | Export 0% functional | GDPR Art. 20 | 🔴 Critical |
+| C7 | rsvp_invitations.event_id NOT NULL — INSERT eșuează | RSVP | 🔴 HIGH |
+| C8 | Manual RSVP invitation_id NULL | RSVP | 🔴 HIGH |
+| C11 | Account DELETE broken global | GDPR Art. 17 | 🔴 Critical |
+
+### Implicații cumulative
+
+- **RSVP feature complet nefuncțional** pentru un wedding nou (combinație C7 + C8 + C1)
+- **7 violations GDPR confirmate empirical** (Art. 5(1)(d), 6, 13, 15, 17, 20, 28)
+- **Pattern systemic schema drift** — cel puțin 9 bugs din aceeași clasă
+
+### Plan acțiune (vezi `/docs/audit/2026-05-pre-launch.md` §6)
+
+- **Total estimat:** 174-276h focused work
+- **6 faze** structurate (0: Infrastructure → 1: RSVP → 2: GDPR → 3: Security → 4: Data → 5: Integrity → 6: Polish)
+- **Faza 0 PRIMA** — fără infrastructure, restul fixurilor sunt construit pe nisip

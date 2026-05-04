@@ -439,3 +439,168 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 *Data: 16 Aprilie 2026*
 *Surse: SPEC V5.4 + CONTEXT V2.0 + STATUS apr16 + ROADMAP v1.2 + v1.5 (ChatGPT) + Gemini + sesiuni Claude apr 7-16 + security audit 100/100*
 *Motto: Nu mai adăuga nimic. Execută.*
+
+
+
+# ROADMAP.md — Faza 13: Pre-launch Hardening (post-audit Mai 2026)
+
+> Adaug această secțiune la ROADMAP.md existent.
+> Detalii complete: `/docs/audit/2026-05-pre-launch.md`.
+
+---
+
+## Faza 13 — Pre-launch Hardening (post-audit empirical Mai 2026)
+
+**Status:** 🔴 **BLOCKING LAUNCH** — 9 launch blockers confirmate empirical
+**Estimare:** 174-276h focused work (~2-3.5 luni la 4-6h/zi)
+**Justificare:** Audit empirical a confirmat că produsul **NU este lansabil** în starea actuală. RSVP feature complet nefuncțional, 7 violations GDPR cumulative, pattern systemic schema drift.
+
+### Sub-faze
+
+#### Faza 13.0 — Infrastructure (PRECONDIȚIE) — 18-30h
+
+**Scop:** Fix-ul care face fix-urile celelalte sustainable. Cauza rădăcină a 7+ bugs e schema drift fără pipeline de validare.
+
+- [ ] 13.0.A.1 — Husky pre-commit hook: `supabase gen types typescript` automatic
+- [ ] 13.0.A.2 — Supabase JS client cu strict typing `createClient<Database>(...)`
+- [ ] 13.0.A.3 — Schema validation runtime (`lib/db/schema-guard.ts`) — fail rapid pe drift
+- [ ] 13.0.A.4 — Vitest profile `vitest.integration.config.ts` cu Supabase DEV
+- [ ] 13.0.A.5 — Migration testing CI (up + down + up)
+- [ ] 13.0.B.1 — `wl_audit_step()`, `wl_audit_diff()`, `wl_audit_actor()` extensions
+- [ ] 13.0.B.2 — Apel audit log pe toate mutațiile sensibile
+- [ ] 13.0.B.3 — Reverse-lookup endpoint (DEV only)
+
+#### Faza 13.1 — RSVP Reconstruction — 32-52h
+
+**Scop:** Modulul RSVP refactorizat de la zero contra arhitecturii corecte. Combinație C1 + C2 + C3 + C7 + C8 + S1 face feature-ul complet broken.
+
+- [ ] 13.1.A.1 — Migration `20260501000001_rsvp_reconstruction.sql`
+- [ ] 13.1.A.2 — Pivot table `rsvp_invitation_events`
+- [ ] 13.1.A.3 — Shadow invitation pattern pentru manual override
+- [ ] 13.1.A.4 — History tracking `rsvp_response_versions` + trigger
+- [ ] 13.1.A.5 — Sync trigger `AFTER INSERT/UPDATE` pe rsvp_responses → guest_events
+- [ ] 13.1.A.6 — Mapping enum `accepted → attending`
+- [ ] 13.1.A.7 — Backfill rows existente
+- [ ] 13.1.A.8 — `wedding.rsvp_modifiable BOOLEAN` config
+- [ ] 13.1.B.1 — RLS strict pentru anon (zero acces RSVP via Supabase JS)
+- [ ] 13.1.B.2 — Toate operațiile RSVP prin Next.js API + service_role
+- [ ] 13.1.C.1 — POST `/api/rsvp/invitations` rewrite cu `event_ids: string[]`
+- [ ] 13.1.C.2 — POST `/api/rsvp/manual` rewrite cu shadow invitation
+- [ ] 13.1.C.3 — POST `/api/rsvp/[public_link_id]` rewrite cu partial response
+- [ ] 13.1.C.4 — UI guest re-deschidere link cu warning + history
+- [ ] 13.1.C.5 — Email confirmare guest la fiecare submit
+- [ ] 13.1.D.1 — Schema migration ADD COLUMN `email TEXT` pe guests
+- [ ] 13.1.D.2 — CSV import support email
+- [ ] 13.1.D.3 — UI guest list email opțional
+- [ ] 13.1.D.4 — Email URL fix cu publicLinkId
+- [ ] 13.1.D.5 — RESEND_API_KEY configurare
+
+#### Faza 13.2 — GDPR Compliance — 16-28h
+
+**Scop:** 7 violations GDPR rezolvate. Privacy policy aliniat cu realitate empirică.
+
+- [ ] 13.2.A.1 — Consent banner restructurat (3 opțiuni: essential/accept all/personalizează)
+- [ ] 13.2.A.2 — PostHog init gated pe consent
+- [ ] 13.2.A.3 — Reactive `posthog.opt_out_capturing()` la decline
+- [ ] 13.2.A.4 — Defense-in-depth (`disable_session_recording`, `autocapture: false`)
+- [ ] 13.2.B.1 — Privacy.html completat (placeholders: nume companie, email, domeniu)
+- [ ] 13.2.B.2 — PostHog Inc. declarat în privacy §5 procesatori
+- [ ] 13.2.B.3 — DPA cu PostHog verificat/semnat
+- [ ] 13.2.B.4 — Cookies §8 detaliat per categorie
+- [ ] 13.2.B.5 — GDPR rights endpoints: `/api/gdpr/access`, `/erasure`, `/object`
+- [ ] 13.2.C.1 — PostHog instanță verificată (EU vs US)
+- [ ] 13.2.C.2 — Migrare la EU instance dacă necesar
+- [ ] 13.2.C.3 — TIA documentat dacă US
+
+#### Faza 13.3 — Security Hardening — 17-28h
+
+**Scop:** Defense-in-depth full. CSRF gaps fix, headers OWASP, RLS role-aware.
+
+- [ ] 13.3.A.1 — `next.config.mjs` cu CSP, HSTS, X-Frame-Options, Referrer-Policy, X-Content-Type-Options, COOP/CORP
+- [ ] 13.3.A.2 — CSP report-only mode 1 săptămână + fine-tune
+- [ ] 13.3.A.3 — Referrer-Policy `no-referrer` pe `/rsvp/*`
+- [ ] 13.3.A.4 — PostHog dezactivat pe rute publice
+- [ ] 13.3.A.5 — `Cache-Control: no-store` pe API PII
+- [ ] 13.3.B.1 — `checkOrigin` pe account DELETE, shadow-session POST, import/json POST
+- [ ] 13.3.B.2 — CI check assert toate routes mutating au `checkOrigin`
+- [ ] 13.3.C.1 — PostgreSQL function `is_wedding_role(_wedding_id, _min_role)`
+- [ ] 13.3.C.2 — RLS policies actualizate pe 14 tabele operaționale
+- [ ] 13.3.C.3 — Tests integration cu mock JWT pentru fiecare role
+- [ ] 13.3.D.1 — Rate limit fail-CLOSED (refuse dacă Redis down)
+- [ ] 13.3.D.2 — Per-endpoint granular rate limits
+- [ ] 13.3.D.3 — Audit log pe rate limit hits
+
+#### Faza 13.4 — Data Portability — 36-54h
+
+**Scop:** Export/import functional + GDPR Art. 20 compliance.
+
+- [ ] 13.4.A.1 — Format versionat strict `schema_version: "2.0"`
+- [ ] 13.4.A.2 — Multi-format (JSON, CSV per entitate, PDF)
+- [ ] 13.4.A.3 — Schema validation runtime (folosește schema-guard)
+- [ ] 13.4.A.4 — Streaming pentru weddings mari (NDJSON)
+- [ ] 13.4.A.5 — Bug `tables.deleted_at` rezolvat
+- [ ] 13.4.A.6 — `wedding_members`, `vendors` incluse în export
+- [ ] 13.4.B.1 — PostgreSQL function `import_wedding_v2()` tranzacțional
+- [ ] 13.4.B.2 — Schema validation strict cu Zod
+- [ ] 13.4.B.3 — Idempotency cu `idempotency_key`
+- [ ] 13.4.B.4 — Schema migration logic v1.0 → v2.0
+- [ ] 13.4.C.1 — Integration test mandatory roundtrip
+- [ ] 13.4.C.2 — Property-based tests
+- [ ] 13.4.C.3 — CI check roundtrip pe fiecare PR
+
+#### Faza 13.5 — Data Integrity — 30-46h
+
+**Scop:** Idempotency adopt universal + Account DELETE structural rewrite + Dashboard stats fix.
+
+- [ ] 13.5.A.1 — Refactor `withIdempotency` la pattern atomic `INSERT ON CONFLICT DO NOTHING RETURNING`
+- [ ] 13.5.A.2 — Adopt în toate 20 endpoints mutating
+- [ ] 13.5.A.3 — PG Cron cleanup TTL 24h
+- [ ] 13.5.A.4 — Audit log pe race detection
+- [ ] 13.5.A.5 — Tests concurrente (property-based)
+- [ ] 13.5.B.1 — PostgreSQL function `delete_account_atomic`
+- [ ] 13.5.B.2 — Schema migration ADD COLUMN `app_users.status, deletion_requested_at, scheduled_for_deletion_at`
+- [ ] 13.5.B.3 — Tabelă `deleted_users` pentru audit/compliance
+- [ ] 13.5.B.4 — FK fix `idempotency_keys.app_user_id` ON DELETE CASCADE
+- [ ] 13.5.B.5 — FK fix `weddings.owner_user_id` ON DELETE SET NULL
+- [ ] 13.5.B.6 — Hard delete real pentru weddings fără alți members
+- [ ] 13.5.B.7 — Soft delete cu retention 30 zile + cancel flow
+- [ ] 13.5.B.8 — SOLE_OWNER guard cu row lock `FOR UPDATE`
+- [ ] 13.5.B.9 — Recovery endpoints (cancel-deletion, admin recovery)
+- [ ] 13.5.C.1 — Dashboard stats fix `guest_id` → `guest_event_id`
+- [ ] 13.5.C.2 — `Promise.all` → `Promise.allSettled`
+- [ ] 13.5.C.3 — Integration test pe `/api/dashboard/stats`
+
+#### Faza 13.6 — Polish + Tests — 25-38h
+
+**Scop:** C9 fix + documentation + test coverage gaps.
+
+- [ ] 13.6.A.1 — `useEffect` cleanup pe `[eventId]` care clear `syncTimerRef`
+- [ ] 13.6.B.1 — CLAUDE.md updated cu §10 + §11 (decizii LOCKED post-audit)
+- [ ] 13.6.B.2 — HANDOFF.md updated (Faze 13.0-13.6 marcate)
+- [ ] 13.6.B.3 — ROADMAP.md updated (status Faza 13)
+- [ ] 13.6.B.4 — CHANGELOG.md entries per PR
+- [ ] 13.6.C.1 — Integration test suite complete contra Supabase DEV
+- [ ] 13.6.C.2 — E2E test suite Playwright (login → wedding → guests → invitations → RSVP → updates)
+- [ ] 13.6.C.3 — CI integration: all tests must pass înainte de merge
+
+### Secvența recomandată (paralelizare)
+
+**Ordine STRICT obligatorie:**
+
+1. **Faza 13.0 PRIMA** — fără infrastructure, restul fixurilor sunt construit pe nisip
+2. **Faza 13.5.C (dashboard) + 13.6.A (C9)** quick wins paralel cu 13.0
+3. **Faza 13.1 (RSVP)** — feature core broken, prioritate maximă după infra
+4. **Faza 13.4 (Export/Import)** poate începe în paralel cu 13.1.B după ce schema RSVP e finalizată
+5. **Faza 13.2 (GDPR)** — paralel cu 13.1 (nu interactionează)
+6. **Faza 13.3 (Security)** — paralel cu 13.5 (independente)
+7. **Faza 13.5.A + 13.5.B** — DUPĂ 13.0 + 13.4 (depind de schema-guard + tipuri Supabase regenerate)
+8. **Faza 13.6 (Polish)** — final
+
+### Criteriu "DONE" pentru Faza 13
+
+- [ ] Toate 9 launch blockers confirmate empirical sunt REZOLVATE empirical (verificat prin integration test contra DB reală)
+- [ ] Pattern systemic schema drift NU mai poate apărea (schema-guard + types + integration tests CI)
+- [ ] 7 violations GDPR rezolvate (verificate prin checklist legal)
+- [ ] Toate 14 puncte din audit nou + 6 din audit original au verdict ✅ în re-test empirical
+- [ ] CI pipeline forțează: TS strict + lint + unit + integration + roundtrip + E2E
+- [ ] Documentation aliniată cu cod (no comments care mint)

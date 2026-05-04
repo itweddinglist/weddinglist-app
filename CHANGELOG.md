@@ -1,4 +1,4 @@
-# CHANGELOG — WeddingList
+﻿# CHANGELOG — WeddingList
 
 > Istoric PR-uri merge-uite în develop.
 > Single source-of-truth pentru tot ce s-a livrat.
@@ -14,6 +14,7 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
+| #TBD | 2026-05-04 | docs | Pre-launch audit empirical findings + Faza 13 plan (174-276h) — 9 launch blockers, 7 GDPR violations, schema drift pattern | (pending) |
 | #178 | 2026-04-29 | feat | H4.2.A E2E auth foundation — DEV bypass helper + smoke /dashboard + data-testid convention | (pending) |
 | #177 | 2026-04-28 | feat | H4.1 E2E Playwright Setup — smoke 2/2 + scaffold | b9aecd7 |
 | #172 | 2026-04-26 | feat | H3 Etapa 3/3 — Budget predicates + presentation layer + RSVP fix | 48b95b9 |
