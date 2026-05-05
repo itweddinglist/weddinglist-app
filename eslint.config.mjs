@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Seating Chart — locked, adresat în Faza 2A
     "app/seating-chart/**",
+    // Auto-generated Supabase types (Faza 13.0 PR 1A) — ESLint nu poate parsa formatul
+    "types/database.ts",
   ]),
   {
     plugins: {
