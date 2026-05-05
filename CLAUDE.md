@@ -431,12 +431,23 @@ Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul 
 - **Email confirmare guest** la fiecare RSVP submit (defense împotriva link forwarding takeover).
 - **`wedding.rsvp_modifiable BOOLEAN`** — host poate configura comportament re-submit (default `true` cu warning + email host la modificare).
 
-### §10.4 Atomicity by default
+### §10.4 Atomicity granulară per complexitate operație
 
-- **Toate operațiile multi-step → PostgreSQL stored procedures cu BEGIN/COMMIT.** NU HTTP-uri independente prin Supabase JS.
-- **Account deletion** via `delete_account_atomic()` RPC.
-- **Import wedding** via `import_wedding_v2()` RPC.
-- **RSVP submit** rămâne atomic via UPSERT, dar audit log per-step adăugat.
+**Atomicity granulară per complexitate operație:**
+
+**RPC tranzacțional OBLIGATORIU pentru:**
+- Account deletion (multi-step destructive cu FK constraints)
+- Wedding import (10+ entități, dependencies)
+- RSVP invite creation multi-event (pivot table inserts)
+- Seating sync (multi-table state reconciliation cu OCC)
+- Schema migrations cu data backfill
+
+**App-layer cu idempotency framework pentru:**
+- CRUD simplu (INSERT/UPDATE/DELETE single row)
+- Mutații cu maximum 2 INSERTs (parent + child)
+- Operații care NU au rollback complex
+
+**Rationale:** RPC pe orice CRUD = over-engineering, complică testabilitate și debug. RPC pentru atomicitate reală = arhitectură corectă. Decompoziție pe complexitate, NU "by default" pe toate.
 
 ### §10.5 Audit log per-step
 
@@ -458,6 +469,19 @@ Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul 
 - **Placeholders privacy.html (`[NUME COMPANIE]`, `[EMAIL CONTACT]`, `[DOMENIU]`) NU pot rămâne necompletate** post-launch — checklist pre-deploy.
 - **Schrems II compliance**: PostHog instanță EU prefer, sau SCC + TIA documentat dacă US.
 
+#### §10.6.A — DPO review pre-launch obligatoriu
+
+Privacy policy rewrite + GDPR rights endpoints implementation TREBUIE revizuite de un DPO real (Data Protection Officer) sau avocat specializat GDPR EU înainte de launch public.
+
+Audit-ul tehnic confirmă issues, DAR validation juridică finală e OBLIGATORIE pentru:
+- Calibrare severity sancțiuni RO/EU
+- Verificare formulare drepturi user (Art. 15-22)
+- Verificare lawful basis per processor declarat
+- Aprobare Schrems II compliance pentru transferuri non-EU (PostHog)
+- Aprobare DPA-uri semnate cu toate processors
+
+**Status pre-launch:** 🔴 BLOCKING. Fără DPO sign-off pe privacy policy + processors → launch interzis.
+
 ### §10.7 Security headers
 
 - **Toate routes mutating → `checkOrigin` obligatoriu** (CI check enforce — assert via test).
@@ -466,6 +490,35 @@ Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul 
 - **`Cache-Control: no-store`** pe toate API routes care return PII.
 - **PostHog dezactivat pe rute publice** (`/rsvp/*`) — minimize public_link_id leak surface + privacy guests anon.
 - **Referrer-Policy `no-referrer`** specifică pe rute publice (override global).
+
+#### §10.7.A — Token redaction în logs
+
+Redactare obligatorie `public_link_id` din toate destinations de logging:
+- Custom logger middleware (server-side `console.log`, `logInternal`)
+- Sentry `beforeSend` hook
+- Vercel log filtering (env var `LOG_REDACT_PATTERNS`)
+
+Pattern: orice URL care match `/rsvp/[a-z0-9_-]{16}` are token-ul înlocuit cu `[REDACTED]` înainte de a ajunge în log destinations.
+
+Test obligatoriu: integration test care verifică că logger-ul produce output redacted pentru request-uri cu public_link_id.
+
+#### §10.7.B — Public RSVP rate limiting (constant-time)
+
+Rate limiting per IP + per public_link_id obligatoriu pe toate routes RSVP publice:
+
+| Endpoint | Per IP | Per public_link_id |
+|----------|--------|---------------------|
+| GET /api/rsvp/[public_link_id] | 30/min | 10/min |
+| POST /api/rsvp/[public_link_id] | 5/min | 3/min |
+
+**Constant-time response pentru toate cazurile** (existent / inexistent / expired / rate-limited):
+- Response body identic (generic 404)
+- Response time identic (delay constant pentru a preveni timing-based enumeration)
+- Headers identic
+
+Logging fără PII — log doar `route, ip_hash, public_link_id_hash, timestamp`.
+
+Audit log pe rate limit hits cu pattern detection (alert dacă același IP atinge limita pe multiple link-uri = scan attempt).
 
 ### §10.8 Rate limiting
 
@@ -560,44 +613,106 @@ Dacă tokens se termină brutal la mijloc de task: nu e catastrofă. Următorul 
 
 ## §12 — Stack tooling disponibil (multi-model collaboration)
 
-User-ul are acces la **4 canale paralele**:
+### Sursa de adevăr arhitectural
+
+**Sursa de adevăr arhitectural = Claude.ai + Claude Code.**
+
+ChatGPT + Codex = **suport și verificare**, NU surse de decizie.
+
+Feedback ChatGPT/Codex se evaluează critic prin **filtrul regulilor user LOCKED:**
+- Premium fără buguri pe termen lung
+- Scalabil
+- Probleme rezolvate structural, NU se ocolesc
+- Plase de siguranță suplimentare
+- Timp ne-important
+
+**Feedback care contrazice aceste reguli se RESPINGE**, indiferent cât de "rațional" pare. User este final arbiter pe scope și standard quality.
+
+**Lessson sistemică LOCKED:** ChatGPT optimizează implicit pentru "minimum viable launch" (industry standard). User optimizează pentru "premium long-term". Filtrul LOCKED e mecanism de aliniere obligatoriu.
 
 ### Claude.ai (planning + audit)
+
 - **Rol:** planner arhitectural, audit, decizii LOCKED, documentation
 - **Cum funcționează:** chat web, sesiuni separate, context zero între ele (excepție: HANDOFF.md + CLAUDE.md + ROADMAP.md = sync mechanism)
 - **Plan user:** Pro
 
 ### Claude Code (primary executant)
+
 - **Rol:** execuție tehnică în terminal pe codul real
 - **Validat:** PR #178 (H4.2.A E2E auth foundation) — funcționează bine
 - **Recomandat:** taskuri lungi cu mult context cross-file, refactor multi-file, migrations + RPCs
 
 ### ChatGPT (second opinion)
+
 - **Plan user:** Plus
 - **Modele disponibile:** GPT-5.3 Instant (default) + GPT-5.5 Thinking
-- **Rol:** validare cross-model pe decizii arhitecturale critice, detectare blind spots
-- **Pattern:** Claude.ai produce plan → user paste în ChatGPT 5.5 Thinking cu prompt critic → feedback → reconsiderare dacă necesar
-- **NU folosim pentru:** întrebări factuale despre stack proprietar, decizii LOCKED settled, documentation
+- **Rol:** validare cross-model pe decizii arhitecturale critice, detectare blind spots, identificare gap-uri
+- **Pattern:** Claude.ai produce plan → user paste în ChatGPT 5.5 Thinking cu prompt critic → feedback → Claude.ai filtrează prin LOCKED → reconsiderare unde validăm
+- **NU folosim pentru:** întrebări factuale despre stack proprietar, decizii LOCKED settled, documentation execution
 
-### Codex (backup executant)
-- **Rol:** alternativă la Claude Code când rate-limited
-- **Recomandat:** taskuri scurte, izolate (un fișier, refactor mic)
-- **NU recomandat:** taskuri cu mult context cross-file (Claude Code mai bun acolo)
+### Codex usage criteria
+
+**Codex = backup executant pentru taskuri mici, FOLOSIT DOAR când aduce valoare reală peste Claude Code.**
+
+**Folosim Codex când:**
+- Claude Code rate-limited + task urgent + izolat
+- Refactor 1-3 fișiere, scope clar, fără context cross-cutting
+- Lint/format/rename simplu
+- **Verificare paralelă pe un patch mic** (Claude Code livrează → Codex verifică independent → comparăm output)
+
+**NU folosim Codex când:**
+- Task atinge multiple module
+- Migrations, RPCs complexe, RLS policies
+- Schema-guard, integration test harness, decizii arhitecturale
+- Necesită citire CLAUDE.md + HANDOFF.md + ROADMAP.md pentru context complet
+
+**Default executant = Claude Code.** Codex = excepție motivată.
 
 ### Workflow recomandat pentru Faza 13
 
-Pentru decizii arhitecturale critice (RSVP reconstruction, account deletion atomic, schema-guard design):
+Pentru decizii arhitecturale critice:
 
 1. Claude.ai generează plan + decizii LOCKED + prompts Claude Code
 2. User paste plan în ChatGPT 5.5 Thinking cu prompt critic structurat
 3. User aduce feedback ChatGPT înapoi la Claude.ai
-4. Claude.ai ajustează planul dacă feedback e valid; explică dacă nu
-5. User execută cu Claude Code prompt-uri ajustate
-6. La PR review: user paste diff în ChatGPT pentru second opinion
-7. User aduce review înapoi la Claude.ai pentru decizie merge/iterate
+4. **Claude.ai filtrează feedback prin regulile LOCKED:**
+   - Accept: feedback aliniat cu regulile + îmbunătățește quality
+   - Accept parțial: granularitate sau plase siguranță fără diluare
+   - Resping: feedback care propune compromis pe quality/scope/structural
+5. Claude.ai documentează decizia per punct cu motivație ancorată în regulile LOCKED
+6. User ratifică sau reorientează
+7. User execută cu Claude Code prompt-uri ajustate
+8. La PR review: user paste diff în ChatGPT pentru second opinion
+9. Claude.ai re-filtrează review prin LOCKED
+10. Decizie merge/iterate
 
-### Decizie LOCKED tooling
+### Decizii LOCKED tooling
 
 - **Multi-model validation pe decizii arhitecturale critice = OBLIGATORIE**
-- **Documentation update prin PR (Claude.ai planuiește, Claude Code/Codex execută)**
+- **Documentation update prin PR** (Claude.ai planuiește, Claude Code/Codex execută)
 - **Audit empirical pre-launch = repetabil pentru fiecare major release** (vezi /docs/audit/)
+- **Feedback ChatGPT/Codex filtrat prin LOCKED rules** — NU acceptat blind
+- **Codex doar când aduce valoare reală** — NU default
+
+---
+
+## §13 — Production drift prevention DEV vs PROD
+
+> **Decizie LOCKED nouă post-cross-model validation (Risk A).**
+
+Schema fingerprint script generat și verificat în CI pre-deploy:
+- Tabele + coloane + tipuri
+- Constraints (NOT NULL, UNIQUE, CHECK, FK)
+- Indexes
+- RLS policies + grants
+- Functions + triggers
+
+CI pipeline pre-deploy:
+1. Rulează `schema_fingerprint` pe PROD (read-only Supabase service role)
+2. Rulează `schema_fingerprint` pe DEV (după aplicare migrations noi)
+3. Compară hash + diff detaliat dacă diferă
+4. **Fail deploy dacă diferă nejustificat** (cu posibilitate override explicit doar cu approval)
+
+Plus monitoring runtime pe PROD: `schema-guard.ts` la app startup verifică schema reală vs schema declarată în code (deja LOCKED §10.1).
+
+**Decision LOCKED:** NU permitem deploy cu schema drift între environments. Niciun "deploy fast and fix later".

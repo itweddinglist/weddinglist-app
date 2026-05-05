@@ -604,3 +604,306 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 - [ ] Toate 14 puncte din audit nou + 6 din audit original au verdict ✅ în re-test empirical
 - [ ] CI pipeline forțează: TS strict + lint + unit + integration + roundtrip + E2E
 - [ ] Documentation aliniată cu cod (no comments care mint)
+
+---
+
+## Faza 13 — Granularitate execuție post-cross-model validation
+
+> **Reformulare granulară a Fazei 13** după validation cross-model ChatGPT.
+> Scope-ul Fazei 13 RĂMÂNE NESCHIMBAT (174-276h, toate 9 launch blockers + scope complet).
+> Doar **execuția** se sparge în PR-uri concrete pentru reviewability + risk surface mai mic.
+
+### Estimare actualizată: 186-296h (+12-20h pentru 5 risks adăugate A-E)
+
+### Cele 17 PR-uri Faza 13
+
+#### PR 1 — Schema Drift Safety Net (Faza 13.0 partial)
+
+**Scop:** infrastructura care previne următoarele 50 de bugs din clasa schema drift.
+
+- [ ] 1.1 — Husky pre-commit hook: `npx supabase gen types typescript --local > types/database.ts`
+- [ ] 1.2 — TypeScript Database type generated + commit
+- [ ] 1.3 — Supabase JS client typed: refactor `createClient<Database>(...)`
+- [ ] 1.4 — Schema fingerprint script (Risk A): `scripts/schema_fingerprint.sql`
+- [ ] 1.5 — Schema-guard runtime (`lib/db/schema-guard.ts`)
+- [ ] 1.6 — Vitest profile separat: `vitest.integration.config.ts` contra Supabase DEV
+- [ ] 1.7 — 3 integration tests pe endpoints broken (dashboard stats, export JSON, RSVP invitations)
+- [ ] 1.8 — CI job nou: integration tests obligatorii pre-merge develop
+- [ ] 1.9 — Migration testing CI: up + down + up automatic
+- [ ] 1.10 — DEV vs PROD schema fingerprint diff în CI pre-deploy
+
+**Estimare:** 18-30h
+**Acceptance:** TS verde pe toate 9 bugs schema drift (compile-time detection); schema fingerprint identical DEV vs PROD în CI.
+
+#### PR 2 — Security/GDPR Emergency Stop (Faza 13.2 + 13.3 + Risk D + E)
+
+**Scop:** stop bleeding pe security + legal exposure înainte de orice user real.
+
+- [ ] 2.1 — RLS RSVP fix (S1): anon zero acces, toate prin Next.js API + service_role
+- [ ] 2.2 — Migration `20260505000001_rls_rsvp_close_anon.sql`
+- [ ] 2.3 — PostHog consent gate (S2): banner restructurat 3 opțiuni, init gated
+- [ ] 2.4 — Reactive `posthog.opt_out_capturing()` la decline
+- [ ] 2.5 — PostHog dezactivat pe rute publice (`/rsvp/*`)
+- [ ] 2.6 — Security headers complete (S3): CSP, HSTS, X-Frame-Options, Referrer-Policy, X-Content-Type-Options, COOP/CORP
+- [ ] 2.7 — CSP report-only mode 1 săptămână înainte de enforce
+- [ ] 2.8 — Cache-Control: no-store pe API PII (S6)
+- [ ] 2.9 — CSRF gaps fix (S5): account DELETE, shadow-session POST, import/json POST
+- [ ] 2.10 — CI check assert toate routes mutating au `checkOrigin`
+- [ ] 2.11 — Token redaction în logs (Risk E): logger middleware + Sentry beforeSend + Vercel filter
+- [ ] 2.12 — Rate limiting public RSVP (Risk D): per IP + per public_link_id, constant-time response
+- [ ] 2.13 — Privacy.html completare placeholders (nume companie, email, domeniu)
+- [ ] 2.14 — PostHog Inc. declarat în privacy §5 procesatori
+- [ ] 2.15 — DPO review prep package documentation
+
+**Estimare:** 20-32h
+**Acceptance:** Anon NU poate face SELECT/INSERT/UPDATE pe rsvp; PostHog NU se inițializează fără consent; toate headers OWASP setate; rate limiting funcțional.
+
+#### PR 3 — RSVP Minimal Functional Reconstruction (Faza 13.1 partial + 13.5.C)
+
+**Scop:** RSVP devine funcțional end-to-end cu calitate completă pentru scope-ul minim. NU "cu bugs ramase".
+
+- [ ] 3.1 — Schema migration `20260506000001_rsvp_phase1.sql`
+- [ ] 3.2 — `rsvp_invitations.event_id` rămâne NOT NULL (decizie pragmatic)
+- [ ] 3.3 — Sync trigger AFTER INSERT/UPDATE pe `rsvp_responses` → `guest_events.attendance_status`
+- [ ] 3.4 — Mapping enum `accepted → attending`
+- [ ] 3.5 — Backfill rows existente
+- [ ] 3.6 — POST /api/rsvp/invitations rewrite: include `event_id` în payload
+- [ ] 3.7 — POST /api/rsvp/manual rewrite: shadow invitation pattern (NU `invitation_id: null`)
+- [ ] 3.8 — POST /api/rsvp/[public_link_id]: partial response cu warning (NU silent drop C2)
+- [ ] 3.9 — Dashboard stats fix (C4): `seat_assignments.guest_id` → `guest_event_id`
+- [ ] 3.10 — `Promise.all` → `Promise.allSettled` în dashboard stats
+- [ ] 3.11 — E2E test Playwright: host generează → guest răspunde → seating vede status
+
+**Estimare:** 28-40h
+**Acceptance:** Host generează invitație fără 500; guest răspunde fără data loss; seating + guest list + RSVP dashboard arată ACEEAȘI valoare; manual override funcționează; dashboard se încarcă fără 500.
+
+#### PR 4 — Account Deletion Atomic (Faza 13.5.B)
+
+**Scop:** GDPR Art. 17 implementabil + zero state hibrid.
+
+- [ ] 4.1 — Schema migration: ADD COLUMN `app_users.status, deletion_requested_at, scheduled_for_deletion_at`
+- [ ] 4.2 — PostgreSQL function `delete_account_atomic()` cu BEGIN/COMMIT
+- [ ] 4.3 — Tabelă `deleted_users` pentru audit/compliance
+- [ ] 4.4 — FK fix: `idempotency_keys.app_user_id` ON DELETE CASCADE
+- [ ] 4.5 — FK fix: `weddings.owner_user_id` ON DELETE SET NULL (sau handle structural)
+- [ ] 4.6 — Hard delete real pentru weddings fără alți members
+- [ ] 4.7 — Soft delete cu retention 30 zile + cancel flow
+- [ ] 4.8 — SOLE_OWNER guard cu row lock `FOR UPDATE`
+- [ ] 4.9 — Recovery endpoints (`/api/account/cancel-deletion`, `/api/admin/recover-stuck-deletion`)
+- [ ] 4.10 — Email confirmare DELETE trimis DUPĂ pașii destructive (nu înainte)
+- [ ] 4.11 — Integration test: end-to-end delete pe wedding cu guests, RSVP, seating, budget, payments
+
+**Estimare:** 16-24h
+**Acceptance:** Account DELETE funcționează atomic; zero state hibrid posibil; 30-day soft hold + recovery flow.
+
+#### PR 5 — Pivot Table RSVP Multi-event (Faza 13.1.A complete)
+
+**Scop:** arhitectura premium long-term pentru link unic multi-event.
+
+- [ ] 5.1 — Schema migration `20260507000001_rsvp_pivot.sql`: tabela `rsvp_invitation_events`
+- [ ] 5.2 — Refactor POST /api/rsvp/invitations cu `event_ids: string[]`
+- [ ] 5.3 — RPC tranzacțional pentru creare invitation + N rows pivot atomic
+- [ ] 5.4 — Backfill rows existente (1 row pivot per invitation existent)
+- [ ] 5.5 — Update toate read paths (host dashboard, public RSVP) pentru pivot
+- [ ] 5.6 — Migration data: `rsvp_invitations.event_id` → poate deveni nullable după backfill complet
+- [ ] 5.7 — Integration tests pivot multi-event
+
+**Estimare:** 12-18h
+
+#### PR 6 — RSVP History Tracking + Warning UI (Faza 13.1.C)
+
+**Scop:** Defense împotriva link forwarding takeover (C3) + audit trail complet.
+
+- [ ] 6.1 — Schema migration: tabel `rsvp_response_versions` + trigger BEFORE UPDATE
+- [ ] 6.2 — `wedding.rsvp_modifiable BOOLEAN` config
+- [ ] 6.3 — UI guest re-deschidere link cu warning + history vizibil
+- [ ] 6.4 — Audit log per RSVP submit + modificare
+- [ ] 6.5 — Host dashboard: timeline schimbări per guest
+
+**Estimare:** 8-14h
+
+#### PR 7 — Email Confirmation RSVP (Faza 13.1.D)
+
+**Scop:** Defense layer + RESEND_API_KEY configurat.
+
+- [ ] 7.1 — Schema migration: ADD COLUMN `email TEXT` pe guests
+- [ ] 7.2 — CSV import support email
+- [ ] 7.3 — UI guest list email opțional
+- [ ] 7.4 — Email URL fix: cu `publicLinkId` (NU `rawToken`)
+- [ ] 7.5 — RESEND_API_KEY configurare DEV + PROD
+- [ ] 7.6 — Email confirmare guest la fiecare submit
+- [ ] 7.7 — Email notification host la modificare RSVP
+
+**Estimare:** 6-10h
+
+#### PR 8 — Export JSON v2.0 + Roundtrip Tests (Faza 13.4.A + 13.4.C)
+
+**Scop:** GDPR Art. 20 implementabil + foundation pentru import.
+
+- [ ] 8.1 — Format versionat strict `schema_version: "2.0"`
+- [ ] 8.2 — Bug `tables.deleted_at` rezolvat structural
+- [ ] 8.3 — `wedding_members`, `vendors`, `audit_logs` incluse în export
+- [ ] 8.4 — Schema validation runtime (folosește schema-guard)
+- [ ] 8.5 — Streaming pentru weddings mari (NDJSON)
+- [ ] 8.6 — Integration test mandatory roundtrip
+- [ ] 8.7 — Property-based tests (fast-check sau similar)
+- [ ] 8.8 — CI check roundtrip pe fiecare PR
+
+**Estimare:** 12-18h
+
+#### PR 9 — Import JSON v2.0 (Faza 13.4.B)
+
+**Scop:** complet roundtrip-able + GDPR Art. 20 bidirecțional.
+
+- [ ] 9.1 — PostgreSQL function `import_wedding_v2()` tranzacțional
+- [ ] 9.2 — Schema validation strict cu Zod
+- [ ] 9.3 — Idempotency cu `idempotency_key`
+- [ ] 9.4 — Schema migration logic v1.0 → v2.0
+- [ ] 9.5 — Toate 6 coloane fantomă rezolvate
+- [ ] 9.6 — Toate 8 NOT NULL violations rezolvate
+- [ ] 9.7 — Toate 3 nume coloană greșite rezolvate
+- [ ] 9.8 — Mesaje erori traduse RO
+
+**Estimare:** 14-20h
+
+#### PR 10 — PDF Export Complete (Faza 13.4.A continuat)
+
+**Scop:** PDF print-friendly profesional + bug `tables.deleted_at` rezolvat.
+
+- [ ] 10.1 — PDF export query fix
+- [ ] 10.2 — Layout polish (couple_names, event details, guests, table plan)
+- [ ] 10.3 — Multilingual support (RO + EN)
+- [ ] 10.4 — Cache-Control: no-store
+
+**Estimare:** 6-10h
+
+#### PR 11 — Idempotency Framework Adopt Universal (Faza 13.5.A)
+
+**Scop:** scalabilitate + zero race vulnerabilities pe orice mutating endpoint.
+
+- [ ] 11.1 — Refactor `withIdempotency` la pattern atomic `INSERT ON CONFLICT DO NOTHING RETURNING`
+- [ ] 11.2 — Adopt în toate 20 endpoints mutating
+- [ ] 11.3 — PG Cron cleanup TTL 24h
+- [ ] 11.4 — Audit log pe race detection
+- [ ] 11.5 — Tests concurrente (property-based, simulate race)
+- [ ] 11.6 — Comentariu MISLEADING `idempotency.ts:46` rezolvat (rescris cu adevărul)
+
+**Estimare:** 12-18h
+
+#### PR 12 — RLS Role Hierarchy Complet (Faza 13.3.C)
+
+**Scop:** Defense-in-depth + scalabilitate pentru future Supabase Auth integration.
+
+- [ ] 12.1 — PostgreSQL function `is_wedding_role(_wedding_id, _min_role)`
+- [ ] 12.2 — RLS policies actualizate pe 14 tabele operaționale
+- [ ] 12.3 — UPDATE/DELETE folosesc `is_wedding_role(wedding_id, 'editor')`
+- [ ] 12.4 — Tests integration cu mock JWT pentru fiecare role
+- [ ] 12.5 — Roluri partner + planner activate pentru endpoints relevante
+
+**Estimare:** 6-10h
+
+#### PR 13 — Audit Log Infrastructure Consolidation (Faza 13.0.B)
+
+**Scop:** observability + compliance.
+
+- [ ] 13.1 — `wl_audit_step()`, `wl_audit_diff()`, `wl_audit_actor()` extensions
+- [ ] 13.2 — Audit log apelat OBLIGATORIU pe toate mutațiile sensibile
+- [ ] 13.3 — Reverse-lookup capability (debug endpoint în DEV)
+- [ ] 13.4 — Tests audit log coverage
+
+**Estimare:** 6-10h
+
+#### PR 14 — WordPress/Voxel Bridge Tests (Risk B)
+
+**Scop:** elimina cea mai fragilă suprafață a stack-ului.
+
+- [ ] 14.1 — Test suite explicit pentru bootstrap failure modes (happy path, user nou, plan expirat, WP timeout, membership repair race)
+- [ ] 14.2 — Webhook WP → Next.js pentru sync plan changes (sau polling)
+- [ ] 14.3 — Audit log per bootstrap failure (cu reason code)
+- [ ] 14.4 — Fallback graceful (cache TTL scurt) când WP e down
+
+**Estimare:** 8-14h
+
+#### PR 15 — Multi-user Concurrency Policy Explicit (Risk C)
+
+**Scop:** elimina race conditions pe RSVP host + budget + guest list.
+
+- [ ] 15.1 — OCC version pentru RSVP host manual override
+- [ ] 15.2 — OCC version pentru budget items
+- [ ] 15.3 — OCC version pentru wedding settings
+- [ ] 15.4 — UI conflict resolution pentru toate (similar seating)
+- [ ] 15.5 — Audit log diff per modificare cu actor identification
+- [ ] 15.6 — UI: "modificat ultima dată de X la Y"
+
+**Estimare:** 8-14h
+
+#### PR 16 — C9 useEffect Cleanup + Polish (Faza 13.6.A)
+
+**Scop:** edge case race fix + small polish.
+
+- [ ] 16.1 — `useEffect` cleanup pe `[eventId]` clear `syncTimerRef`
+- [ ] 16.2 — Mesaje engleze hardcoded → RO (export, RSVP error messages)
+- [ ] 16.3 — Privacy banner UX final polish
+
+**Estimare:** 2-4h
+
+#### PR 17 — DPO Review Final + Privacy Approval
+
+**Scop:** GDPR sign-off pre-launch.
+
+- [ ] 17.1 — DPO review meeting + feedback documented
+- [ ] 17.2 — Privacy policy ajustări per DPO recomandări
+- [ ] 17.3 — DPA-uri verificate cu toate processors (Supabase, Vercel, PostHog, Sentry, Resend)
+- [ ] 17.4 — Schrems II compliance documented (TIA dacă US instances)
+- [ ] 17.5 — DPO sign-off oficial documented
+
+**Estimare:** 4-8h
+
+### Secvență recomandată (paralelizare)
+
+**Ordine STRICT obligatorie:**
+
+1. **PR 1 PRIMA** — fără infrastructure, restul fixurilor sunt construit pe nisip
+2. **PR 2** — paralel cu PR 1 (independente la nivel de cod)
+3. **PR 3** — DUPĂ PR 1 (depinde de schema-guard + types regenerate)
+4. **PR 4** — paralel cu PR 3 (independent ca scope, ambele după PR 1)
+5. **PR 5-7** — secvențial DUPĂ PR 3 (depind de RSVP minimal functional)
+6. **PR 8-10** — paralel cu PR 5-7 (export/import independent de RSVP)
+7. **PR 11-13** — paralel între ele DUPĂ PR 1
+8. **PR 14-15** — paralel cu restul, DUPĂ PR 1
+9. **PR 16** — final polish
+10. **PR 17 ULTIMUL** — DPO review obligatoriu pre-launch
+
+### Criteriu "DONE" pentru Faza 13
+
+- [ ] Toate 9 launch blockers + 5 risks (A-E) confirmate REZOLVATE empirical
+- [ ] Pattern systemic schema drift NU mai poate apărea (schema-guard + types + integration tests CI + DEV/PROD fingerprint)
+- [ ] 7 violations GDPR rezolvate (verificate prin checklist legal + DPO sign-off)
+- [ ] Toate 14 puncte din audit nou + 6 din audit original au verdict ✅ în re-test empirical
+- [ ] CI pipeline forțează: TS strict + lint + unit + integration + roundtrip + E2E + schema fingerprint
+- [ ] Documentation aliniată cu cod (no comments care mint)
+- [ ] DPO sign-off oficial pe privacy + processors + DPA-uri
+- [ ] Toate 17 PR-uri merged în develop
+
+### Tabel sumar PR-uri
+
+| PR | Titlu | Estimare | Faza originală |
+|----|-------|----------|----------------|
+| PR 1 | Schema Drift Safety Net | 18-30h | 13.0 |
+| PR 2 | Security/GDPR Emergency Stop | 20-32h | 13.2 + 13.3 + Risk D + E |
+| PR 3 | RSVP Minimal Functional | 28-40h | 13.1 + 13.5.C |
+| PR 4 | Account Deletion Atomic | 16-24h | 13.5.B |
+| PR 5 | RSVP Pivot Multi-event | 12-18h | 13.1.A complete |
+| PR 6 | RSVP History + Warning | 8-14h | 13.1.C |
+| PR 7 | Email Confirmation | 6-10h | 13.1.D |
+| PR 8 | Export JSON v2.0 + Roundtrip | 12-18h | 13.4.A + 13.4.C |
+| PR 9 | Import JSON v2.0 | 14-20h | 13.4.B |
+| PR 10 | PDF Export Complete | 6-10h | 13.4.A continuat |
+| PR 11 | Idempotency Universal | 12-18h | 13.5.A |
+| PR 12 | RLS Role Hierarchy | 6-10h | 13.3.C |
+| PR 13 | Audit Log Infrastructure | 6-10h | 13.0.B |
+| PR 14 | WP/Voxel Bridge Tests | 8-14h | Risk B |
+| PR 15 | Multi-user Concurrency | 8-14h | Risk C |
+| PR 16 | C9 + Polish | 2-4h | 13.6.A |
+| PR 17 | DPO Review Final | 4-8h | 13.2 final |
+| **TOTAL** | | **186-296h** | |

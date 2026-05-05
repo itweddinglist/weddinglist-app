@@ -493,3 +493,96 @@ Toate adăugate în CLAUDE.md §10. Highlights:
 - Security: headers OWASP complete, CSP report-only, PostHog off pe rute publice
 - Idempotency: pattern atomic INSERT ON CONFLICT, adopt universal
 - RLS: `is_wedding_role` (role-aware) NU `is_wedding_member` (role-blind)
+
+---
+
+## Lessons noi L33-L37 (post-cross-model validation 2026-05-04)
+
+### L33 — Cross-model validation = util doar cu filtru LOCKED
+
+**Lesson:** ChatGPT 5.5 Thinking a oferit feedback substanțial pe audit-ul Claude.ai (5 riscuri ratate, granularitate PR-uri, calibrare juridică). DAR a propus și 5 puncte care violau direct regulile LOCKED ale user (lista "Top 5 NU merită rezolvate acum" — toate erau ocoliri, nu rezolvări structurale).
+
+**Eroare sistemică ChatGPT:** optimizează default pentru "minimum viable launch" (industry standard pattern). User optimizează pentru "premium long-term, scalabil, fără workaround". Filtrul LOCKED e mecanism de aliniere obligatoriu.
+
+**Rule:** când Claude.ai primește feedback de la ChatGPT/Codex:
+1. Clasifică fiecare punct: respectă regulile LOCKED sau le violează?
+2. Accept doar puncte care îmbunătățesc quality (granularitate, plase siguranță, gap-uri ratate)
+3. Resping fără ezitare orice punct care diluează scope/calitate
+4. Documentează decizia per punct cu motivație ancorată în reguli LOCKED
+5. NU acceptă blind feedback "rațional" generic — filtrează prin reguli specifice user
+
+### L34 — User este final arbiter pe scope și standard quality
+
+**Lesson:** În răspunsul inițial la feedback ChatGPT, Claude.ai (eu) am acceptat 10 puncte integral, inclusiv "Top 5 NU merită rezolvate acum". User a prins greșeala instant: "propunem o ignorare cand am zis clar ca problemele trebuie rezolvate nu ignorate."
+
+**Pattern:** Claude.ai (orice sesiune) poate ceda în fața argumentului "rațional" generic dacă nu filtrează prin reguli specifice. User este ultim filtru de calibrare.
+
+**Rule:** la cross-model validation:
+- Claude.ai propune evaluare per punct
+- User ratifică sau reorientează
+- Dacă user reorientează → Claude.ai învață și ajustează metodologia (NU doar acel caz)
+- Documentez sistemic în HANDOFF.md ca lesson reusable
+
+### L35 — Granularitate ≠ diluare scope
+
+**Lesson:** ChatGPT a propus spargerea Fazei 13.0 în 3 PR-uri concrete (PR 1: types + 3 teste, PR 2: integration harness, PR 3: RLS emergency). Inițial a părut "diluare" prin filtrul LOCKED, dar la analiză onestă:
+- Toate componentele Fazei 13.0 RĂMÂN
+- PR-uri mai mici = review mai eficient + rollback mai ușor + risk surface mai mic per merge
+- Granularitate îmbunătățește calitate, NU o diluează
+
+**Rule:** la cross-model validation, distinge clar:
+- "Sparge implementarea în PR-uri mici" = ✅ accept (bună inginerie)
+- "Sparge scope-ul, fă doar parte din lucruri" = ❌ resping (ocolire)
+- Dacă feedback ChatGPT propune granularitate cu scope păstrat → accept
+- Dacă feedback propune scope reducere ("amânăm la post-launch") → resping
+
+### L36 — Filtrul LOCKED e mecanism de aliniere, NU rigiditate
+
+**Lesson:** Filtrul LOCKED nu înseamnă "respinge tot ce vine de la ChatGPT". Înseamnă "evaluează prin reguli specifice user". 
+
+Din 12 observații ChatGPT pe audit:
+- ✅ ACCEPT: 10 puncte (puncte 1, 2, 3, 4, 5, 6, 8, 10, 11, 12)
+- 🟡 ACCEPT cu precizare: 2 puncte (7 — pivot rămâne LOCKED dar implementare granulară; 9 — accept (a)+(b), resping (c))
+- 🔴 RESPING: "Top 5 NU merită rezolvate acum" (5 sub-puncte) + 1 sub-punct din 9
+
+Plus 5 risks (A-E) accept integral — gap-uri reale ale audit-ului.
+
+**Rule:** filtrul LOCKED produce calibrare onestă, nu blocadă. Rezultatul e plan îmbunătățit (5 risks adăugate, granularitate concretă) cu scope păstrat (toate 9 launch blockers + scope rămân).
+
+### L37 — Codex usage = excepție motivată, NU default
+
+**Lesson:** User are acces la Codex ca backup executant. **Codex = util DOAR pentru taskuri mici, izolate, când aduce valoare reală peste Claude Code.**
+
+NU default executant — Claude Code rămâne primary pe orice task complex (migrations, RPCs, RLS, multi-file refactor). Codex = excepție pentru:
+- Claude Code rate-limited + task urgent
+- Verificare paralelă pe patch mic (Claude Code livrează → Codex verifică independent → comparăm)
+- Refactor 1-3 fișiere scope clar
+
+**Rule:** sesiuni Claude.ai viitoare NU recomandă Codex by default. Doar dacă task-ul fits criteria specifice. Default executant = Claude Code.
+
+---
+
+## Decizii LOCKED noi (post-addendum 01)
+
+Toate adăugate în CLAUDE.md §10.4 (reformulat), §10.6.A (nou), §10.7.A/B (nou), §13 (nou), §12 (reformulat).
+
+Highlights:
+
+- **§10.4 reformulat:** Atomicity granulară per complexitate (RPC pentru atomicitate reală, app-layer cu idempotency pentru CRUD simplu) — NU "RPC by default pe tot"
+- **§10.6.A:** DPO review pre-launch obligatoriu pentru privacy policy + processors
+- **§10.7.A:** Token redaction în logs (Vercel + Sentry + custom logger middleware)
+- **§10.7.B:** Public RSVP rate limiting cu constant-time response
+- **§13:** Production drift prevention DEV vs PROD (schema fingerprint în CI)
+- **§12 reformulat:** Sursa de adevăr arhitectural = Claude.ai + Claude Code; ChatGPT/Codex = suport, NU surse de decizie; filtrul LOCKED OBLIGATORIU
+
+---
+
+## Status post-addendum 01
+
+**Scope Faza 13:** NESCHIMBAT — toate 9 launch blockers + scope complet rezolvate, NU "amânate post-launch"
+
+**Estimare:** 174-276h → 186-296h (+12-20h pentru 5 risks A-E)
+
+**Granularitate execuție:** 17 PR-uri concrete (vezi ROADMAP.md Faza 13 actualizat)
+
+**Acțiune următoare:** PR 1 — Schema Drift Safety Net (Faza 13.0 partial — types + schema-guard + 3 integration tests + DEV/PROD fingerprint)
