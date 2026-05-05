@@ -32,6 +32,14 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    // CLI scripts (Faza 13.0 PR 1A) — console.log legitim pentru comunicare cu user.
+    // Bloc plasat DUPA rules global ca sa override "no-console" pentru scripts/**.
+    files: ["scripts/**"],
+    rules: {
+      "no-console": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
