@@ -78,6 +78,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const tables_total = tablesResult.data?.length ?? 0
     const seats_total  = seatsResult.data?.length ?? 0
+    // @ts-expect-error: C4 - seat_assignments.guest_id column missing (real: guest_event_id) - fix in PR 3
     const uniqueSeatedGuests = new Set((assignmentsResult.data ?? []).map((a) => a.guest_id))
     const seated_guests_total = uniqueSeatedGuests.size
 

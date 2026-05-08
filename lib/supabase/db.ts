@@ -99,6 +99,7 @@ export async function rpc<T>(
   const request_id = options.request_id ?? crypto.randomUUID();
   const start = Date.now();
 
+  // @ts-expect-error: Cat4-rpc-name - RPC name string vs Database union strict - fix in PR 1.6
   const { data, error } = await supabaseServer.rpc(name, payload);
 
   const duration = Date.now() - start;

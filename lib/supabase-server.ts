@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -16,14 +17,14 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
  * - Passes Bearer token so RLS evaluates against `sub` claim (= app_users.id)
  * - Each API route call gets a fresh client — no shared state
  */
-export function createAuthenticatedClient(jwt: string): SupabaseClient {
+export function createAuthenticatedClient(jwt: string): SupabaseClient<Database> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY"
     );
   }
 
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: {
       headers: { Authorization: `Bearer ${jwt}` },
     },

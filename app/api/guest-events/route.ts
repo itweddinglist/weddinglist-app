@@ -113,6 +113,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const { data, error } = await supabaseServer
       .from("guest_events")
+      // @ts-expect-error: Cat3-narrow - attendance_status (AttendanceStatus | null) vs schema string (null not assignable) - fix in PR 3
       .insert({
         wedding_id: access.wedding_id,
         event_id: input.event_id,

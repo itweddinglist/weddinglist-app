@@ -98,9 +98,11 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
           async () => {
             const { data: d, error: e } = await supabaseServer.rpc(
               "sync_seating_editor_state",
+              // @ts-expect-error: Cat4-rpc-json - SeatingAssignmentSyncItem[] missing index signature for Json - fix in PR 1.6
               rpcParams
             );
             if (e) throw e;
+            // @ts-expect-error: Cat4-rpc-cast - RPC return type cast to SeatingFullSyncResponse - fix in PR 1.6
             return d as SeatingFullSyncResponse;
           }
         );
@@ -111,8 +113,10 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
       // ── Fără client_operation_id → apel direct (backward compat) ──────────────
       const { data: d, error: e } = await supabaseServer.rpc(
         "sync_seating_editor_state",
+        // @ts-expect-error: Cat4-rpc-json - SeatingAssignmentSyncItem[] missing index signature for Json - fix in PR 1.6
         rpcParams
       );
+      // @ts-expect-error: Cat4-rpc-cast - RPC return type cast to SeatingFullSyncResponse - fix in PR 1.6
       data = d as SeatingFullSyncResponse;
       rpcError = e;
     }

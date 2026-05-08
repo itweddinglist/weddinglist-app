@@ -18,13 +18,14 @@
 // =============================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
 /**
  * Checks if the authenticated user is a member of the specified wedding.
  * RLS on wedding_members ensures only the caller's own rows are visible.
  */
 export async function isWeddingMember(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   weddingId: string
 ): Promise<boolean> {
   const { data, error } = await supabase
@@ -48,7 +49,7 @@ export async function isWeddingMember(
  * RLS ensures null is returned if user isn't a wedding member.
  */
 export async function getGuestWeddingId(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   guestId: string
 ): Promise<string | null> {
   const { data, error } = await supabase
@@ -71,7 +72,7 @@ export async function getGuestWeddingId(
  * RLS ensures null is returned if user isn't a wedding member.
  */
 export async function getGuestEventWeddingId(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   guestEventId: string
 ): Promise<string | null> {
   const { data, error } = await supabase
@@ -94,7 +95,7 @@ export async function getGuestEventWeddingId(
  * RLS ensures null is returned if user isn't a wedding member.
  */
 export async function getBudgetItemMeta(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   itemId: string
 ): Promise<{ wedding_id: string; status: string } | null> {
   const { data, error } = await supabase

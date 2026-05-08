@@ -63,6 +63,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     return internalErrorResponse(paymentsError, `GET budget summary payments for wedding ${weddingId}`);
   }
 
+  // @ts-expect-error: Cat3-enum - BudgetItemForSummary status narrow - fix in PR 1.5 (Enum Type Narrowing Layer)
   const summary = calculateBudgetSummary(items ?? [], payments ?? []);
 
   return successResponse<BudgetSummary>(summary);

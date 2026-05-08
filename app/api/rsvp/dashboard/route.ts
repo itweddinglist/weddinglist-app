@@ -127,6 +127,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
 
     const invitationByGuestId = new Map(
+      // @ts-expect-error: Cat3-enum - InvitationProjection.delivery_status enum subset (missing "revoked" from rsvp_delivery_status) - fix in PR 3
       (invitations ?? []).map((i: InvitationProjection) => [i.guest_id, i])
     );
 

@@ -8,10 +8,11 @@
 // =============================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import type { NumericIdMap } from "./types";
 
 export async function fetchAndAllocateIds(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   weddingId: string,
   eventId: string,
   guestUuids: string[],

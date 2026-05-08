@@ -6,6 +6,7 @@
 // =============================================================================
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
 export const EXPORT_FORMAT = "weddinglist-export";
 export const EXPORT_SCHEMA_VERSION = "1.0";
@@ -75,7 +76,7 @@ export function buildExportFilename(weddingTitle: string, exportedAt: string): s
 // ─── Export function ──────────────────────────────────────────────────────────
 
 export async function exportWeddingJson(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   weddingId: string
 ): Promise<ExportResult> {
   try {
