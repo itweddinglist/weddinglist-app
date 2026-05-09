@@ -914,3 +914,36 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 | PR 16 | C9 + Polish | 2-4h | 13.6.A |
 | PR 17 | DPO Review Final | 4-8h | 13.2 final |
 | **TOTAL** | | **186-296h** | |
+
+---
+
+## Future tasks
+
+> Items captured ca residual debt din PR-uri precedente sau identificate empirical.
+> **Regula 17 LOCKED (lesson L55):** fiecare item TREBUIE sa aiba trigger explicit
+> + vizibilitate HANDOFF + trace CHANGELOG. Fara cele 4 ancore = drift garantat.
+
+| ID | Task | Estimare | Trigger explicit | Trace |
+|----|------|----------|------------------|-------|
+| FT-01 | ROADMAP cleanup PR 1 entry restructure (placeholder L622-626 → 6 entries reale PR 1A-D + PR 1E + PR 1F + update tabel sumar L897-916) | 1-2h focused | Oricare alt PR atinge ROADMAP.md → bundle impreuna (saving 1 PR overhead) | CHANGELOG entry Pachet A |
+| FT-02 | Cat 5 mojibake grep audit codebase complet | 30-60 min | PR 11 deschis (Polish) — parte naturala scope. Discovered: `lib/authorization.ts` + `app/api/guests/import/route.ts`. Defer registry §F. | CHANGELOG entry Pachet A |
+| FT-03 | Branch hygiene — 58 orphaned local branches cleanup | 5-15 min | User observa `git branch` zgomotos sau pre-launch cleanup sweep | CHANGELOG entry Pachet A |
+| FT-04 | DEAD CODE removal — `createAuthenticatedClient` `lib/supabase-server.ts:20` (cross-ref TD-30 HANDOFF) | 15-30 min | PR 11 deschis SAU PR mic dedicat daca review headroom curent. Empirical confirmed: 1 export, 0 imports. | CHANGELOG entry Pachet A |
+
+### Cross-references
+
+- **HANDOFF.md** Section 5 "Medium-term backlog" — vizibilitate per sesiune (FT-01..04 cross-ref)
+- **HANDOFF.md** TD-30 entry tabel datorii tehnice — single source DEAD CODE definition
+- **CHANGELOG.md** entry Pachet A — trace istoric creare FT-01..FT-04
+- **HANDOFF.md** §"Reguli LOCKED (17)" R17 — regula structurala 4 ancore
+- **HANDOFF.md** lesson L55 — Future/viitor formulations require triggers
+
+### Regula future tasks
+
+Orice item adaugat aici TREBUIE sa respecte R17 (cele 4 ancore minim):
+1. **Locul canonic** (acest tabel ROADMAP.md §"Future tasks") — single source of truth
+2. **Vizibilitate per sesiune** (HANDOFF.md secțiune "Medium-term backlog" cross-ref)
+3. **Trigger explicit** ("cand deschidem PR X" / "cand user observa Y" / "data Z") — NU "eventual" / "post-launch" simple
+4. **Trace istoric** (CHANGELOG entry care l-a creat — pentru audit trail)
+
+Anti-pattern: "vom face mai tarziu" fara ancorare = drift garantat (lesson L55).

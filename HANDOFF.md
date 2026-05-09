@@ -22,6 +22,40 @@
 
 ---
 
+## Reguli LOCKED (17) — filtru permanent sesiuni AI
+
+> Reguli operationale aplicate per sesiune Claude.ai + Claude Code.
+> Filtru obligatoriu pentru orice decizie. Reconstruite din chat sesiune
+> 2026-05-09 post-disk-reset (SCRATCH local pierdut).
+
+1. **Premium fara bug-uri pe termen lung** — quality > speed
+2. **Scalabil** — solutia suporta 10x utilizatori fara refactor major
+3. **Probleme rezolvate STRUCTURAL** — NU se ocolesc, NU workaround-uri
+4. **Probleme rezolvate, NU se uita** — PR target explicit per fix
+5. **Plase de siguranta suplimentare** — defense-in-depth pe orice critical path
+6. **Timp NU important** — pregatire buna > graba
+7. **NICIODATA `--no-verify`** — Husky obligatoriu, fara exceptii
+8. **Comentariile reflecta realitatea** — verify-on-disk pattern
+9. **Verify-on-disk pattern** — `grep + sed + wc -l`, NU display Claude Code
+10. **Granularitate cluster mic** — Edit 2-4 markers max per cluster
+11. **Onestate disciplinata** — "nu mergem pe ghicite", raportam exact
+12. **Aprobare per comanda** — NICIODATA "Yes allow all" / whitelist
+13. **Sursa de adevar: disk + Claude Code** — NU presupuneri user din memorie
+14. **Stack tehnic strict** — `Next.js 16.2.2 + TS strict + Supabase + Vercel`
+15. **Securitate chei** — NU in chat, NU in commits, NU in logs
+16. **ASCII pur context-aware** — strict in code/commits/hooks; UTF-8 OK in markdown body
+17. **Future/viitor formulari = trigger explicit obligatoriu** — orice item "amanat" fara conditie de re-activare = drift garantat. Minim 4 ancore: canonic + vizibil + trigger + trace. Cross-ref: lesson L55.
+
+### Reconstruction notes
+
+R1-R16 reconstruite din chat sesiune 2026-05-09 post-disk-reset (SCRATCH_REGULI_LOCKED.md
+local pierdut, raportat empirical PAS 0.B Pachet A). R17 auto-catch din chat sesiune
+curenta: user a prins drift in formulare "ROADMAP Future tasks" fara trigger conditions
+(meta-proces: regula aplicata pe insusi procesul de creare a regulii). Lesson L55
+captures pattern.
+
+---
+
 ## 1. Ultima actualizare
 
 - **Data:** 2026-04-29 (PR #178 — H4.2.A E2E auth foundation)
@@ -180,6 +214,18 @@ Post PR #170, dashboard (app/rsvp/page.tsx) are încă statusLabels + badgeColor
 - H6 — Manual flow walkthrough: folosește datoriile catalogate cu tag pre-launch din sub-section "Datorii tehnice catalogate" (de mai jos) ca start point.
 - H7 — Design tokens + typography polish: extindere pattern început la PR #170.
 
+### Future tasks (cross-ref ROADMAP)
+
+> Items captured ca residual debt din PR-uri precedente (Pachet A capture).
+> Single source of truth: `ROADMAP.md` §"Future tasks". Acest entry = ANCORA 2 R17 (vizibilitate per sesiune).
+
+- **FT-01** — ROADMAP cleanup PR 1 entry restructure (1-2h focused; trigger: oricare alt PR atinge `ROADMAP.md` → bundle împreună)
+- **FT-02** — Cat 5 mojibake grep audit codebase (30-60 min; trigger: PR 11 Polish — natural scope; cross-ref registry §F)
+- **FT-03** — Branch hygiene 58 orphaned local branches cleanup (5-15 min; trigger: user observă zgomot `git branch` SAU pre-launch sweep)
+- **FT-04** — DEAD CODE removal `createAuthenticatedClient` `lib/supabase-server.ts:20` (15-30 min; trigger: PR 11 SAU PR mic dedicat; cross-ref TD-30 + registry §G.2)
+
+Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R17, trace CHANGELOG, lesson L55).
+
 ### Long-term backlog
 
 - HWE1 — Seating chart TS migration (sprint dedicat post-H7, pre-launch)
@@ -215,8 +261,9 @@ Post PR #170, dashboard (app/rsvp/page.tsx) are încă statusLabels + badgeColor
 | TD-27 | CHANGELOG missing entries pentru PR #173-#176 | 🟡 Medium | PR mic dedicat docs sau HWE0.5 | 30-45 min | Single source of truth break — PR #173, #174, #175, #176 nu apar în CHANGELOG SECȚIUNEA ACTIVĂ. Discovered PR #177 PAS 6.B. |
 | TD-28 | Next.js 16.2.2 "middleware" file convention deprecation | 🟡 Medium | PR dedicat (rename middleware.ts → proxy.ts + update conventions) | 30-60 min | Next.js emite ⚠ "middleware" convention deprecated, use "proxy" instead. Apare la `npm run dev` startup. NU breaks build/runtime, dar future Next.js version va remove suport. Discovered PR #178 PAS 4.2 webServer logs. |
 | TD-29 | HMR `.next/` corruption pattern — automated cleanup hook lipsă | 🟢 Low | Eventual sprint dedicate DX | 1-2h | Pattern recognition: dupa edit-uri component live + E2E run, `.next/dev/types/*` poate avea fragmente duplicate trunchiate (cauza HMR interruption). Manual recovery prin `rm -rf .next/` documentat L20 + L21. Eventual: pre-test hook automatizat sau Playwright globalSetup cleanup. Side-note: testele E2E observa și DNS errors (Supabase/WP unreachable din mediu sandboxed) — environment limitation, NU TD separat. Discovered PR #178 PAS 6.4-DEBUG. |
+| TD-30 | DEAD CODE — `createAuthenticatedClient` exported but never imported (`lib/supabase-server.ts:20`) | 🟢 Low | PR mic dedicat sau PR 11 (Polish) | 15-30 min | Empirical confirmed PR 1A: `git grep "import.*createAuthenticatedClient"` = zero matches. Function exportata cu zero consumers. Cross-ref: `docs/audit/schema-drift-known-failures.md` §G.2 (L1171-1187). Trigger: PR 11 deschis SAU PR mic dedicat. → ROADMAP §"Future tasks" FT-04. |
 
-**Sumar severitate:** 2 Critical, 10 Medium, 5 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+**Sumar severitate:** 2 Critical, 10 Medium, 6 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---
@@ -647,6 +694,78 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical PR 1A:** 56 markers documented în registry `docs/audit/schema-drift-known-failures.md` + PR targets distribution (PR 1E enum narrowing, PR 1F RPC+Json hardening, PR 3 RSVP minimal, PR 4 account deletion, PR 9 import JSON, PR 11 polish), NU fix-uri inline. Markers = "fix in PR X" delegation explicit. Decizia LOCKED A3 cross-model validation.
 
 **Rule:** Catalog PR scope = identify + categorize + delegate. Fix execution = downstream PR cu marker consumption verify (`npx tsc --noEmit` reduce errors corespunzător markers consumed per PR target). Maintain separation clear pentru reviewability + scope contract.
+
+### L49 — Display artefacte cross-source: math + grep + display reconciliation
+
+**Lesson:** Display Claude Code (counts, summaries, file diffs) poate diverge de disk reality pe trei axe simultan: (a) math empirical recalibrate (estimates ≠ counts reale), (b) display artefacte rendering (multi-Edit preview "is_active de 3 ori"), (c) grep substring false positives (pattern "main" matches "remote/main" + "develop/main"). Extension L41 — pattern multi-axis NU single-axis.
+
+**Pattern empirical Task 1A.5:** 3 instante descoperite simultan: math ROADMAP Edit 1 (estimate "+7 PR-uri", reality "+6" recount empirical), display "Faza 13 PR 1A:" duplicate concern verified empirical → rendering artefact, Step S3 grep substring `git branch | grep "main"` false positives `stale/main`, `develop/main` (NU bug, expected substring behavior).
+
+**Rule:** post-display Claude Code, OBLIGATORIU 3 verify-uri: math recount empirical (`grep -c` + `wc -l`, NU eyeball estimate), disk diff vs display preview (`cat` post-Edit), grep cu word-boundary `\b` sau `-w` flag daca pattern match cu substring risk. Cross-ref: L41 baseline pattern, L46 hidden bugs.
+
+### L50 — Naming + scope + subject discipline (commit hygiene)
+
+**Lesson:** Conventiile de naming (PR sub-numbering, scope tags, subject format) sunt fragile daca schimbate mid-sesiune. Patterns LOCKED early prevent cascade rework.
+
+**Pattern empirical Task 1A.5:** 3 catches: PR sub-PR naming "PR 1.5/1.6" → schimbat la "PR 1E/1F" → regression CHANGELOG entry (Edit 0a fix necesar pentru consistency); subject commit `feat(faza-13): ...` 113 chars + em-dash → ZERO precedent in git log → Option D adopt mixed case `feat: faza 13 pr 1a...` 94 chars ASCII pur (R16); scope tag selection `feat(faza-13)` vs `chore(types)` decided ad-hoc.
+
+**Rule:** la PAS 0 al fiecarui PR, decisively LOCKED inainte de Edit 1: naming sub-PR (1A/1B vs 1.1/1.2 vs descriptive), subject template (max 72 chars, ASCII pur, scope tag) cu preview inainte de commit, scope tag verify pattern existing (`grep "^| #" CHANGELOG.md | head`).
+
+### L51 — Source of truth multi-doc reconciliation
+
+**Lesson:** Cand info exista in multiple locuri (registry vs scratch vs HANDOFF vs CHANGELOG), hierarchy autoritate trebuie LOCKED early. Default = "ultima committed pe disk = canonic". Scratch local + decizii pre-cleanup = transient, NU sursa de adevar.
+
+**Pattern empirical Task 1A.5:** 2 catches: NEW-4 → C8 reconciliation — SCRATCH local zice "NEW-4", registry committed zice "C8 naming consolidation" → registry committed = source of truth (NU scratch incomplete); Decizii LOCKED A2+A3 captured pre-cleanup (typing-only + catalog-with-PR-targets) → L47 + L48 over-rule recomandare "skip — nu sunt critical lessons".
+
+**Rule:** la conflict info intre surse, hierarchy fixa: disk committed > scratch local > memory chat; registry §X latest > older sections; CHANGELOG entry merged > HANDOFF Open Items pending. Document explicit reconciliation in Edit cu nota "reconciled: source X vs Y".
+
+### L52 — Git hygiene preventiv (regula 12 safe variants)
+
+**Lesson:** Git commands cu side-effects (delete, force-push, reset) au 2 variante: safe (`-d`) vs forced (`-D`, `--force`). Default LOCKED = safe variant. Forced doar cu verify-on-disk + raport explicit user.
+
+**Pattern empirical Task 1A.5:** 2 catches: `git branch -d` (safe — refuza daca unmerged) vs `-D` (forced) — adoptat `-d` even daca Claude Code default propus `-D`; `.gitignore` Edit propus → verify net-effect ZERO vs HEAD (preventive cancel-out empirical) → Edit cancelled before commit daca diff e ZERO.
+
+**Rule:** orice git command destructive: safe variant default (`-d`, NU `-D`; `--soft`, NU `--hard`); pre-execution diff vs HEAD verify (mai ales pentru Edit-uri care "ar trebui" sa faca X); ZERO-diff result = STOP, NU commit (cancellation legitima, NU bug).
+
+### L53 — Estimate vs realitate empirical (count discipline)
+
+**Lesson:** Estimates pre-action ("vom curata ~10 stale refs", "~45 orphaned branches") diverg sistematic de realitate empirical. Fara recount post-action, divergence se cumuleaza in docs ca "fapte" false.
+
+**Pattern empirical Task 1A.5:** 2 catches: Step S2 estimate "10 stale refs pruned" → reality "11 stale refs pruned" empirical; Step S3 estimate "~45 orphaned branches" → reality "58 orphaned branches" empirical (count substring inclusiv false positives, dar absolute numbers >>> estimate).
+
+**Rule:** orice action cu count claim in docs: empirical count post-action OBLIGATORIU (`wc -l`, `grep -c`); update doc cu count real, NU keep estimate; nota explicit "empirical NU estimate" daca divergence > 10%.
+
+### L54 — Capture-during-refactor pattern (extension L43)
+
+**Lesson:** Pre-emptive findings discoveries durante refactor (typing, markers, Edit cluster) trebuie captured imediat in scratch — pattern L43. Extension empirical Task 1A.5: nu doar findings critical (security HIGH), dar si **process catches** (math errors, naming drift, scope artefacts) merita capture immediate, pentru lessons HANDOFF post-PR.
+
+**Pattern empirical Task 1A.5:** 11 process catches captured during sub-pas execution in `SCRATCH_CATCHES_TASK1A5.md` (subsequent pierdut disk-reset, reconstructed din chat). Consolidated to 9 lessons L49-L57 prin grouping logic (R10 cluster mic).
+
+**Rule:** durante orice Sub-pas execution: process catch detected (display artefact, naming drift, count error) → scratch capture imediat in chat session OR file local; post-PR consolidation lessons in HANDOFF, grouped logic (NU 1:1 catch:lesson); source-of-truth fallback: daca scratch pierdut, chat session = autoritate pana la compactare (apoi pierdut definitiv).
+
+### L55 — Future/viitor formulations require triggers
+
+**Lesson:** Formulari "future task", "viitor", "amanat", "post-launch", "eventual" fara trigger condition explicit = drift garantat. Item-ul zace pasiv in docs pana cineva il re-gaseste accidental (sau, mai des, NU il re-gaseste deloc).
+
+**Pattern empirical chat curent (Pachet A planning):** Item ROADMAP "Future tasks" propus initial cu format `| FT-01 | task | ROI | complexitate | note |`. User a flag-uit instant: *"future poate insemna oricand"*. Decizie revizuita la triplu-ancorat (ROADMAP + HANDOFF + CHANGELOG) + coloana Trigger explicit per item. Auto-catch in meta-proces (regula aplicata pe insusi procesul de creare a regulii).
+
+**Rule:** orice item categorizat "future" / "later" / "eventual" / "post-launch" / "amanat" trebuie sa aiba 4 ancore minim: locul canonic (ROADMAP §"Future tasks" sau echivalent) — single source of truth; vizibilitate per sesiune (HANDOFF Open items / Medium-term backlog); trigger condition explicit ("cand deschidem PR X" / "cand user observa Y" / "data Z") — ce eveniment il scoate din "future" in "active"; trace istoric (CHANGELOG entry care l-a creat). Cross-ref: R17 din lista Reguli LOCKED.
+
+### L56 — Markdown rendering chat + planner parafrazare = pierderi copy-paste
+
+**Lesson:** Prompt-uri din chat Claude.ai pierd sistematic la copy-paste catre Claude Code din 2 cauze: (a) markdown rendering — backticks inline (`` ` ``), bold (`**text**`), italic, links auto-rendat — chat renderea vizual, clipboard copiaza textul rendat NU sursa raw; (b) planner parafrazare — Claude.ai planner rescrie din summary Claude Code in loc de text disk verbatim, generand old_str-uri inexacte.
+
+**Pattern empirical Pachet A Edit 1 + Edit 3:** Edit 1 prompt initial inclus old_str cu `.next/` (backticks) + `**Sumar severitate:**` (bold) — ambele pierdute la markdown rendering chat → Claude Code detectat empirical, oprit Edit, cerut re-typeaza prompt. Edit 3 prompt v2 inclus old_str cu Rule L48 parafrazat de planner ("Bug fixes pentru ulterior PR-uri") in loc de text disk verbatim ("Fix execution = downstream PR cu marker consumption verify...") — Claude Code detectat empirical, oprit Edit, cerut re-typeaza cu disk reality.
+
+**Rule:** orice prompt Claude.ai → Claude Code cu code references, bold, sau formatare nested: prompt-ul COMPLET in fence cod brut exterior (` ``` ` cu 3 backticks); ZERO fence-uri interne nested; user copy-paste prin buton "Copy" UI Claude.ai (NU select+ctrl+c din rendering); old_str ALWAYS din raport empirical Claude Code (NU parafrazare planner); verify in input Claude Code ca vezi backticks literal inainte de Enter. Daca markdown e mancat sau text e parafrazat: STOP, cere user re-trimitere cu disk verbatim.
+
+### L57 — Etichete numerice ≠ count empirical (gap-aware verify)
+
+**Lesson:** Etichetele numerice (TD-XX, L-XX, PR-XX, FT-XX) pot avea gap-uri istorice. Verify pattern `grep -c "^| TD-"` returneaza count empirical (numar de matches), NU eticheta max. Pre-edit verify trebuie sa foloseasca delta (count post − count pre = +N), NU valoare absoluta (count = max eticheta).
+
+**Pattern empirical Pachet A Edit 1 + Edit 2:** Edit 1 prompt expecta `count = 30` pe baza etichetei TD-30, realitate `count = 26` (gap-uri TD-20..TD-23). Edit 2 prompt expecta `count linii numbered bold = 17`, realitate `count = 32` (15 pre-existente + 17 nou). Discrepante false (Edits corecte, doar verify check off pe valoare absoluta).
+
+**Rule:** verify counts: foloseste delta vs pre-edit baseline (count post − count pre = +N expected), NU valoare absoluta (count = max eticheta); pre-edit OBLIGATORIU: capture count actual (`grep -c "^| TD-"` inainte de Edit) ca baseline; post-edit asteptat: `pre-count + N` (cati ai adaugat); document reconciliation in raport: "count absolut X, delta corect +N vs pre-baseline Y".
 
 ---
 
