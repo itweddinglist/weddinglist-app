@@ -935,7 +935,7 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 - **HANDOFF.md** Section 5 "Medium-term backlog" — vizibilitate per sesiune (FT-01..04 cross-ref)
 - **HANDOFF.md** TD-30 entry tabel datorii tehnice — single source DEAD CODE definition
 - **CHANGELOG.md** entry Pachet A — trace istoric creare FT-01..FT-04
-- **HANDOFF.md** §"Reguli LOCKED (17)" R17 — regula structurala 4 ancore
+- **HANDOFF.md** §"Reguli LOCKED (18)" R17 — regula structurala 4 ancore
 - **HANDOFF.md** lesson L55 — Future/viitor formulations require triggers
 
 ### Regula future tasks

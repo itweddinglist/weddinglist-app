@@ -22,7 +22,7 @@
 
 ---
 
-## Reguli LOCKED (17) — filtru permanent sesiuni AI
+## Reguli LOCKED (18) — filtru permanent sesiuni AI
 
 > Reguli operationale aplicate per sesiune Claude.ai + Claude Code.
 > Filtru obligatoriu pentru orice decizie. Reconstruite din chat sesiune
@@ -45,6 +45,7 @@
 15. **Securitate chei** — NU in chat, NU in commits, NU in logs
 16. **ASCII pur context-aware** — strict in code/commits/hooks; UTF-8 OK in markdown body
 17. **Future/viitor formulari = trigger explicit obligatoriu** — orice item "amanat" fara conditie de re-activare = drift garantat. Minim 4 ancore: canonic + vizibil + trigger + trace. Cross-ref: lesson L55.
+18. **Commit message pattern reusable** — pentru orice commit non-trivial: heredoc stdin (NU `-m` direct), ASCII pur strict (R16 reused), paragraph headers cu DOT suffix (NU colon, evita footer trailer trap), TOATE liniile <100 chars (body-max + footer-max ambele enforced). Pattern validat empirical PR #183 + #184. Cross-ref: lessons L60, L61.
 
 ### Reconstruction notes
 
@@ -54,14 +55,19 @@ curenta: user a prins drift in formulare "ROADMAP Future tasks" fara trigger con
 (meta-proces: regula aplicata pe insusi procesul de creare a regulii). Lesson L55
 captures pattern.
 
+R18 auto-catch din chat sesiune Pachet B (post-Pachet A, post-Section 1 update):
+empirical learned dual rules commitlint (body-max + footer-max line length) +
+markdown rendering corruption Windows + planner UTF-8 violations. Pattern reusable
+pentru orice commit non-trivial. Lessons L58-L61 capture detalii granular.
+
 ---
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-09 (Pachet A capture residual merged, post-PR 1A)
+- **Data:** 2026-05-09 (Pachet B in-flight, post-Pachet A + Section 1 update merged)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
-- **Motiv handoff:** PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) ambele merged. Pachet A a livrat: TD-30 (DEAD CODE catalog), secțiune nouă "Reguli LOCKED (17)" cu R17 future triggers, 9 lessons noi L49-L57 (extension L41 display artefacts + L43 capture-during-refactor), subsection "Future tasks" FT-01..FT-04 cu R17 4-ancore complete (canonic ROADMAP + vizibil HANDOFF + trigger explicit + trace CHANGELOG).
-- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu DB reală — natural follow-up Layer 1), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular.
+- **Motiv handoff:** 4 livrări consecutive azi pe develop. PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) + HANDOFF Section 1 update (#184, `2539459`) merged. Pachet B in-flight (acest commit): R18 LOCKED nou (Reguli 17 → 18) + 4 lessons noi L58-L61 (commitlint dual rules + Write tool Windows display + heredoc pattern + planner R16 violations) + Section 1 self-update + 3 CHANGELOG entries (#183 + #184 + Pachet B placeholder).
+- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu DB reală — natural follow-up Layer 1), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular. Pachet B closes capture residual phase — next phase = code execution Faza 13.
 
 ---
 
@@ -766,6 +772,38 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical Pachet A Edit 1 + Edit 2:** Edit 1 prompt expecta `count = 30` pe baza etichetei TD-30, realitate `count = 26` (gap-uri TD-20..TD-23). Edit 2 prompt expecta `count linii numbered bold = 17`, realitate `count = 32` (15 pre-existente + 17 nou). Discrepante false (Edits corecte, doar verify check off pe valoare absoluta).
 
 **Rule:** verify counts: foloseste delta vs pre-edit baseline (count post − count pre = +N expected), NU valoare absoluta (count = max eticheta); pre-edit OBLIGATORIU: capture count actual (`grep -c "^| TD-"` inainte de Edit) ca baseline; post-edit asteptat: `pre-count + N` (cati ai adaugat); document reconciliation in raport: "count absolut X, delta corect +N vs pre-baseline Y".
+
+### L58 — Conventional Commits dual line-length rules (body + footer max)
+
+**Lesson:** commitlint (Conventional Commits parser) enforces 2 rules independent: `body-max-line-length: 100` si `footer-max-line-length: 100`. Switching paragraph between body si footer trailer pe baza pattern `Key:` colon-prefix la inceput. Practic: TOATE liniile (subject + body + footer) trebuie sub 100 chars regardless de tipul paragraph.
+
+**Pattern empirical Pachet B Edit Section 1 + commit:** initial commit message cu paragraph headers colon-prefix (Edits applied:, Verify:, Cross-ref:) a triggered footer-max-line-length violation pe paragraf >100 chars. Splitting footer in 3 sub-paragrafe NU a rezolvat — alte paragrafe cu colon-prefix au fost tot tratate footer trailers. Workaround: paragraph headers cu DOT suffix (Updates aplicate. NU Updates applied:) + ALL lines <100 chars empirical.
+
+**Rule:** orice commit message non-trivial: paragraph headers cu DOT suffix (NU colon-prefix); ALL lines (subject + body + footer + bullets) <100 chars; pre-commit verify cu `cat -n` count + manual line length check obligatoriu inainte de git commit.
+
+### L59 — Display Write tool corruption Windows terminal + UTF-8
+
+**Lesson:** Claude Code Write tool display preview e corupt vizual cand body file contine caractere UTF-8 speciale (em-dash —, sageata →, paragraph §) + terminal PowerShell Windows. Lines duplicate, characters overwrite, numbers ordering scrambled. Sursa pe disk e curata, dar preview e impossible de verificat vizual.
+
+**Pattern empirical Pachet A commit message + Pachet B prompts:** Write tool display preview rupt reproductibil cand text contine — sau →. Confirmed la 2 instances diferite Pachet A. Sursa Claude Code raportata era curata, dar preview rendering Claude Code arata caractere amestecate. NU e file content corruption, e display rendering artefact.
+
+**Rule:** orice commit message + prompt cu UTF-8 special chars: bypass Write tool entirely; foloseste heredoc stdin pipe (cat <<'EOF' | git commit -F -) sau prompt rewrite ASCII pur strict. Pre-execute: verify body cu cat -n in subshell (NU Write preview) inainte de commit/edit. Daca display preview arata corupt: STOP, NU aproba based on visual.
+
+### L60 — Heredoc stdin pattern reusable (commit message bypass Write)
+
+**Lesson:** Pattern reusable pentru orice commit message non-trivial: heredoc stdin (cat <<'EOF' EOF) pipe direct la git commit -F -. ZERO Write tool, ZERO file intermediar (heredoc = stdin pipe), ZERO fisier scratch. Newlines explicite per linie permit body multi-line cu fiecare linie sub 100 chars. Single-quoted heredoc ('EOF') previne shell expansion ($variables, backticks evaluated).
+
+**Pattern empirical PR 183 + 184:** Pachet A commit failed 5 tentative cu git commit -m direct (footer trap, body line length, etc.). Workaround heredoc stdin succeeded la prima try cu DOT suffix headers. Section 1 update commit reused pattern, succeeded la a 2-a tentativa (1 line length minor adjustment). R18 LOCKED capture pattern.
+
+**Rule:** orice commit message non-trivial: usar heredoc stdin DEFAULT, NU git commit -m direct. Pattern obligatoriu: cat <<'EOF' header subject + body cu DOT suffix headers + bullets ASCII + EOF | git commit -F -. Pre-commit verify: cat <<'EOF' | cat -n in subshell pentru line count + length check.
+
+### L61 — Planner Claude.ai auto-violation R16 (UTF-8 in commit content)
+
+**Lesson:** Claude.ai planner mid-sesiune obosita uita propriile reguli LOCKED. Specific: planner propune commit message body cu UTF-8 special chars (em-dash —, sageata →) violand R16 LOCKED ("ASCII pur strict in commits/hooks"). Recurence pattern: chiar si dupa explicit catch + fix, planner repeta violarea la prompt urmator.
+
+**Pattern empirical Pachet B Edit 1 prompt:** Planner a propus old_str cu diacritice romanesti (amânat, fără, condiție) cand disk reality era ASCII pur (amanat, fara, conditie). Empirical confirmed la 2 instances diferite in chat sesiune. Sursa: planner "umanizeaza" textul automat fara verify-on-disk pre-prompt.
+
+**Rule:** Claude Code = plasa de siguranta empirical pentru R16 in commits + R11 onestate verify-on-disk pentru old_str. Pattern: pre-edit verify obligatoriu raporteaza textul disk verbatim; planner foloseste textul raportat NU memoria proprie. Daca planner-ul propune diacritice/UTF-8 in old_str: STOP, re-ask user pentru re-paste verbatim disk.
 
 ---
 
