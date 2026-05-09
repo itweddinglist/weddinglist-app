@@ -619,6 +619,12 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 
 #### PR 1 — Schema Drift Safety Net (Faza 13.0 partial)
 
+> **Note 2026-05-09 — SPLIT decision LOCKED:** PR 1 monolithic original e split în 4 sub-PRs cross-model validation (vezi HANDOFF.md lesson L38): **PR 1A** Database Types Contract (Layer 1 compile-time, merge pending — vezi CHANGELOG.md `#TBD3`), **PR 1B** integration tests cu DB reală (Layer 2), **PR 1C** CI `db:types:check` + schema fingerprint (Layer 3), **PR 1D** runtime schema-guard la app startup (Layer 4).
+>
+> Plus 2 sub-PRs adiționale identificate empirical Task 1A.4 markers placement: **PR 1E** Enum Type Narrowing Layer (consolidare Cat3 markers cross-feature) + **PR 1F** RPC + Json Hardening (consolidare Cat4 + Cat5 markers).
+>
+> **Status:** sub-tasks 1.1-1.10 mai jos rămân valide ca scope intent, dar grupare exactă pe sub-PR (1A-1F) NU e reflectată în acest entry. ROADMAP restructure deferat la PR ROADMAP cleanup dedicat (separate concern, scope contained Task 1A.5 = PR 1A docs consolidation).
+
 **Scop:** infrastructura care previne următoarele 50 de bugs din clasa schema drift.
 
 - [ ] 1.1 — Husky pre-commit hook: `npx supabase gen types typescript --local > types/database.ts`
@@ -664,6 +670,7 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 
 - [ ] 3.1 — Schema migration `20260506000001_rsvp_phase1.sql`
 - [ ] 3.2 — `rsvp_invitations.event_id` rămâne NOT NULL (decizie pragmatic)
+- [ ] 3.2.A — **C12 SECURITY HIGH:** ADD COLUMN `rsvp_invitations.expires_at TIMESTAMPTZ` (schema currently missing, code references → 22 errors cascade single root cause). Pre-condiție pentru token expiry guard. Cross-ref: HANDOFF.md L43 + registry §E.1 + L46 hidden bugs F13 disclosure.
 - [ ] 3.3 — Sync trigger AFTER INSERT/UPDATE pe `rsvp_responses` → `guest_events.attendance_status`
 - [ ] 3.4 — Mapping enum `accepted → attending`
 - [ ] 3.5 — Backfill rows existente
@@ -675,7 +682,7 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 - [ ] 3.11 — E2E test Playwright: host generează → guest răspunde → seating vede status
 
 **Estimare:** 28-40h
-**Acceptance:** Host generează invitație fără 500; guest răspunde fără data loss; seating + guest list + RSVP dashboard arată ACEEAȘI valoare; manual override funcționează; dashboard se încarcă fără 500.
+**Acceptance:** Host generează invitație fără 500; guest răspunde fără data loss; seating + guest list + RSVP dashboard arată ACEEAȘI valoare; manual override funcționează; dashboard se încarcă fără 500; tokens RSVP expire la `expires_at` (NU never — C12 fix).
 
 #### PR 4 — Account Deletion Atomic (Faza 13.5.B)
 
