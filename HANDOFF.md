@@ -560,6 +560,94 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 
 **Rule:** sesiuni Claude.ai viitoare NU recomandă Codex by default. Doar dacă task-ul fits criteria specifice. Default executant = Claude Code.
 
+### L38 — Granularitate execuție split PR mari
+
+**Lesson:** PR-urile mari (>10h focused work) cu scope arhitectural critic au risc surface mare per merge: review superficial, conflict potential, rollback granularity zero, merge timing dependency cumulativ.
+
+**Pattern empirical PR 1A:** PR 1 original (Schema Drift Safety Net, 18-30h, 10 tasks, 4 defense layers) split în 4 sub-PR-uri secvențiale (PR 1A compile-time typing + PR 1B integration tests + PR 1C CI fingerprint + PR 1D runtime guard). Cross-model validation (ChatGPT 5.5 Thinking) + filtrare LOCKED rules → split decision validated.
+
+**Rule:** la PAS 0 al fiecărui PR, dacă scope estimat >10h focused → propune split înainte de execuție. Granularitate per-task max 5 sub-tasks per PR. NU split granular peste 2-3 sub-PR-uri 4-6h fiecare optim (overhead context switch).
+
+### L39 — Husky pre-commit fail-CLOSED structural (Decizia A4)
+
+**Lesson:** Hook-uri Husky care depind de prerequisite externe (Supabase DB / network / services) trebuie să **fail-CLOSED** când prerequisite missing — exit 1 + commit BLOCKED + mesaj user-friendly cu instrucțiuni concrete. NU silent degradation prin auto-fallback.
+
+**Pattern empirical PR 1A:** `db:types:generate` hook (PR 1A.3) face check Supabase local UP. La Supabase DOWN (test scenariu 3 PR 1A.3), opțiunea A propusă = auto-fallback la `db:types:linked` (cloud regen). REJECTED — risc silent degradation: user NU știe că types regenerate dintr-o sursă diferită (cloud schema poate diverge de local schema). Option B adoptat: hook fail cu exit 1 + 3 instrucțiuni clare (start Supabase / regen manual cloud / re-commit). Empirical validated.
+
+**Rule:** orice hook cu prerequisite extern → fail-CLOSED + actionable error message. User decide explicit fix path, NU automat. Aplicabil cross-PR pentru future hooks similar.
+
+### L40 — Defense-in-depth Layer 1 ~70% coverage gap
+
+**Lesson:** Compile-time TS strict cu Database generic (Layer 1) acoperă ~70% schema drift bugs (Insert/Update objects + SELECT cascade + RPC params + enum narrowing). ~30% remain undetected: filter operators column names (`.eq`, `.is`, `.gt`, etc.) accept any string, NOT strict-typed against Database schema.
+
+**Pattern empirical PR 1A:** PR 1A.4 markers placement: 56 markers consumed Layer 1 errors, dar C5 `tables.deleted_at` filter (`.is("deleted_at", null)`) NU a fost detected compile-time (single layer covers ~70%). Empirical proof la sub-cluster placement testing — filter operators escape Layer 1.
+
+**Rule:** Layer 1 typing NU sufficient standalone — false confidence dacă single layer. Plan layered defense obligatoriu: PR 1B integration tests cu DB reală (Layer 2), PR 1C CI `db:types:check` + schema fingerprint (Layer 3), PR 1D runtime schema-guard la app startup (Layer 4). Multi-layer = empirical justified, NU over-engineering.
+
+### L41 — Display Claude Code vs disk (verify-on-disk pattern)
+
+**Lesson:** Claude Code display output (file diffs, tool results, marker count summaries) poate diverge subtle de disk reality. Source of truth = disk verify empirical (`cat`, `wc`, `grep`, `xxd`), NU display.
+
+**Pattern empirical PR 1A:** PR 1A.4 commit body declarat "8 Cat 4 markers" dar `git show e575780 | grep -c "Cat4"` empirical = 7 (reconciled în registry §"Catalog NEW final"). Display report ≠ disk reality. Plus multi-Edit bulk markers RSVP route inițial display "is_active de 3 ori" în diff preview — disk verify confirmed structurally correct (display rendering artefact).
+
+**Rule:** post-Edit / post-Write / post-Bash, ALWAYS verify pe disk cu `grep -c` + `wc -l` + `file` ÎNAINTE de a continua. Display = informativ rapid, NU autoritativ. Decisions empirical pe disk only — pattern aplicabil cross-sesiuni Claude Code (regula §8a verify-on-disk).
+
+### L42 — Supabase CLI stdout contamination
+
+**Lesson:** Supabase CLI commands (gen types, etc.) emit la stdout banners + connection messages care contaminate piped output (ex: `... > file.ts`). Genereaza file invalid TS — first lines = banner text, NU TypeScript code.
+
+**Pattern empirical PR 1A:** PR 1A.1 Task 1A.1 first run `npx supabase gen types typescript --local > types/database.ts` produced file cu prima linie `Connecting to db 5432` + last lines banner `A new version of Supabase CLI is available...`. tsc compile error pe banner text. Hardening required: `stdio: ["inherit", "pipe", "ignore"]` + start/end markers validation în `scripts/db-types-generate.ts`.
+
+**Rule:** pipe Supabase CLI stdout into file = filter output mandatory. Use `stdio: ["inherit", "pipe", "ignore"]` în execSync (ignore stderr) + post-process validation cu start markers (ex: `export type Database`) și end markers. Aplicabil oricărei tool CLI cu side-effect stdout (banners, update notices).
+
+### L43 — Pre-emptive findings durante refactor
+
+**Lesson:** Durante refactor (typing, markers placement, Edit cluster), descoperire finding NEW critical trebuie capturată imediat în scratch — NU defer post-completion. Riscul "țin minte și revin" = pierdut sau diluat în context.
+
+**Pattern empirical PR 1A:** Task 1A.4 marker placement scratch capture: C12 (`rsvp_invitations.expires_at` security HIGH, 22 errors cascade single root cause), NEW-10 (`payments.due_date` dashboard UX silent broken, `paymentDueSoonCount` always 0), F13 RSVP invitations Insert (3 simultaneous bugs disclosed via L46 pattern). Findings reconciled în registry post-Task 1A.5.
+
+**Rule:** Severity criteria capture imediat: (a) security HIGH / data loss / broken core feature, (b) cascade ≥5 errors single root cause, (c) hidden bug masked TS overload (L46), (d) cross-cutting concern multi-PR. PAUSE refactor → document scratch (Finding + Severity + Empirical + Fix + PR target + Marker preview) → resume.
+
+### L44 — Marker placement Pattern A/B per error level
+
+**Lesson:** `@ts-expect-error` consumă DOAR linia imediat următoare. Pentru Insert/Update objects, placement depinde de tipul erorii TS reportate — single pattern wrong → cascade markers (consume errors lineară, NU root cause). Identify pattern ÎNAINTE de placement.
+
+**Pattern empirical PR 1A:** 2 patterns confirmate Task 1A.4: **A** — eroare la `.insert()` line (Insert object incomplet, NOT NULL field missing) → marker deasupra `.insert({...})` line (ex: C5 `weddings.location_name`, C7 `rsvp_invitations.event_id`, NEW-7 `seats.event_id`). **B** — eroare la field line ÎNĂUNTRU object literal (legacy field în cod dar lipsă din schema) → marker ÎNĂUNTRU object, deasupra liniei field-ului (ex: NEW-9 `rsvp_responses.id` legacy remap). Detection: Fișier 2 sub-cluster F — 6 markers added, 4 consumate inițial → mis-placement detected via `tsc` check intermediar → re-Edit → 6 consumed final.
+
+**Rule:** Pre-marker placement: citește eroare TS exact (linie:coloana `tsc.log`) + identifică Pattern A (top-level Insert strict, NOT NULL missing) vs Pattern B (per-field, legacy/extra field). Post-cluster Edit, `tsc` check intermediar OBLIGATORIU — discrepanță count consumed (markers added vs errors removed) = signal mis-placement → fix prin re-Edit.
+
+### L45 — Verify schema empirical ÎNAINTE de marker categorization
+
+**Lesson:** Audit catalog pre-launch (anticipated findings, NEW-N notation) e TENTATIVE STARTING POINT, NU CONFIRMED REALITY. Source of truth = `types/database.ts` (regenerated empirical) + `tsc` log (REAL TS error linie:coloana) + registry `docs/audit/schema-drift-known-failures.md` post-reconcile. Audit anticipated category wrong la majoritatea cases.
+
+**Pattern empirical PR 1A:** 5/5 cases formal re-categorize Task 1A.4 (registry §D) + 1 special case F13 (registry §E.3 L46 disclosure): F8 wl-audit NEW-1 (anticipated `request_id` schema drift) → Cat4-json-meta (`AuditMetadata` index sig); F9 idempotency NEW-2 (anticipated `request_hash` drift) → Cat4-json-response (`Record<string,unknown>` not Json); F17 guest-events NEW-3 (anticipated `wedding_id` drift) → Cat3-narrow `attendance_status` null narrow; NEW-4 manual RSVP (anticipated `rsvp_responses.wedding_id` drift) → C8 naming consolidation (schema HAS `wedding_id`; real bug = `invitation_id` NOT NULL passes null); F15 rsvp/dashboard Cat3-narrow → Cat3-enum subset (`InvitationProjection.delivery_status` missing `"revoked"`); F13 rsvp/invitations NEW (special) → Cat3-enum REPORTED + C12 + C7 HIDDEN (L46 disclosure pattern). Pattern systemic — audit anticipated category ALWAYS wrong empirical (5+1/6 cases).
+
+**Rule:** Pre-marker placement OBLIGATORIU: (1) `grep "<table>:" types/database.ts -A20` confirmă coloane existente, (2) `grep "<file>" /tmp/tsc.log -A6` eroarea exactă, (3) cross-reference category match. NU asume audit catalog correct. Re-categorize transparent în registry post-empirical (regula 11 onestate). Cross-reference: registry §D "Re-categorizations 5 cases" + §E.3 "L46 hidden bugs F13 disclosure".
+
+### L46 — Hidden bugs masked by TS overload selection
+
+**Lesson:** TypeScript reports DOAR primul error în Insert/Update validation chain. Multiple bugs simultane în same Insert object = doar primul vizibil compile-time. `@ts-expect-error` consume primul → restul rămân HIDDEN până post-fix Round 1 sau runtime.
+
+**Pattern empirical PR 1A:** F13 `app/api/rsvp/invitations/route.ts` L106-116 Insert (10 fields) = 3 simultaneous bugs identificate empirical, doar 1 REPORTED by TS: (a) Cat3-enum `delivery_channel` (string \| null vs `rsvp_delivery_channel` enum narrow) REPORTED, (b) C12 `expires_at` extra field schema lipsă HIDDEN, (c) C7 `event_id` NOT NULL missing HIDDEN. Single marker placed pentru REPORTED only — C12 + C7 ar surface DUPĂ fix Cat3-enum Round 1.
+
+**Rule:** Post-fix Round 1 pe orice marker, OBLIGATORIU `npx tsc --noEmit` pentru Round 2 errors discovery. Insert/Update cu 5+ fields = high-risk hidden bugs — pre-investigation: Schema Required (NOT NULL) vs Insert, Schema column names (existence) vs Insert (extra fields), Type narrowing pe enum/nullable. Reviewer note explicit în PR description pentru Round 2 expected.
+
+### L47 — Typing-only refactor pattern (separate Layer 1 PR-uri)
+
+**Lesson:** PR-uri cu scope "Layer 1 typing" (Database generic + `@ts-expect-error` markers placement) trebuie ZERO logic changes — separare clară responsibility (typing layer NU bug fixes inline). Reviewer expectation match: PR review focused exclusiv pe typing correctness.
+
+**Pattern empirical PR 1A:** Task 1A.4 commit `e575780` = `chore(types)` prefix, ZERO logic edits, only typing application + 56 markers placement across consumers. Vitest regression check passes unbreakable (0 delta tests). Decizia LOCKED A2 cross-model validation.
+
+**Rule:** Split PR Layer 1 typing complet separate de PR-uri downstream cu bug fixes (PR 1E, PR 1F, PR 3, PR 4, PR 9, PR 11). Scope contract explicit în PR description: "typing-only, zero logic changes, markers delegate fixes la PR target". Aplicabil oricărui future Layer 1 PR (other defense layers similar pattern).
+
+### L48 — Catalog-with-PR-targets pattern (NU bug fixes în catalog PR)
+
+**Lesson:** PR-uri "catalog" (markers + registry + lessons + ROADMAP placeholder) trebuie ZERO bug fixes inline. Scope = documentation + PR target identification, NU execution. Bug fixes consume markers post-fix per PR target downstream — separation clear pentru reviewability.
+
+**Pattern empirical PR 1A:** 56 markers documented în registry `docs/audit/schema-drift-known-failures.md` + PR targets distribution (PR 1E enum narrowing, PR 1F RPC+Json hardening, PR 3 RSVP minimal, PR 4 account deletion, PR 9 import JSON, PR 11 polish), NU fix-uri inline. Markers = "fix in PR X" delegation explicit. Decizia LOCKED A3 cross-model validation.
+
+**Rule:** Catalog PR scope = identify + categorize + delegate. Fix execution = downstream PR cu marker consumption verify (`npx tsc --noEmit` reduce errors corespunzător markers consumed per PR target). Maintain separation clear pentru reviewability + scope contract.
+
 ---
 
 ## Decizii LOCKED noi (post-addendum 01)

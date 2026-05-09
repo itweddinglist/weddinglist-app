@@ -37,10 +37,12 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     return errorResponse(404, "USER_NOT_FOUND", "Contul nu a fost găsit.");
   }
 
+  // @ts-expect-error: C11 cascade - SelectQueryError from status SELECT (app_users) - fix in PR 4
   if (appUser.status === "deleting") {
     return errorResponse(409, "DELETION_IN_PROGRESS", "Ștergerea contului este deja în curs.");
   }
 
+  // @ts-expect-error: C11 cascade - SelectQueryError from status SELECT (app_users) - fix in PR 4
   if (appUser.status === "deletion_failed") {
     return errorResponse(409, "DELETION_FAILED", "O ștergere anterioară a eșuat. Contactează suportul.");
   }
@@ -134,8 +136,10 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     }
 
     // ── Step 7: Email confirmare (best-effort) ────────────────────────────────
+    // @ts-expect-error: C11 cascade - SelectQueryError from status SELECT (app_users) - fix in PR 4
     if (appUser.email) {
       await sendAccountDeletionEmail({
+        // @ts-expect-error: C11 cascade - SelectQueryError from status SELECT (app_users) - fix in PR 4
         to: appUser.email,
         deletedAt: new Date().toISOString(),
       }).catch((e: unknown) => {

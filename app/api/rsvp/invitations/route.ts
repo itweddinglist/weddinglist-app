@@ -103,6 +103,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     // ── Inserează invitația ────────────────────────────────────────────────
     const { data: invitation, error: insertError } = await supabaseServer
       .from("rsvp_invitations")
+      // @ts-expect-error: Cat3-enum - delivery_channel (string | null) vs rsvp_delivery_channel enum narrow - fix in PR 3
       .insert({
         wedding_id: weddingId,
         guest_id: guestId,

@@ -1,11 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import { type SeatingPersistenceAdapter, type SeatingSnapshot } from "./types";
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error("Missing Supabase env variables");
-  return createClient(url, key, {
+  return createClient<Database>(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }

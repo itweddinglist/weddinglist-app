@@ -81,6 +81,7 @@ export async function withIdempotency<T>(
   // 3. Stocăm răspunsul — non-fatal dacă tabelul lipsește sau există conflict de UNIQUE
   const { error: insertError } = await supabaseServer
     .from("idempotency_keys")
+    // @ts-expect-error: Cat4-json-response - Record<string, unknown> not assignable to Json (missing index signature) - fix in PR 1.6
     .insert({
       request_hash:        requestHash,
       client_operation_id: clientOperationId,

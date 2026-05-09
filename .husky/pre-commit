@@ -1,1 +1,31 @@
 npm run lint
+
+# === Faza 13.0 PR 1A.3 - schema types regen if migrations changed ===
+# Ref: CLAUDE.md section 10.1, /docs/audit/2026-05-pre-launch.md section 10.12
+
+MIGRATIONS_CHANGED=$(git diff --cached --name-only | grep -E "^supabase/migrations/.*\.sql$" || true)
+
+if [ -n "$MIGRATIONS_CHANGED" ]; then
+  echo ""
+  echo "Migrations changed in this commit:"
+  echo "$MIGRATIONS_CHANGED" | sed 's/^/  - /'
+  echo ""
+  echo "Regenerating Supabase types..."
+
+  if ! npm run db:types:generate; then
+    echo ""
+    echo "FAILED: Supabase local nu ruleaza sau a esuat regenerarea."
+    echo ""
+    echo "Pentru a continua:"
+    echo "  1. Porneste Supabase local: npx supabase start"
+    echo "  2. SAU regen manual din cloud: npm run db:types:linked"
+    echo "  3. Apoi re-commit"
+    echo ""
+    exit 1
+  fi
+
+  # Add updated types to commit
+  git add types/database.ts
+  echo "OK types/database.ts regenerated and staged (auto-generated - any manual edit will be overwritten)"
+  echo ""
+fi

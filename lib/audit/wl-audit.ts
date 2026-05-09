@@ -66,6 +66,7 @@ export async function wl_audit(
   try {
     const { error } = await supabaseServer
       .from("audit_logs")
+      // @ts-expect-error: Cat4-json-meta - AuditMetadata missing index signature for Json - fix in PR 1.6
       .insert({
         request_id,
         actor_type,

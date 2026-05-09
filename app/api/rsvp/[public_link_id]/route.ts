@@ -8,6 +8,7 @@
 
 import { type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import { validateTokenState } from "@/lib/rsvp/token";
 import { validateRsvpSubmission } from "@/lib/rsvp/validate-rsvp-submission";
 import {
@@ -27,7 +28,7 @@ const GENERIC_404_MSG = "Acest link de invitație nu este valid sau a expirat.";
 function getPublicClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(url, key, {
+  return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -71,8 +72,11 @@ export async function GET(
     }
 
     const tokenState = validateTokenState({
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       is_active: invitation.is_active,
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       responded_at: invitation.responded_at,
+      // @ts-expect-error: C12 - expires_at column missing on rsvp_invitations - fix in PR 3
       expires_at: invitation.expires_at,
     });
 
@@ -82,16 +86,19 @@ export async function GET(
     }
 
     // Marchează opened_at la primul acces
+    // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
     if (!invitation.opened_at) {
       await supabase
         .from("rsvp_invitations")
         .update({ opened_at: new Date().toISOString() })
+        // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
         .eq("id", invitation.id);
     }
 
     const { data: guest, error: guestError } = await supabase
       .from("guests")
       .select("id, first_name, last_name, display_name")
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("id", invitation.guest_id)
       .single();
 
@@ -109,7 +116,9 @@ export async function GET(
           id, name, event_type, starts_at
         )
       `)
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("guest_id", invitation.guest_id)
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("wedding_id", invitation.wedding_id);
 
     if (eventsError) return internalErrorResponse(eventsError, `GET ${route} events`);
@@ -117,6 +126,7 @@ export async function GET(
     const { data: existingResponses } = await supabase
       .from("rsvp_responses")
       .select("*")
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("invitation_id", invitation.id);
 
     const events = (guestEvents ?? []).map((ge: any) => {
@@ -135,9 +145,13 @@ export async function GET(
 
     const pageData: RsvpPageData = {
       invitation: {
+        // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
         id: invitation.id,
+        // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
         guest_id: invitation.guest_id,
+        // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
         is_active: invitation.is_active,
+        // @ts-expect-error: C12 - expires_at column missing on rsvp_invitations - fix in PR 3
         expires_at: invitation.expires_at,
       },
       guest: {
@@ -209,8 +223,11 @@ export async function POST(
     }
 
     const tokenState = validateTokenState({
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       is_active: invitation.is_active,
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       responded_at: invitation.responded_at,
+      // @ts-expect-error: C12 - expires_at column missing on rsvp_invitations - fix in PR 3
       expires_at: invitation.expires_at,
     });
 
@@ -222,7 +239,9 @@ export async function POST(
     const { data: validEvents, error: eventsError } = await supabase
       .from("guest_events")
       .select("id, event_id")
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("guest_id", invitation.guest_id)
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("wedding_id", invitation.wedding_id);
 
     if (eventsError) return internalErrorResponse(eventsError, `POST ${route} events`);
@@ -253,8 +272,10 @@ export async function POST(
 
     const now = new Date().toISOString();
     const upsertData = validResponses.map((r) => ({
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       wedding_id: invitation.wedding_id,
       event_id: validEventMap.get(r.guest_event_id) ?? null,
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       invitation_id: invitation.id,
       guest_event_id: r.guest_event_id,
       status: r.status,
@@ -267,6 +288,7 @@ export async function POST(
 
     const { error: upsertError } = await supabase
       .from("rsvp_responses")
+      // @ts-expect-error: Cat3-narrow - event_id (string | null) needs null-check before upsert - fix in PR 3
       .upsert(upsertData, { onConflict: "guest_event_id" });
 
     if (upsertError) {
@@ -276,11 +298,13 @@ export async function POST(
     await supabase
       .from("rsvp_invitations")
       .update({ responded_at: now, updated_at: now })
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("id", invitation.id);
 
     return successResponse({
       success: true,
       responses_saved: validResponses.length,
+      // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       invitation_id: invitation.id,
     });
 

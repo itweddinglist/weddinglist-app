@@ -55,6 +55,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   if (error) return internalErrorResponse(error, `GET budget item ${itemId}`);
   if (!data) return notFoundResponse("Budget item");
 
+  // @ts-expect-error: Cat3-enum - string vs BudgetItemStatus enum narrow - fix in PR 1.5 (Enum Type Narrowing Layer)
   return successResponse<BudgetItemRow>(data);
 }
 
@@ -106,6 +107,7 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
   if (error) return internalErrorResponse(error, `PATCH budget item ${itemId}`);
   if (!data) return notFoundResponse("Budget item");
 
+  // @ts-expect-error: Cat3-enum - string vs BudgetItemStatus enum narrow - fix in PR 1.5 (Enum Type Narrowing Layer)
   return successResponse<BudgetItemRow>(data);
 }
 

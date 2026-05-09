@@ -12,6 +12,7 @@
 
 import { type NextRequest } from "next/server";
 import { type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import {
   getServerAppContext,
   requireAuthenticatedContext,
@@ -335,7 +336,7 @@ function dedupKey(firstName: string, lastName: string | null): string {
  *   Missing entries = groups that failed to create (FIX 5).
  */
 async function resolveGroups(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   weddingId: string,
   groupNames: Set<string>
 ): Promise<Map<string, string>> {

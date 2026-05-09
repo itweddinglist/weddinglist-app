@@ -16,6 +16,9 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "ci": "npm run lint && npm run format:check && npm run build",
+    "db:types:generate": "tsx scripts/db-types-generate.ts",
+    "db:types:check": "tsx scripts/db-types-check.ts",
+    "db:types:linked": "supabase gen types typescript --linked > types/database.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -52,6 +55,7 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "supabase": "^2.83.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "vitest": "^4.1.0"
   }
 }

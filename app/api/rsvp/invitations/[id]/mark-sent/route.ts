@@ -74,6 +74,7 @@ export async function PATCH(
     const { data: updated, error: updateError } = await supabaseServer
       .from("rsvp_invitations")
       .update({
+        // @ts-expect-error: Cat3-enum - delivery_channel (string | null) vs rsvp_delivery_channel enum narrow on update - fix in PR 3
         delivery_channel: deliveryChannel ?? null,
         delivery_status: "sent",
         last_sent_at: now,

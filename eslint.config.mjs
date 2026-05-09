@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Seating Chart — locked, adresat în Faza 2A
     "app/seating-chart/**",
+    // Auto-generated Supabase types (Faza 13.0 PR 1A) — ESLint nu poate parsa formatul
+    "types/database.ts",
   ]),
   {
     plugins: {
@@ -28,6 +30,14 @@ const eslintConfig = defineConfig([
           argsIgnorePattern: "^_",
         },
       ],
+    },
+  },
+  {
+    // CLI scripts (Faza 13.0 PR 1A) — console.log legitim pentru comunicare cu user.
+    // Bloc plasat DUPA rules global ca sa override "no-console" pentru scripts/**.
+    files: ["scripts/**"],
+    rules: {
+      "no-console": "off",
     },
   },
 ]);
