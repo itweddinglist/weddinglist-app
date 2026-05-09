@@ -14,6 +14,9 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
+| #TBD-PB | 2026-05-09 | docs | Pachet B closure — R18 LOCKED nou (Reguli 17 to 18) + lessons L58-L61 (commitlint dual rules + Write display + heredoc + planner R16) + Section 1 self-update + 3 CHANGELOG entries | (pending) |
+| #184 | 2026-05-09 | docs | HANDOFF Section 1 update post-Pachet A merge — refresh Data + Motiv handoff + Next contribuitor (PR 1A + Pachet A combined) | 2539459 |
+| #183 | 2026-05-09 | docs | Pachet A capture residual closure post-PR 1A — TD-30 ADD + Reguli LOCKED 17 (R17) + 9 lessons L49-L57 + Future tasks FT-01..04 (4 ancore R17) | b309f1e |
 | #182 | 2026-05-09 | feat | Faza 13 PR 1A — Database Types Contract Layer 1 (types/database.ts + db:types scripts + Husky hook + Database generic + 56 markers + registry 1270 linii 8 sections A-H) | 8fe3861 |
 | #TBD2 | 2026-05-04 | docs | Cross-model validation addendum 01 — 5 risks adaugate (A-E), granularitate 17 PR-uri, decizii LOCKED reformulate, scope neschimbat | (pending) |
 | #TBD | 2026-05-04 | docs | Pre-launch audit empirical findings + Faza 13 plan (174-276h) — 9 launch blockers, 7 GDPR violations, schema drift pattern | (pending) |
@@ -36,6 +39,9 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 - H4.1 E2E setup (#177): foundation Playwright + 2 smoke tests E2E, vitest baseline preserved (879/4 unchanged)
 - H4.2.A E2E auth foundation (#178): +1 E2E test (auth.spec.ts), data-testid contract pattern, NEXT_PUBLIC_DEBUG_AUTH composite probe, vitest baseline preserved (879/4 unchanged)
 - Faza 13 PR 1A (#182): 0 teste delta (Layer 1 compile-time only), +56 @ts-expect-error markers across consumers, +1270 linii registry `docs/audit/schema-drift-known-failures.md`, +9 lessons HANDOFF L38-L46
+- Pachet A capture residual (#183): 0 teste delta (docs only), TD-30 ADD (DEAD CODE catalog), Reguli LOCKED 17 cu R17 future triggers, +9 lessons L49-L57, Future tasks FT-01..04 cu R17 4-ancore complete
+- HANDOFF Section 1 update (#184): 0 teste delta (docs only), refresh Section 1 body cu starea curenta post-Pachet A merge (Data + Motiv handoff + Next contribuitor)
+- Pachet B closure (#TBD-PB): 0 teste delta (docs only), R18 LOCKED (Reguli 17 to 18 commit message pattern), +4 lessons L58-L61, Section 1 self-update post-Pachet B, 3 CHANGELOG entries cumulative deltas
 - PR 1A target distribution: PR 1E (Enum Type Narrowing NEW), PR 1F (RPC + Json Hardening NEW), PR 3 (RSVP Minimal — C12 SECURITY HIGH escalation), PR 4 (Account Deletion), PR 9 (Import JSON v2.0), PR 11 (Polish)
 
 ---
