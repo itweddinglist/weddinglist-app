@@ -58,10 +58,10 @@ captures pattern.
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-04-29 (PR #178 — H4.2.A E2E auth foundation)
+- **Data:** 2026-05-09 (Pachet A capture residual merged, post-PR 1A)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
-- **Motiv handoff:** PR #178 H4.2.A E2E auth foundation ready for merge — DEV bypass via `NEXT_PUBLIC_DEBUG_AUTH` validated end-to-end, helper composite probe + spec smoke pe `/dashboard`, data-testid convention introdus pe AppShell sidebar + Dashboard module grid.
-- **Next contribuitor așteptat:** H4.2.B (RSVP flow E2E) sau H4.2.C/D — auth foundation deblochează scenarii business cu DEV mock identity.
+- **Motiv handoff:** PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) ambele merged. Pachet A a livrat: TD-30 (DEAD CODE catalog), secțiune nouă "Reguli LOCKED (17)" cu R17 future triggers, 9 lessons noi L49-L57 (extension L41 display artefacts + L43 capture-during-refactor), subsection "Future tasks" FT-01..FT-04 cu R17 4-ancore complete (canonic ROADMAP + vizibil HANDOFF + trigger explicit + trace CHANGELOG).
+- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu DB reală — natural follow-up Layer 1), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular.
 
 ---
 
