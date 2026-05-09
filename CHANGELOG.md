@@ -14,7 +14,7 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
-| #TBD3 | 2026-05-09 | feat | Faza 13 PR 1A — Database Types Contract Layer 1 (types/database.ts + db:types scripts + Husky hook + Database generic + 56 markers + registry 1270 linii 8 sections A-H) | (pending) |
+| #182 | 2026-05-09 | feat | Faza 13 PR 1A — Database Types Contract Layer 1 (types/database.ts + db:types scripts + Husky hook + Database generic + 56 markers + registry 1270 linii 8 sections A-H) | 8fe3861 |
 | #TBD2 | 2026-05-04 | docs | Cross-model validation addendum 01 — 5 risks adaugate (A-E), granularitate 17 PR-uri, decizii LOCKED reformulate, scope neschimbat | (pending) |
 | #TBD | 2026-05-04 | docs | Pre-launch audit empirical findings + Faza 13 plan (174-276h) — 9 launch blockers, 7 GDPR violations, schema drift pattern | (pending) |
 | #178 | 2026-04-29 | feat | H4.2.A E2E auth foundation — DEV bypass helper + smoke /dashboard + data-testid convention | (pending) |
@@ -35,7 +35,7 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 - Misc (#170-#171): docs + tokens fix, 0 teste delta
 - H4.1 E2E setup (#177): foundation Playwright + 2 smoke tests E2E, vitest baseline preserved (879/4 unchanged)
 - H4.2.A E2E auth foundation (#178): +1 E2E test (auth.spec.ts), data-testid contract pattern, NEXT_PUBLIC_DEBUG_AUTH composite probe, vitest baseline preserved (879/4 unchanged)
-- Faza 13 PR 1A (#TBD3): 0 teste delta (Layer 1 compile-time only), +56 @ts-expect-error markers across consumers, +1270 linii registry `docs/audit/schema-drift-known-failures.md`, +9 lessons HANDOFF L38-L46
+- Faza 13 PR 1A (#182): 0 teste delta (Layer 1 compile-time only), +56 @ts-expect-error markers across consumers, +1270 linii registry `docs/audit/schema-drift-known-failures.md`, +9 lessons HANDOFF L38-L46
 - PR 1A target distribution: PR 1E (Enum Type Narrowing NEW), PR 1F (RPC + Json Hardening NEW), PR 3 (RSVP Minimal — C12 SECURITY HIGH escalation), PR 4 (Account Deletion), PR 9 (Import JSON v2.0), PR 11 (Polish)
 
 ---
