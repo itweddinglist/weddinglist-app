@@ -74,10 +74,10 @@ functional check git apply --check). Pattern reusable pentru orice file write Wi
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-10 (Pachet C in-flight, post-Layer 1 enforcement complete merged)
+- **Data:** 2026-05-11 (Pachet D in-flight, post-Pachet C closure merged)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
-- **Motiv handoff:** 6 livrări Faza 13 pe develop. PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) + HANDOFF Section 1 update (#184, `2539459`) + Pachet B R18 LOCKED + L58-L61 (#185, `0e40b6b`) merged anterior. Sesiunea curentă (10 mai 2026): PR 1B.0.0 chore Prettier global cleanup 173 files prerequisite (#186, `946b0eb`) + PR 1B.0 feat ci+husky Layer 1 enforcement complete + CI parity local (#187, `988a5f5`) merged. Pachet C in-flight (acest commit): R19 LOCKED nou (Reguli 18 → 19, encoding-aware file writes Windows PowerShell) + 10 lessons noi L62-L71 (Prettier batch concurrency + PowerShell encoding family UTF-16 LE/CRLF + recovery point validation functional check + Conventional Commits footer-leading-blank) + Section 1 self-update + 2 CHANGELOG entries (#186 + #187). Layer 1 defense-in-depth complete: typecheck + tests enforced atât în Husky local hooks (pre-commit + pre-push) cât și în CI workflow remote.
-- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu Supabase DEV — DB-real test profile, natural follow-up Layer 1 enforcement), PR 1C (Schema fingerprint + db:types:check CI Layer 3), PR 1D (Runtime schema-guard Layer 4), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular. Pachet C closes capture residual phase post-Layer 1 enforcement complete — next phase = code execution Layer 2 sau alt sub-PR Faza 13.
+- **Motiv handoff:** 7 livrări Faza 13 pe develop. PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) + HANDOFF Section 1 update (#184, `2539459`) + Pachet B R18 LOCKED + L58-L61 (#185, `0e40b6b`) + PR 1B.0.0 chore Prettier global cleanup 173 files prerequisite (#186, `946b0eb`) + PR 1B.0 feat ci+husky Layer 1 enforcement complete + CI parity local (#187, `988a5f5`) + Pachet C capture residual L62-L71 + R19 LOCKED + CHANGELOG sync (#188, `881b0f4`) merged anterior. Pachet D in-flight (acest commit): 5 lessons noi L72-L76 (Display Claude Code wrap visual artifact + PowerShell Remove-Item cross-tool confusion + "5 min" estimate trap R11 violation + Claude planner new-file anti-pattern + CHANGELOG cumulative drift detection) + Section 1 self-update post-Pachet C merge (closure proper) + TD-31 entry nou (GitHub Actions Node.js 20 deprecation warning) + TD-32 entry nou (recovery patches cleanup user-local) + 4 CHANGELOG entries retroactive fix (#178 hash recovery + #TBD→#179 + #180 add missing complete gap + #TBD2→#181) + Pachet C bullet missing cumulative deltas catch-up + Pachet D self-bullet preventive. Layer 1 defense-in-depth complete preserved (typecheck + tests + format:check enforced atât Husky local hooks pre-commit + pre-push cât și CI workflow remote).
+- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu Supabase DEV — DB-real test profile, natural follow-up Layer 1 enforcement), PR 1C (Schema fingerprint + db:types:check CI Layer 3), PR 1D (Runtime schema-guard Layer 4), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Plus task-uri TD pending discoverit empirical: TD-31 GitHub Actions v5 bump trigger (când `actions/checkout@v5` + `actions/setup-node@v5` release stable disponibil, sau forced upgrade Node.js 24 anunțat), TD-32 recovery patches manual cleanup user-local `$env:USERPROFILE\pr1b0-edits*.patch` (oricând, 2-5 min). Plus Section 2 HANDOFF stale fix dedicat (PR #177 vs realitate #187/#188, branch-uri deschise outdated, baseline teste reflectă state vechi) — separate PR future cu pre-flight verify size empirical. Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular. Pachet D closes capture residual phase post-Pachet C merge — next phase = code execution Layer 2 (PR 1B integration tests Supabase DEV) sau alt sub-PR Faza 13.
 
 ---
 
@@ -278,8 +278,10 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-28 | Next.js 16.2.2 "middleware" file convention deprecation | 🟡 Medium | PR dedicat (rename middleware.ts → proxy.ts + update conventions) | 30-60 min | Next.js emite ⚠ "middleware" convention deprecated, use "proxy" instead. Apare la `npm run dev` startup. NU breaks build/runtime, dar future Next.js version va remove suport. Discovered PR #178 PAS 4.2 webServer logs. |
 | TD-29 | HMR `.next/` corruption pattern — automated cleanup hook lipsă | 🟢 Low | Eventual sprint dedicate DX | 1-2h | Pattern recognition: dupa edit-uri component live + E2E run, `.next/dev/types/*` poate avea fragmente duplicate trunchiate (cauza HMR interruption). Manual recovery prin `rm -rf .next/` documentat L20 + L21. Eventual: pre-test hook automatizat sau Playwright globalSetup cleanup. Side-note: testele E2E observa și DNS errors (Supabase/WP unreachable din mediu sandboxed) — environment limitation, NU TD separat. Discovered PR #178 PAS 6.4-DEBUG. |
 | TD-30 | DEAD CODE — `createAuthenticatedClient` exported but never imported (`lib/supabase-server.ts:20`) | 🟢 Low | PR mic dedicat sau PR 11 (Polish) | 15-30 min | Empirical confirmed PR 1A: `git grep "import.*createAuthenticatedClient"` = zero matches. Function exportata cu zero consumers. Cross-ref: `docs/audit/schema-drift-known-failures.md` §G.2 (L1171-1187). Trigger: PR 11 deschis SAU PR mic dedicat. → ROADMAP §"Future tasks" FT-04. |
+| TD-31 | GitHub Actions Node.js 20 deprecation warning — `actions/checkout@v4` + `actions/setup-node@v4` running on Node.js 20 (deprecated). GitHub forced upgrade Node.js 24 default in future. | 🟢 Low | Când `actions/checkout@v5` + `actions/setup-node@v5` release stable disponibil, sau forced upgrade GitHub timeline anunțat | 25-40 min (verify v5 release + bump 2 linii ci.yml + PR + Husky + CI verify) | Discovered PR #188 build-and-check job May 10 2026 (Pachet C). Annotation "Node.js 20 actions are deprecated" visible Complete job step. Warning, NU error; build green; zero impact actual. Cross-ref: Pachet D capture. |
+| TD-32 | Recovery patches user-local pending cleanup — `$env:USERPROFILE\pr1b0-edits-utf8.patch` (UTF-8 valid recovery) + `pr1b0-edits.patch` (UTF-16 LE corrupt original) | 🟢 Low | Manual cleanup user-local oricând | 2-5 min (`Remove-Item` 2 files) | Created PR 1B.0 #187 recovery cycle May 10 2026. Hygiene only, user-local files NU in repo. Cross-ref: lessons L67 + L68 + L69 (UTF-16 LE redirect + recovery point validation + git apply LF strict). |
 
-**Sumar severitate:** 2 Critical, 10 Medium, 6 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+**Sumar severitate:** 2 Critical, 10 Medium, 8 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---
@@ -894,6 +896,46 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical [PR 1B.0 #187 commit]:** Commit message cu lessons bullet list direct urmat de "refs HANDOFF reguli LOCKED..." fără blank line → commitlint warning footer-leading-blank.
 
 **Rule:** Pattern R18 update — în commit message body, ÎNAINTE de footer block (refs, signed-off-by, etc.) ALWAYS blank line separator. Verify pre-commit cu pattern: `[blank line] refs ...` NU `last bullet [newline] refs ...`.
+
+### L72 — Display Claude Code wrap visual artifact (~80-100 chars terminal width, NU disk reality)
+
+**Lesson:** Claude Code display wrap-uie linii lungi mid-content visual la ~80-100 chars terminal width. Linii apar cu line-prefix număr + content fragment + indented continuation. **NU pe disk** — file conține single-line per linie. Verify obligatoriu cu view tool sau Get-Content count pentru confirm semantic.
+
+**Pattern empirical [Pachet C verify cycle multiple]:** commit-msg-pr1b0-0.txt L9, pr-body-pr1b0-0.md L41-L45, HANDOFF.md L810-L886 (Pachet C add L62-L71) toate apparent wrap-uite display, single-line confirmed pe disk via Get-Content lines count.
+
+**Rule:** NU concluzii din display singur. ALWAYS view tool range OR Get-Content count post-edit pentru semantic verify single-line vs multi-line pe disk. Cross-ref: R9 (verify-on-disk strict).
+
+### L73 — PowerShell `Remove-Item` cmdlet PS-only, NOT available in Bash tool
+
+**Lesson:** Claude Code rulează default Bash tool pe Windows. PowerShell cmdlets (`Remove-Item`, `Get-ChildItem`, `Add-Content`, `Set-Clipboard`) NU funcționează în Bash context → `command not found` exit 127. Eroare aparent generică, mascată ca "cmdlet not recognized".
+
+**Pattern empirical [Pachet C Pas 5.9 cleanup]:** `Remove-Item commit-msg-pachet-c.txt` failed exit 127 Bash context; retry cu `rm commit-msg-pachet-c.txt` SUCCESS (cross-platform Unix command).
+
+**Rule:** Pentru file cleanup în Claude Code Bash: use cross-platform Unix commands (`rm`, `ls`, `cat`, `cp`, `mv`). Sau prefix explicit `powershell -Command "Remove-Item ..."` dacă PS-specific necesar. NU presupune cmdlet PS disponibil în Bash.
+
+### L74 — "5 min" estimate trap (R11 onestate violation pattern recurring)
+
+**Lesson:** Estimate-uri "5 min" pentru PR-uri devin sistematic 25-40 min realist. Causes: pre-flight verify subestimat + Husky hooks (~45-90s) + push (~30-60s) + PR open manual (3-5 min Write + clipboard + browser) + CI remote (~90s) + merge cycle. Pattern recurring across sessions = anti-pattern R11.
+
+**Pattern empirical [Pachet D scope discussion]:** TD-31 fix scope inițial estimat "5 min PR" → breakdown honest revelat 25-40 min realist (verify v5 release + edit ci.yml + 4-layer pre-commit + Husky + PR workflow manual + CI + merge). Same pattern observed Pachet C "Edit 4a CHANGELOG stale fix" inițial "1 min update" → realistic 5-10 min cu verify-on-disk + decision tree filter.
+
+**Rule:** Pentru orice "trivial fix" estimate, breakdown explicit total cycle: pre-flight verify + edit + 4-layer pre-commit + Husky + push + PR open + CI remote + merge. Minimum 15-20 min realist pentru orice PR docs/config. Sub-15 min estimates = automatic suspect R11 violation.
+
+### L75 — Claude planner "new file per concern" anti-pattern (caught by user challenge)
+
+**Lesson:** Claude planner tendency = propose new file pentru fiecare nou concern (briefing, lessons, todo, status). Asta violează R3 single source of truth + L57 single source of truth. HANDOFF Section 1 + CHANGELOG sunt canonical sources designed pentru update incremental, NU să fie duplicate prin new files.
+
+**Pattern empirical [Pachet D scope discussion]:** Propus inițial `BRIEFING-NEXT-SESSION.md` file separat → user challenge "vrei să mai facem încă un fișier?" → re-evaluat = anti-pattern recurring. Section 1 existing acoperă exact use-case (Data + Motiv handoff + Next contribuitor). Update incremental preferred.
+
+**Rule:** Verify-on-disk existing canonical sources (HANDOFF Section 1, CHANGELOG, ROADMAP, TD table) BEFORE propose new file. User challenge "do we really need new file?" = legitimate signal anti-pattern. Default = update incremental. New file = only if structural separation justified (e.g., test data, generated artifact).
+
+### L76 — CHANGELOG missing entries cumulative drift (Pachet C ratat #180 + #188 in cumulative deltas)
+
+**Lesson:** CHANGELOG poate avea SIMULTAN: stale entries (hash pending old PR-uri merged dar neactualizate) + missing entries (PR-uri merged complet absente). Detection necesită verify periodic empirical `git log --oneline` last 10-20 commits versus CHANGELOG tabel pentru gap detection. Plus verify cumulative deltas section pentru self-bullet missing post-merge.
+
+**Pattern empirical [Pachet D pre-flight verify]:** Discovery PR #180 missing complet din CHANGELOG (gap între #178 și #182, pre-Pachet C). Plus Pachet C cumulative deltas section ratat self-bullet pentru #188 (am adăugat #185 + #186 + #187 dar uitat self). Root cause both = R11 onestate verify scope incomplet, NU systematic `git log` cross-check.
+
+**Rule:** Post-merge orice PR, verify `git log --all --oneline -20` versus CHANGELOG tabel entries. Detect gaps numerice (#178 → #182 = gap, missing #179/#180/#181). Detect own PR self-bullet missing cumulative deltas. Catch retroactive în next PR scope. Cross-ref: R3 single source of truth + R11 onestate disciplinată.
 
 ---
 
