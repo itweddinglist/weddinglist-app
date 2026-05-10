@@ -1,4 +1,4 @@
-npm run lint
+npm run lint && npm run typecheck
 
 # === Faza 13.0 PR 1A.3 - schema types regen if migrations changed ===
 # Ref: CLAUDE.md section 10.1, /docs/audit/2026-05-pre-launch.md section 10.12
