@@ -22,7 +22,7 @@
 
 ---
 
-## Reguli LOCKED (18) — filtru permanent sesiuni AI
+## Reguli LOCKED (19) — filtru permanent sesiuni AI
 
 > Reguli operationale aplicate per sesiune Claude.ai + Claude Code.
 > Filtru obligatoriu pentru orice decizie. Reconstruite din chat sesiune
@@ -46,6 +46,7 @@
 16. **ASCII pur context-aware** — strict in code/commits/hooks; UTF-8 OK in markdown body
 17. **Future/viitor formulari = trigger explicit obligatoriu** — orice item "amanat" fara conditie de re-activare = drift garantat. Minim 4 ancore: canonic + vizibil + trigger + trace. Cross-ref: lesson L55.
 18. **Commit message pattern reusable** — pentru orice commit non-trivial: heredoc stdin (NU `-m` direct), ASCII pur strict (R16 reused), paragraph headers cu DOT suffix (NU colon, evita footer trailer trap), TOATE liniile <100 chars (body-max + footer-max ambele enforced). Pattern validat empirical PR #183 + #184. Cross-ref: lessons L60, L61.
+19. **Encoding-aware file writes Windows PowerShell** — pentru orice tool-consumable file (patches, scripts, configs, commit messages): NICIODATA `>` redirect (UTF-16 LE default + CRLF normalization PS5.1) sau pipe stdin la `git commit -F -` (BOM injection). Foloseste `[System.IO.File]::WriteAllText` cu `[System.Text.UTF8Encoding]::new($false)` constructor + content replace CRLF la LF pentru normalization. Recovery point validation MUST include functional check post-creation (`git apply --check`, `npm run X`, etc.) — NU doar hash + size. Pattern validat empirical PR #186 + #187 recovery cycle. Cross-ref: lessons L66, L67, L68, L69.
 
 ### Reconstruction notes
 
@@ -60,14 +61,23 @@ empirical learned dual rules commitlint (body-max + footer-max line length) +
 markdown rendering corruption Windows + planner UTF-8 violations. Pattern reusable
 pentru orice commit non-trivial. Lessons L58-L61 capture detalii granular.
 
+R19 auto-catch din chat sesiune Pachet C (post-Layer 1 enforcement complete, recovery
+cycle UTF-16 LE patch backup): empirical learned encoding-aware file writes Windows
+PowerShell quirks. Redirect default UTF-16 LE PS5.1 + CRLF normalization combo (dublu
+hazard pe tool-consumable files). Pipe stdin la git commit -F injecteaza BOM
+(commitlint rejects). Conversion UTF-16 la UTF-8 preserva CRLF (necesita LF normalize
+explicit). Recovery point hash match NU implica encoding correctness (necesita
+functional check git apply --check). Pattern reusable pentru orice file write Windows
++ tool consumption. Lessons L66-L69 capture detalii granular cycle.
+
 ---
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-09 (Pachet B in-flight, post-Pachet A + Section 1 update merged)
+- **Data:** 2026-05-10 (Pachet C in-flight, post-Layer 1 enforcement complete merged)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
-- **Motiv handoff:** 4 livrări consecutive azi pe develop. PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) + HANDOFF Section 1 update (#184, `2539459`) merged. Pachet B in-flight (acest commit): R18 LOCKED nou (Reguli 17 → 18) + 4 lessons noi L58-L61 (commitlint dual rules + Write tool Windows display + heredoc pattern + planner R16 violations) + Section 1 self-update + 3 CHANGELOG entries (#183 + #184 + Pachet B placeholder).
-- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu DB reală — natural follow-up Layer 1), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular. Pachet B closes capture residual phase — next phase = code execution Faza 13.
+- **Motiv handoff:** 6 livrări Faza 13 pe develop. PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) + HANDOFF Section 1 update (#184, `2539459`) + Pachet B R18 LOCKED + L58-L61 (#185, `0e40b6b`) merged anterior. Sesiunea curentă (10 mai 2026): PR 1B.0.0 chore Prettier global cleanup 173 files prerequisite (#186, `946b0eb`) + PR 1B.0 feat ci+husky Layer 1 enforcement complete + CI parity local (#187, `988a5f5`) merged. Pachet C in-flight (acest commit): R19 LOCKED nou (Reguli 18 → 19, encoding-aware file writes Windows PowerShell) + 10 lessons noi L62-L71 (Prettier batch concurrency + PowerShell encoding family UTF-16 LE/CRLF + recovery point validation functional check + Conventional Commits footer-leading-blank) + Section 1 self-update + 2 CHANGELOG entries (#186 + #187). Layer 1 defense-in-depth complete: typecheck + tests enforced atât în Husky local hooks (pre-commit + pre-push) cât și în CI workflow remote.
+- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu Supabase DEV — DB-real test profile, natural follow-up Layer 1 enforcement), PR 1C (Schema fingerprint + db:types:check CI Layer 3), PR 1D (Runtime schema-guard Layer 4), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular. Pachet C closes capture residual phase post-Layer 1 enforcement complete — next phase = code execution Layer 2 sau alt sub-PR Faza 13.
 
 ---
 
@@ -804,6 +814,86 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical Pachet B Edit 1 prompt:** Planner a propus old_str cu diacritice romanesti (amânat, fără, condiție) cand disk reality era ASCII pur (amanat, fara, conditie). Empirical confirmed la 2 instances diferite in chat sesiune. Sursa: planner "umanizeaza" textul automat fara verify-on-disk pre-prompt.
 
 **Rule:** Claude Code = plasa de siguranta empirical pentru R16 in commits + R11 onestate verify-on-disk pentru old_str. Pattern: pre-edit verify obligatoriu raporteaza textul disk verbatim; planner foloseste textul raportat NU memoria proprie. Daca planner-ul propune diacritice/UTF-8 in old_str: STOP, re-ask user pentru re-paste verbatim disk.
+
+### L62 — Prettier batch concurrency race condition (file lock contention)
+
+**Lesson:** `npm run format` aplicat global pe ~170+ fișiere poate să rateze 1-2 fișiere fără eroare raportată. Output zice "Formatting complete!" dar `npm run format:check` ulterior pică pe acele fișiere ratate. Race condition între worker pool Prettier și file lock Windows file system. Notă: originally numbered L74 in PR #186 description due to planner numerotare incorectă post-compactare conversație. Renumerotat per L57 single source of truth.
+
+**Pattern empirical [PR 1B.0.0 #186]:** `lib/domain/budget.rules.ts` ratat de batch run. Re-run `format:check` confirmă drift. Fix: `npx prettier --write lib/domain/budget.rules.ts` single-file mode → succes immediate.
+
+**Rule:** După `npm run format` global, ALWAYS run `format:check` ca smoke test. Pe orice file resistance, retry single-file mode `npx prettier --write <path>`. NU presupune că batch a terminat clean fără verify.
+
+### L63 — PowerShell `Add-Content -Value ""` semantic ambiguous (PS5.1)
+
+**Lesson:** PowerShell 5.1 `Add-Content -Path file -Value ""` NU produce blank line în file (string empty considered no-op). PS7+ poate diferi. Test pe Windows nativ obligatoriu.
+
+**Pattern empirical [Pachet C planning]:** Tentativă blank line append la end of file `.prettierignore` cu `Add-Content -Value ""` → file unchanged. Hex check confirmă zero bytes adăugați.
+
+**Rule:** Pentru blank line explicit pe Windows PS5.1, folosește `[System.IO.File]::AppendAllText($path, "`n", [System.Text.UTF8Encoding]::new($false))`. NU rely pe `Add-Content -Value ""`. Cross-ref: lesson L67 (encoding-aware writes).
+
+### L64 — PowerShell `Join-String` cmdlet PS7+ only
+
+**Lesson:** Cmdlet `Join-String` (cu pipeline + `-Separator`) NU este disponibil în PowerShell 5.1. Doar PS7+. Folosirea în script crash cu "term not recognized".
+
+**Pattern empirical [Pachet C planning]:** Script verify hex bytes `($bytes | ForEach-Object { '{0:X2}' -f $_ } | Join-String -Separator ' ')` → fail PS5.1.
+
+**Rule:** Pentru cross-version compatibility (PS5.1 + PS7+), folosește `-join` operator nativ: `($bytes | ForEach-Object { '{0:X2}' -f $_ }) -join ' '`. Operatorul există în ambele versiuni.
+
+### L65 — `.prettierignore` original missing trailing newline EOF
+
+**Lesson:** Fișierul `.prettierignore` original al repo-ului NU avea trailing newline la EOF (detected via hex dump last bytes). Append fără preserve newline produs concatenation directă la pattern existing → glob pattern broken.
+
+**Pattern empirical [PR 1B.0.0 #186]:** Append `types/database.ts` la `.prettierignore` cu Write tool a inclus trailing newline corect. Hex verify confirmed last byte `0A` (LF) post-Write.
+
+**Rule:** Pentru orice `*.ignore` config file (`.gitignore`, `.prettierignore`, `.eslintignore`, etc.), verify hex last byte = `0A` post-edit. Folosește Write tool (preserve trailing newline) NU `Add-Content` PowerShell (PS5.1 inconsistent — cross-ref L63).
+
+### L66 — PowerShell pipe stdin to `git commit -F -` injects UTF-8 BOM
+
+**Lesson:** PowerShell `$msg | git commit -F -` pipe stdin pattern injectează UTF-8 BOM (`EF BB BF`) la start of stdin stream pe Windows. Commitlint parser interpretează BOM ca whitespace → "header must not start with whitespace" + 2 followup errors. Commit rejected.
+
+**Pattern empirical [PR 1B.0.0 #186]:** Tentativă commit cu heredoc PowerShell `@'...'@ | git commit -F -` → commitlint fail. Hex check stdin pipe confirmă BOM injection.
+
+**Rule:** NICIODATĂ pipe stdin la `git commit -F -` în PowerShell pe Windows. Folosește Write tool → file → `git commit -F <file>`. File written prin Write tool NU are BOM. Cross-ref: rule R19 LOCKED (encoding-aware file writes).
+
+### L67 — PowerShell `>` redirect default UTF-16 LE encoding + CRLF normalization (PS5.1)
+
+**Lesson:** PowerShell 5.1 `>` redirect operator scrie default UTF-16 LE encoding (`FF FE` BOM la start, every char as 2 bytes). PLUS line endings convertite LF→CRLF la write. Dublă corupție pe tool-consumable files (patches, scripts, configs).
+
+**Pattern empirical [PR 1B.0 #187 recovery]:** `git diff > $env:USERPROFILE\pr1b0-edits.patch` produs patch UTF-16 LE + CRLF. `git apply` raportează "No valid patches in input" exit 128. Hex first 5 bytes = `FF FE 64 00 69` (UTF-16 LE BOM + 'd' high byte + 'i').
+
+**Rule:** NICIODATĂ folosi `>` redirect pentru tool-consumable files. Folosește `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))` cu `$content -replace "`r`n", "`n"` pentru LF normalization. Cross-ref: R19 LOCKED.
+
+### L68 — Recovery point validation requires functional check
+
+**Lesson:** Hash + size match între copies de patch backup confirmă byte fidelity, NU encoding correctness. Doi copii UTF-16 LE corupte au hash identical → trust fals. Recovery point invalid pentru `git apply` consumption.
+
+**Pattern empirical [PR 1B.0 #187 recovery]:** Backup patch la `$env:TEMP` + `$env:USERPROFILE` ambele UTF-16 LE. Hash match → assume backup valid. Real test `git apply --check` la 18h post-creation revelat encoding issue.
+
+**Rule:** Recovery point validation MUST include functional check post-creation (`git apply --check` pentru patches, `npm run X` pentru scripts, `node -e "require('./file')"` pentru JS). Hash + size = surface check, NU sufficient. Cross-ref: R19 LOCKED.
+
+### L69 — `git apply` default strict on LF (CRLF strip required post UTF-16 conversion)
+
+**Lesson:** `git apply` default mode strict pe LF line endings. Patch cu CRLF (chiar și UTF-8 valid post-conversion) raportează "patch does not apply" cu hash MATCH (file conținut OK, doar separator broken). Confusing fail mode.
+
+**Pattern empirical [PR 1B.0 #187 recovery]:** Conversion UTF-16 LE → UTF-8 cu `[System.IO.File]::WriteAllText` păstrează CRLF din sursă. CRLF count post-conversion = 71 (file 4 hunks). `git apply --check` fail toate 4 fișiere "patch does not apply". Hash files current = MATCH expected → confused.
+
+**Rule:** Post UTF-16 conversion la UTF-8, ALWAYS aplicat `$content = $content -replace "`r`n", "`n"` ÎNAINTE de WriteAllText. Verify zero CRLF post-write cu hex scan loop. Cross-ref: R19 LOCKED.
+
+### L70 — Claude Code `2>&1 | Out-Null` pattern suppress output (verify EXIT only insufficient)
+
+**Lesson:** Claude Code default behavior pentru long-running commands = pipe la `Out-Null` (suppress all stdout/stderr) și raportează doar exit code. Pattern problematic pentru R9 verify-on-disk strict — exit 0 nu confirmă semantic correctness, doar absence de error.
+
+**Pattern empirical [PR 1B.0 #187]:** `npm run ci` rulat de Claude Code cu `2>&1 | Out-Null` → exit 0 raportat după 2min. ZERO output text disponibil. Verify subsequent specific (`npm run format:check 2>&1 | Select-Object -Last 3`) revelat output explicit.
+
+**Rule:** Pentru R9 strict, ALWAYS request explicit `2>&1 | Select-Object -Last N` (N=3-40) în comandă, NU accept `Out-Null` patterns. Plus: după run silent, follow-up cu specific layer verify (`format:check`, `typecheck`, etc.) pentru confirmation explicit text.
+
+### L71 — Conventional Commits footer-leading-blank (commitlint warning)
+
+**Lesson:** Conventional Commits spec require footer trailers (`refs ...`, `signed-off-by:`, `closes #N`) preceded by blank line separator. Lipsa blank line → commitlint warning `footer-leading-blank` (NU error, dar polluat output). Footer block parsed direct după body content fără blank → confused parse.
+
+**Pattern empirical [PR 1B.0 #187 commit]:** Commit message cu lessons bullet list direct urmat de "refs HANDOFF reguli LOCKED..." fără blank line → commitlint warning footer-leading-blank.
+
+**Rule:** Pattern R18 update — în commit message body, ÎNAINTE de footer block (refs, signed-off-by, etc.) ALWAYS blank line separator. Verify pre-commit cu pattern: `[blank line] refs ...` NU `last bullet [newline] refs ...`.
 
 ---
 
