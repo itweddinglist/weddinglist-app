@@ -131,14 +131,16 @@ export async function POST(request: NextRequest): Promise<Response> {
       rsvpToken: raw,
     });
 
-    return successResponse({
-      invitation_id: invitation.id,
-      public_link_id: publicLinkId,
-      token: raw, // tokenul raw — pentru email / QR legacy
-      expires_at: expiresAt.toISOString(),
-      email_sent: emailResult.sent,
-    }, 201);
-
+    return successResponse(
+      {
+        invitation_id: invitation.id,
+        public_link_id: publicLinkId,
+        token: raw, // tokenul raw — pentru email / QR legacy
+        expires_at: expiresAt.toISOString(),
+        email_sent: emailResult.sent,
+      },
+      201
+    );
   } catch (err) {
     return internalErrorResponse(err, "POST /api/rsvp/invitations");
   }

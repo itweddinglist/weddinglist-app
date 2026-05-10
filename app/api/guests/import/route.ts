@@ -21,11 +21,7 @@ import {
 import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { parseGuestsCsv } from "@/lib/csv/parse-guests";
-import {
-  successResponse,
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, internalErrorResponse } from "@/lib/api-response";
 import type {
   ImportResult,
   ImportRowError,
@@ -55,11 +51,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   try {
     formData = await request.formData();
   } catch {
-    return errorResponse(
-      400,
-      "INVALID_FORM_DATA",
-      "Request must be multipart/form-data."
-    );
+    return errorResponse(400, "INVALID_FORM_DATA", "Request must be multipart/form-data.");
   }
 
   // 3. Extract and validate form fields
@@ -67,16 +59,11 @@ export async function POST(request: NextRequest): Promise<Response> {
   const createGroupsRaw = formData.get("create_groups");
 
   if (!file || !(file instanceof File)) {
-    return errorResponse(
-      400,
-      "MISSING_FILE",
-      "A CSV file must be uploaded in the 'file' field."
-    );
+    return errorResponse(400, "MISSING_FILE", "A CSV file must be uploaded in the 'file' field.");
   }
 
   // FIX 4: Strict create_groups validation
-  const createGroupsStr =
-    typeof createGroupsRaw === "string" ? createGroupsRaw : "";
+  const createGroupsStr = typeof createGroupsRaw === "string" ? createGroupsRaw : "";
   if (createGroupsRaw !== null && !VALID_CREATE_GROUPS.has(createGroupsStr)) {
     return errorResponse(
       400,
@@ -147,17 +134,12 @@ export async function POST(request: NextRequest): Promise<Response> {
       .eq("wedding_id", weddingId);
 
     if (existingError) {
-      return internalErrorResponse(
-        existingError,
-        "POST /api/guests/import - fetch existing"
-      );
+      return internalErrorResponse(existingError, "POST /api/guests/import - fetch existing");
     }
 
     // FIX 2: Two separate dedup sets
     const existingDbKeys = new Set(
-      (existingGuests ?? []).map((g) =>
-        dedupKey(g.first_name, g.last_name)
-      )
+      (existingGuests ?? []).map((g) => dedupKey(g.first_name, g.last_name))
     );
     const seenCsvKeys = new Set<string>();
 
@@ -195,9 +177,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     if (createGroups) {
       const groupNames = new Set(
-        toInsert
-          .map((r) => r.group_name)
-          .filter((name): name is string => name !== null)
+        toInsert.map((r) => r.group_name).filter((name): name is string => name !== null)
       );
 
       if (groupNames.size > 0) {
@@ -239,9 +219,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         first_name: row.first_name,
         last_name: row.last_name,
         display_name: row.display_name,
-        guest_group_id: row.group_name
-          ? (groupMap.get(row.group_name) ?? null)
-          : null,
+        guest_group_id: row.group_name ? (groupMap.get(row.group_name) ?? null) : null,
         side: row.side,
         notes: row.notes,
         is_vip: row.is_vip,
@@ -402,4 +380,3 @@ async function resolveGroups(
 
   return result;
 }
-

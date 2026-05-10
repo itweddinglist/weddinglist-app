@@ -7,47 +7,47 @@ import type { SeatingTable, CameraState, Point } from "@/types/seating";
 const PAN_PAD = 1000;
 
 interface DraggingTable {
-  id: number
-  ox: number
-  oy: number
-  dw: number
-  dh: number
+  id: number;
+  ox: number;
+  oy: number;
+  dw: number;
+  dh: number;
 }
 
 interface PanState {
-  sx: number
-  sy: number
-  vx0: number
-  vy0: number
+  sx: number;
+  sy: number;
+  vx0: number;
+  vy0: number;
 }
 
 interface DragPreview {
-  tableId: number
-  x: number
-  y: number
+  tableId: number;
+  x: number;
+  y: number;
 }
 
 interface UseTableInteractionsProps {
-  tables: SeatingTable[]
-  setTables: (updater: SeatingTable[] | ((prev: SeatingTable[]) => SeatingTable[])) => void
-  selectedTableId: number | null
-  lockMode: boolean
-  undo: () => void
-  saveAction: () => void
-  setModal: (config: Record<string, unknown> | null) => void
-  setEditPanel: (panel: { tableId: number } | null) => void
-  setConfirmDialog: (dialog: Record<string, unknown> | null) => void
-  setClickedSeat: (seat: { tableId: number; seatIndex: number } | null) => void
-  setShowCatering: (value: boolean) => void
-  setSelectedTableId: (id: number | null) => void
-  setHoveredGuest: (guest: number | null) => void
-  setIsDraggingGuest: (value: boolean) => void
-  camRef: MutableRefObject<CameraState>
-  canvasWRef: MutableRefObject<number>
-  canvasHRef: MutableRefObject<number>
-  screenToSVG: (clientX: number, clientY: number) => Point | null
-  dispatchCam: (action: { type: string; [key: string]: unknown }) => void
-  notifyDrag?: (() => void) | null
+  tables: SeatingTable[];
+  setTables: (updater: SeatingTable[] | ((prev: SeatingTable[]) => SeatingTable[])) => void;
+  selectedTableId: number | null;
+  lockMode: boolean;
+  undo: () => void;
+  saveAction: () => void;
+  setModal: (config: Record<string, unknown> | null) => void;
+  setEditPanel: (panel: { tableId: number } | null) => void;
+  setConfirmDialog: (dialog: Record<string, unknown> | null) => void;
+  setClickedSeat: (seat: { tableId: number; seatIndex: number } | null) => void;
+  setShowCatering: (value: boolean) => void;
+  setSelectedTableId: (id: number | null) => void;
+  setHoveredGuest: (guest: number | null) => void;
+  setIsDraggingGuest: (value: boolean) => void;
+  camRef: MutableRefObject<CameraState>;
+  canvasWRef: MutableRefObject<number>;
+  canvasHRef: MutableRefObject<number>;
+  screenToSVG: (clientX: number, clientY: number) => Point | null;
+  dispatchCam: (action: { type: string; [key: string]: unknown }) => void;
+  notifyDrag?: (() => void) | null;
 }
 
 export function useTableInteractions({
@@ -138,7 +138,18 @@ export function useTableInteractions({
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [undo, selectedTableId, saveAction, setTables, setModal, setEditPanel, setConfirmDialog, setClickedSeat, setShowCatering, setSelectedTableId]);
+  }, [
+    undo,
+    selectedTableId,
+    saveAction,
+    setTables,
+    setModal,
+    setEditPanel,
+    setConfirmDialog,
+    setClickedSeat,
+    setShowCatering,
+    setSelectedTableId,
+  ]);
 
   useEffect(() => {
     const rafRef: { current: number | null } = { current: null };

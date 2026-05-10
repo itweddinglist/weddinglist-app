@@ -29,14 +29,12 @@ export interface EmailResult {
  *
  * Activare: adaugă RESEND_API_KEY în Vercel Dashboard → Settings → Env Vars
  */
-export async function sendRsvpInvitationEmail(
-  payload: RsvpEmailPayload
-): Promise<EmailResult> {
+export async function sendRsvpInvitationEmail(payload: RsvpEmailPayload): Promise<EmailResult> {
   // ── Stub guard ─────────────────────────────────────────────────────────────
   if (!RESEND_API_KEY) {
     console.warn(
       "[RSVP Email] RESEND_API_KEY not configured — email not sent. " +
-      "Add RESEND_API_KEY to Vercel env vars to activate."
+        "Add RESEND_API_KEY to Vercel env vars to activate."
     );
     return { sent: false, reason: "no_api_key" };
   }
@@ -46,19 +44,19 @@ export async function sendRsvpInvitationEmail(
   const subject = `Invitație la nunta ${payload.coupleNames}`;
 
   const html = buildEmailHtml({
-  guestName: payload.guestName,
-  coupleNames: payload.coupleNames,
-  weddingDate: payload.weddingDate,
-  rsvpUrl,
-  subject,
-});
+    guestName: payload.guestName,
+    coupleNames: payload.coupleNames,
+    weddingDate: payload.weddingDate,
+    rsvpUrl,
+    subject,
+  });
 
   // ── Send via Resend ────────────────────────────────────────────────────────
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

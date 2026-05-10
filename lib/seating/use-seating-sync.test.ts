@@ -48,7 +48,16 @@ function makeSnapshot(overrides: Partial<SeatingSnapshot> = {}): SeatingSnapshot
     reason: "assignments",
     assignments: { 1: 10 },
     tables: [
-      { id: 10, name: "Masa 1", type: "round", seats: 8, x: 100, y: 200, rotation: 0, isRing: false },
+      {
+        id: 10,
+        name: "Masa 1",
+        type: "round",
+        seats: 8,
+        x: 100,
+        y: 200,
+        rotation: 0,
+        isRing: false,
+      },
     ],
     ...overrides,
   };
@@ -173,7 +182,9 @@ describe("useSeatingSync — Faza 10", () => {
     });
 
     // Pas 1: avansăm debounce-ul — doSync pornește dar se suspendă la await fetch()
-    act(() => { vi.advanceTimersByTime(1500); });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
 
     // Pas 2: drenăm lanțul async al lui doSync:
     //   tick 1-2: fetch() rezolvă → doSync continuă
@@ -215,16 +226,22 @@ describe("useSeatingSync — Faza 10", () => {
     // Un fetch care nu se rezolvă imediat — simulăm retry în curs
     let resolveRetryFetch!: (r: Response) => void;
     fetchMock.mockReturnValue(
-      new Promise<Response>((resolve) => { resolveRetryFetch = resolve; })
+      new Promise<Response>((resolve) => {
+        resolveRetryFetch = resolve;
+      })
     );
 
     // Primul retry() — pune isRetryInProgressRef = true
-    act(() => { result.current.retry(); });
+    act(() => {
+      result.current.retry();
+    });
     // Statusul ar trebui să fie saving
     expect(result.current.saveStatus).toBe("saving");
 
     // Al doilea retry() — trebuie ignorat (nu schimbă nimic)
-    act(() => { result.current.retry(); });
+    act(() => {
+      result.current.retry();
+    });
 
     // Rezolvăm fetch-ul manual cu success
     resolveRetryFetch(makeSuccessResponse());
@@ -301,7 +318,9 @@ describe("useSeatingSync — Faza 10", () => {
     // Acum retry cu fetch care reușește
     fetchMock.mockResolvedValue(makeSuccessResponse());
 
-    act(() => { result.current.retry(); });
+    act(() => {
+      result.current.retry();
+    });
 
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -327,26 +346,43 @@ describe("useSeatingSync — Faza 10", () => {
     act(() => {
       result.current.onSeatingStateChanged(makeSnapshot({ reason: "layout" }));
     });
-    await act(async () => { await vi.runAllTimersAsync(); });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
     expect(result.current.saveStatus).toBe("unconfirmed");
 
     // Trimitem un snapshot nou (user a mai modificat ceva)
     const newSnapshot = makeSnapshot({
       reason: "assignments",
       tables: [
-        { id: 20, name: "Masa 2", type: "round", seats: 6, x: 200, y: 300, rotation: 0, isRing: false },
+        {
+          id: 20,
+          name: "Masa 2",
+          type: "round",
+          seats: 6,
+          x: 200,
+          y: 300,
+          rotation: 0,
+          isRing: false,
+        },
       ],
     });
     act(() => {
       result.current.onSeatingStateChanged(newSnapshot);
     });
     // Cancelăm debounce-ul nou (nu vrem un sync automat)
-    act(() => { vi.clearAllTimers(); });
+    act(() => {
+      vi.clearAllTimers();
+    });
 
     // Retry cu fetch success — ar trebui să folosească newSnapshot
     fetchMock.mockResolvedValue(makeSuccessResponse());
-    act(() => { result.current.retry(); });
-    await act(async () => { await vi.runAllTimersAsync(); });
+    act(() => {
+      result.current.retry();
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
 
     // Snapshot confirmat ar trebui să conțină "Masa 2" (din newSnapshot)
     expect(result.current.confirmedSnapshot?.tables[0].name).toBe("Masa 2");
@@ -368,14 +404,19 @@ describe("useSeatingSync — Faza 10", () => {
     await waitForLoad(result);
 
     // Inițial: niciun beforeunload
-    const unloadCallsBefore = addListenerSpy.mock.calls
-      .filter(([ev]) => ev === "beforeunload").length;
+    const unloadCallsBefore = addListenerSpy.mock.calls.filter(
+      ([ev]) => ev === "beforeunload"
+    ).length;
     expect(unloadCallsBefore).toBe(0);
 
     // Notă: beforeunload este adăugat de SeatingChartInner (page.js) pe baza syncSaveStatus,
     // nu de useSeatingSync direct. Testăm că saveStatus devine "unconfirmed".
-    act(() => { result.current.onSeatingStateChanged(makeSnapshot()); });
-    await act(async () => { await vi.runAllTimersAsync(); });
+    act(() => {
+      result.current.onSeatingStateChanged(makeSnapshot());
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
 
     expect(result.current.saveStatus).toBe("unconfirmed");
 

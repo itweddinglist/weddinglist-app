@@ -85,7 +85,11 @@ export async function POST(request: NextRequest): Promise<Response> {
         .maybeSingle();
 
       if (groupError || !group) {
-        return errorResponse(400, "INVALID_GUEST_GROUP", "guest_group_id does not exist or belongs to a different wedding.");
+        return errorResponse(
+          400,
+          "INVALID_GUEST_GROUP",
+          "guest_group_id does not exist or belongs to a different wedding."
+        );
       }
     }
 
@@ -124,8 +128,18 @@ export async function POST(request: NextRequest): Promise<Response> {
       .single();
 
     if (error) {
-      if (error.code === "23503") return errorResponse(400, "FK_VIOLATION", "A referenced record (wedding or guest group) does not exist.");
-      if (error.code === "23514") return errorResponse(400, "CONSTRAINT_VIOLATION", "Data violates a database constraint. Check required fields.");
+      if (error.code === "23503")
+        return errorResponse(
+          400,
+          "FK_VIOLATION",
+          "A referenced record (wedding or guest group) does not exist."
+        );
+      if (error.code === "23514")
+        return errorResponse(
+          400,
+          "CONSTRAINT_VIOLATION",
+          "Data violates a database constraint. Check required fields."
+        );
       return internalErrorResponse(error, "POST /api/guests");
     }
 

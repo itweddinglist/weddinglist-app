@@ -21,11 +21,7 @@ export function SkeletonText({ lines = 3, gap = "8px" }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap }}>
       {Array.from({ length: lines }).map((_, i) => (
-        <SkeletonBox
-          key={i}
-          width={i === lines - 1 ? "60%" : "100%"}
-          height="14px"
-        />
+        <SkeletonBox key={i} width={i === lines - 1 ? "60%" : "100%"} height="14px" />
       ))}
     </div>
   );

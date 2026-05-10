@@ -22,18 +22,13 @@ setInterval(() => {
 }, 60_000);
 
 type RateLimitOptions = {
-  limit: number;       // max requests
-  windowMs: number;    // window în ms
+  limit: number; // max requests
+  windowMs: number; // window în ms
 };
 
-type RateLimitResult =
-  | { ok: true; remaining: number }
-  | { ok: false; retryAfterMs: number };
+type RateLimitResult = { ok: true; remaining: number } | { ok: false; retryAfterMs: number };
 
-export function rateLimit(
-  key: string,
-  options: RateLimitOptions
-): RateLimitResult {
+export function rateLimit(key: string, options: RateLimitOptions): RateLimitResult {
   const now = Date.now();
   const entry = store.get(key);
 

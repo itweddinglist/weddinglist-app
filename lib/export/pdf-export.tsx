@@ -7,14 +7,7 @@
 // =============================================================================
 
 import React from "react";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Font,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 import { getStatusLabel, getStatusColorHex } from "@/lib/rsvp/rsvp-presentation";
 
 // ─── Font cu diacritice ───────────────────────────────────────────────────────
@@ -260,7 +253,6 @@ export function WeddingPdfDocument({ data }: { data: PdfData }) {
     >
       {/* ── Pagina 1: Header + Stats + Plan Mese ── */}
       <Page size="A4" style={styles.page}>
-
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.coupleNames}>{data.couple_names}</Text>
@@ -285,27 +277,39 @@ export function WeddingPdfDocument({ data }: { data: PdfData }) {
               <Text style={styles.statLabel}>Total</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: getStatusColorHex("accepted") }]}>{data.stats.accepted}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("accepted") }]}>
+                {data.stats.accepted}
+              </Text>
               <Text style={styles.statLabel}>Confirmați</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: getStatusColorHex("declined") }]}>{data.stats.declined}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("declined") }]}>
+                {data.stats.declined}
+              </Text>
               <Text style={styles.statLabel}>Refuzați</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: getStatusColorHex("pending") }]}>{data.stats.pending}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("pending") }]}>
+                {data.stats.pending}
+              </Text>
               <Text style={styles.statLabel}>În așteptare</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: getStatusColorHex("maybe") }]}>{data.stats.maybe}</Text>
+              <Text style={[styles.statValue, { color: getStatusColorHex("maybe") }]}>
+                {data.stats.maybe}
+              </Text>
               <Text style={styles.statLabel}>Poate</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: "#C9907A" }]}>{data.stats.special_meals}</Text>
+              <Text style={[styles.statValue, { color: "#C9907A" }]}>
+                {data.stats.special_meals}
+              </Text>
               <Text style={styles.statLabel}>Vegetarieni</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: "#C9907A" }]}>{data.stats.has_allergies}</Text>
+              <Text style={[styles.statValue, { color: "#C9907A" }]}>
+                {data.stats.has_allergies}
+              </Text>
               <Text style={styles.statLabel}>Alergii</Text>
             </View>
           </View>
@@ -327,7 +331,9 @@ export function WeddingPdfDocument({ data }: { data: PdfData }) {
               ) : (
                 <View style={styles.tableGuests}>
                   {table.guests.map((g, j) => (
-                    <Text key={j} style={styles.guestChip}>{g}</Text>
+                    <Text key={j} style={styles.guestChip}>
+                      {g}
+                    </Text>
                   ))}
                 </View>
               )}
@@ -366,7 +372,12 @@ export function WeddingPdfDocument({ data }: { data: PdfData }) {
           {data.guests.map((g, i) => (
             <View key={i} style={styles.guestRow} wrap={false}>
               <Text style={styles.guestName}>{g.display_name}</Text>
-              <Text style={[styles.guestStatus, { color: getStatusColorHex(g.rsvp_status ?? "pending") }]}>
+              <Text
+                style={[
+                  styles.guestStatus,
+                  { color: getStatusColorHex(g.rsvp_status ?? "pending") },
+                ]}
+              >
                 {getStatusLabel(g.rsvp_status ?? "pending")}
               </Text>
               <Text style={styles.guestMeal}>{mealLabel(g.meal_choice)}</Text>

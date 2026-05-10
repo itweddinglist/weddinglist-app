@@ -37,14 +37,17 @@ const handlePost = withAuth(
       ]);
     }
 
-    if (!input.status || !VALID_STATUSES.includes(input.status as typeof VALID_STATUSES[number])) {
+    if (
+      !input.status ||
+      !VALID_STATUSES.includes(input.status as (typeof VALID_STATUSES)[number])
+    ) {
       return validationErrorResponse([
         { field: "status", message: "Status must be: accepted, declined, or maybe." },
       ]);
     }
 
     const guestEventId = input.guest_event_id as string;
-    const status = input.status as typeof VALID_STATUSES[number];
+    const status = input.status as (typeof VALID_STATUSES)[number];
 
     try {
       // Verifică că guest_event aparține wedding-ului activ
@@ -62,20 +65,22 @@ const handlePost = withAuth(
       const { error: upsertError } = await supabaseServer
         .from("rsvp_responses")
         // @ts-expect-error: C8 - rsvp_responses.invitation_id NOT NULL but code passes null (manual override pattern) - fix in PR 3
-        .upsert({
-          wedding_id: ge.wedding_id,
-          event_id: ge.event_id,
-          invitation_id: null,
-          guest_event_id: guestEventId,
-          status,
-          rsvp_source: "couple_manual",
-          responded_at: new Date().toISOString(),
-        }, { onConflict: "guest_event_id" });
+        .upsert(
+          {
+            wedding_id: ge.wedding_id,
+            event_id: ge.event_id,
+            invitation_id: null,
+            guest_event_id: guestEventId,
+            status,
+            rsvp_source: "couple_manual",
+            responded_at: new Date().toISOString(),
+          },
+          { onConflict: "guest_event_id" }
+        );
 
       if (upsertError) return internalErrorResponse(upsertError, "POST /api/rsvp/manual — upsert");
 
       return successResponse({ success: true, guest_event_id: guestEventId, status });
-
     } catch (err) {
       return internalErrorResponse(err, "POST /api/rsvp/manual");
     }

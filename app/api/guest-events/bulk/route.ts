@@ -46,7 +46,11 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: input.wedding_id,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   try {
@@ -59,7 +63,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       .maybeSingle();
 
     if (eventError || !event) {
-      return errorResponse(400, "INVALID_EVENT", "Event does not exist or belongs to a different wedding.");
+      return errorResponse(
+        400,
+        "INVALID_EVENT",
+        "Event does not exist or belongs to a different wedding."
+      );
     }
 
     // Fetch all guests for this wedding
@@ -68,12 +76,16 @@ export async function POST(request: NextRequest): Promise<Response> {
       .select("id")
       .eq("wedding_id", access.wedding_id);
 
-    if (guestsError) return internalErrorResponse(guestsError, "POST /api/guest-events/bulk — fetch guests");
+    if (guestsError)
+      return internalErrorResponse(guestsError, "POST /api/guest-events/bulk — fetch guests");
 
     if (!guests || guests.length === 0) {
       return successResponse<BulkCreateResult>({
-        created: 0, skipped: 0, total_guests: 0,
-        event_id: input.event_id, already_complete: true,
+        created: 0,
+        skipped: 0,
+        total_guests: 0,
+        event_id: input.event_id,
+        already_complete: true,
       });
     }
 
@@ -84,7 +96,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       .eq("event_id", input.event_id)
       .eq("wedding_id", access.wedding_id);
 
-    if (existingError) return internalErrorResponse(existingError, "POST /api/guest-events/bulk — fetch existing");
+    if (existingError)
+      return internalErrorResponse(existingError, "POST /api/guest-events/bulk — fetch existing");
 
     const existingGuestIds = new Set((existing ?? []).map((ge) => ge.guest_id));
 
@@ -115,7 +128,11 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     if (insertError) {
       if (insertError.code === "23514") {
-        return errorResponse(400, "CONSTRAINT_VIOLATION", "Data violates a database constraint. Check attendance_status value.");
+        return errorResponse(
+          400,
+          "CONSTRAINT_VIOLATION",
+          "Data violates a database constraint. Check attendance_status value."
+        );
       }
       return internalErrorResponse(insertError, "POST /api/guest-events/bulk — insert");
     }

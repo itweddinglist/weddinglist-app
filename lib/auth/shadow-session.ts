@@ -136,9 +136,7 @@ export async function verifyShadowToken(
     }
 
     const shadow_auth_source =
-      p.auth_source === "wordpress" || p.auth_source === "shadow"
-        ? p.auth_source
-        : undefined;
+      p.auth_source === "wordpress" || p.auth_source === "shadow" ? p.auth_source : undefined;
 
     return {
       status: "authenticated",

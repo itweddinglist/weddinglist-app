@@ -43,9 +43,7 @@ const labelStyle = {
   letterSpacing: "0.06em",
 };
 
-export default function GuestFormModal({
-  guest, groups, weddingId, onSave, onClose,
-}: Props) {
+export default function GuestFormModal({ guest, groups, weddingId, onSave, onClose }: Props) {
   const isEditing = !!guest;
 
   const [firstName, setFirstName] = useState("");
@@ -149,7 +147,9 @@ export default function GuestFormModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(19,23,46,0.5)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="w-full max-w-md rounded-2xl"
@@ -170,16 +170,20 @@ export default function GuestFormModal({
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors"
+            className="rounded-lg p-1.5 transition-colors"
             style={{ color: "var(--muted)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--cream)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--cream)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
           >
             <X size={18} strokeWidth={1.8} />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="space-y-4 px-6 py-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label style={labelStyle}>Prenume *</label>
@@ -224,7 +228,9 @@ export default function GuestFormModal({
               >
                 <option value="">Fără grup</option>
                 {groups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -258,11 +264,11 @@ export default function GuestFormModal({
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsVip(!isVip)}
-              className="relative w-10 h-5 rounded-full transition-colors flex-shrink-0"
+              className="relative h-5 w-10 flex-shrink-0 rounded-full transition-colors"
               style={{ background: isVip ? "var(--rose)" : "var(--cream-line)" }}
             >
               <span
-                className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow-sm"
+                className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
                 style={{
                   transform: isVip ? "translateX(1.25rem)" : "translateX(0.125rem)",
                 }}
@@ -274,7 +280,9 @@ export default function GuestFormModal({
           </div>
 
           {error && (
-            <p className="text-sm" style={{ color: "var(--red)" }}>{error}</p>
+            <p className="text-sm" style={{ color: "var(--red)" }}>
+              {error}
+            </p>
           )}
         </div>
 
@@ -284,7 +292,7 @@ export default function GuestFormModal({
         >
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-full text-sm font-medium"
+            className="rounded-full px-4 py-2 text-sm font-medium"
             style={{
               border: "1px solid var(--cream-line)",
               color: "var(--muted)",
@@ -295,7 +303,7 @@ export default function GuestFormModal({
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+            className="rounded-full px-5 py-2 text-sm font-medium transition-all"
             style={{
               background: isSaving ? "var(--cream-line)" : "var(--rose)",
               color: isSaving ? "var(--muted)" : "white",

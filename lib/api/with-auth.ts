@@ -55,10 +55,7 @@ type WithAuthOptions = {
  *
  * Explicit validation, not a cast: reads ROLE_HIERARCHY to compare ranks.
  */
-export function assertRole(
-  actualRole: string,
-  requiredRole: string
-): NextResponse | null {
+export function assertRole(actualRole: string, requiredRole: string): NextResponse | null {
   const actualRank = ROLE_HIERARCHY[actualRole] ?? 0;
   const requiredRank = ROLE_HIERARCHY[requiredRole] ?? 0;
 

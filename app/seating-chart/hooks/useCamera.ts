@@ -7,12 +7,12 @@ import type { SeatingTable, Point } from "@/types/seating";
 
 // Tipul acumulatorului pentru wheel events (rafId este number | null)
 interface WheelAcc {
-  sumZoomExp: number
-  lastNx: number
-  lastNy: number
-  lastCW: number
-  lastCH: number
-  rafId: number | null
+  sumZoomExp: number;
+  lastNx: number;
+  lastNy: number;
+  lastCW: number;
+  lastCH: number;
+  rafId: number | null;
 }
 
 export function useCamera() {

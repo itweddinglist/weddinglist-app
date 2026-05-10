@@ -6,19 +6,16 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import {
-  getServerAppContext,
-  requireAuthenticatedContext,
-} from "@/lib/server-context";
+import { getServerAppContext, requireAuthenticatedContext } from "@/lib/server-context";
 import { supabaseServer } from "@/app/lib/supabase/server";
-import { validateImportPayload, buildImportPreview, MAX_FILE_SIZE_BYTES } from "@/lib/import/validate-import";
+import {
+  validateImportPayload,
+  buildImportPreview,
+  MAX_FILE_SIZE_BYTES,
+} from "@/lib/import/validate-import";
 import { importWeddingJson } from "@/lib/import/json-import";
 import { wl_audit } from "@/lib/audit/wl-audit";
-import {
-  successResponse,
-  errorResponse,
-  validationErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api-response";
 
 export async function POST(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────
@@ -106,9 +103,12 @@ export async function POST(request: NextRequest): Promise<Response> {
     },
   });
 
-  return successResponse({
-    new_wedding_id: result.new_wedding_id,
-    counts: result.counts,
-    message: "Import finalizat cu succes. A fost creat un wedding nou.",
-  }, 201);
+  return successResponse(
+    {
+      new_wedding_id: result.new_wedding_id,
+      counts: result.counts,
+      message: "Import finalizat cu succes. A fost creat un wedding nou.",
+    },
+    201
+  );
 }

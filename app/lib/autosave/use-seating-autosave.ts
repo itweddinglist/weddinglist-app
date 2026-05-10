@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  type SaveStatus,
-  type SeatingPersistenceAdapter,
-  type SeatingSnapshot,
-} from "./types";
+import { type SaveStatus, type SeatingPersistenceAdapter, type SeatingSnapshot } from "./types";
 import { localAdapter } from "./local-adapter";
 import { createSupabaseAdapter } from "./supabase-adapter";
 

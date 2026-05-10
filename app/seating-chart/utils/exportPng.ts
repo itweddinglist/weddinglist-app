@@ -2,17 +2,17 @@ import { Canvg } from "canvg";
 import type { SeatingTable } from "@/types/seating";
 
 interface BoundingBox {
-  x: number
-  y: number
-  w: number
-  h: number
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 interface ExportToPngOptions {
-  svgEl: SVGSVGElement
-  tables: SeatingTable[]
-  getTableDims: (t: Pick<SeatingTable, "type" | "seats" | "isRing">) => { w: number; h: number }
-  mode?: "fit" | "a4"
+  svgEl: SVGSVGElement;
+  tables: SeatingTable[];
+  getTableDims: (t: Pick<SeatingTable, "type" | "seats" | "isRing">) => { w: number; h: number };
+  mode?: "fit" | "a4";
 }
 
 async function fetchFontsAsBase64(): Promise<string> {
@@ -58,7 +58,12 @@ function getBoundingBox(
   return { x: minX - PAD, y: minY - PAD, w: maxX - minX + PAD * 2, h: maxY - minY + PAD * 2 };
 }
 
-export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" }: ExportToPngOptions): Promise<Blob | null> {
+export async function exportToPng({
+  svgEl,
+  tables,
+  getTableDims,
+  mode = "fit",
+}: ExportToPngOptions): Promise<Blob | null> {
   const bbox = getBoundingBox(tables, getTableDims);
 
   let canvasW: number;
@@ -81,7 +86,8 @@ export async function exportToPng({ svgEl, tables, getTableDims, mode = "fit" }:
     const offsetX = bbox.x - (vbW - bbox.w) / 2;
     const offsetY = bbox.y - (vbH - bbox.h) / 2;
     viewBox = `${offsetX} ${offsetY} ${vbW} ${vbH}`;
-    void scaledW; void scaledH;
+    void scaledW;
+    void scaledH;
   }
 
   const fontCSS = await fetchFontsAsBase64();

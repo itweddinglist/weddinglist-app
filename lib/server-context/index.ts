@@ -23,10 +23,7 @@ export {
   type RequireAuthenticatedResult,
 } from "./require-authenticated";
 
-export {
-  requireWeddingAccess,
-  type RequireWeddingAccessResult,
-} from "./require-wedding-access";
+export { requireWeddingAccess, type RequireWeddingAccessResult } from "./require-wedding-access";
 
 export {
   requireProvisionableContext,

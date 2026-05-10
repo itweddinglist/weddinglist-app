@@ -23,36 +23,132 @@ const GRID = 20;
 // ── DATE REALISTE ROMÂNEȘTI ──────────────────────────────────────────────────
 
 const PRENUME_M = [
-  "Alexandru", "Andrei", "Bogdan", "Călin", "Claudiu",
-  "Constantin", "Cosmin", "Cristian", "Dan", "Daniel",
-  "David", "Dragoș", "Emil", "Florin", "Gabriel",
-  "George", "Gheorghe", "Iancu", "Ionuț", "Ion",
-  "Iulian", "Liviu", "Lucian", "Marian", "Mihai",
-  "Mircea", "Nicolae", "Octavian", "Paul", "Petru",
-  "Radu", "Robert", "Silviu", "Ștefan", "Teodor",
-  "Tudor", "Valentin", "Vasile", "Victor", "Vlad",
+  "Alexandru",
+  "Andrei",
+  "Bogdan",
+  "Călin",
+  "Claudiu",
+  "Constantin",
+  "Cosmin",
+  "Cristian",
+  "Dan",
+  "Daniel",
+  "David",
+  "Dragoș",
+  "Emil",
+  "Florin",
+  "Gabriel",
+  "George",
+  "Gheorghe",
+  "Iancu",
+  "Ionuț",
+  "Ion",
+  "Iulian",
+  "Liviu",
+  "Lucian",
+  "Marian",
+  "Mihai",
+  "Mircea",
+  "Nicolae",
+  "Octavian",
+  "Paul",
+  "Petru",
+  "Radu",
+  "Robert",
+  "Silviu",
+  "Ștefan",
+  "Teodor",
+  "Tudor",
+  "Valentin",
+  "Vasile",
+  "Victor",
+  "Vlad",
 ];
 
 const PRENUME_F = [
-  "Alexandra", "Alina", "Ana", "Andreea", "Bianca",
-  "Carmen", "Cătălina", "Claudia", "Corina", "Cristina",
-  "Diana", "Elena", "Gabriela", "Georgiana", "Ioana",
-  "Irina", "Laura", "Lavinia", "Lidia", "Loredana",
-  "Lucia", "Luminița", "Maria", "Mihaela", "Monica",
-  "Nicoleta", "Oana", "Raluca", "Ramona", "Roxana",
-  "Simona", "Sorina", "Ștefania", "Teodora", "Valentina",
+  "Alexandra",
+  "Alina",
+  "Ana",
+  "Andreea",
+  "Bianca",
+  "Carmen",
+  "Cătălina",
+  "Claudia",
+  "Corina",
+  "Cristina",
+  "Diana",
+  "Elena",
+  "Gabriela",
+  "Georgiana",
+  "Ioana",
+  "Irina",
+  "Laura",
+  "Lavinia",
+  "Lidia",
+  "Loredana",
+  "Lucia",
+  "Luminița",
+  "Maria",
+  "Mihaela",
+  "Monica",
+  "Nicoleta",
+  "Oana",
+  "Raluca",
+  "Ramona",
+  "Roxana",
+  "Simona",
+  "Sorina",
+  "Ștefania",
+  "Teodora",
+  "Valentina",
 ];
 
 const NUME = [
-  "Alexandrescu", "Badea", "Barbu", "Bogdan", "Bratu",
-  "Ciobanu", "Cojocaru", "Constantin", "Costea", "Cristea",
-  "Dima", "Dragomir", "Dumitrescu", "Florescu", "Gheorghe",
-  "Grecu", "Iacob", "Ionescu", "Iordache", "Lazar",
-  "Lungu", "Manole", "Marinescu", "Matei", "Mihai",
-  "Moldovan", "Nedelcu", "Niculescu", "Oprea", "Popa",
-  "Popescu", "Radu", "Roman", "Rusu", "Sava",
-  "Stan", "Stanciu", "Stoica", "Toma", "Tudor",
-  "Ungureanu", "Vasile", "Vlad", "Zamfir", "Zaharia",
+  "Alexandrescu",
+  "Badea",
+  "Barbu",
+  "Bogdan",
+  "Bratu",
+  "Ciobanu",
+  "Cojocaru",
+  "Constantin",
+  "Costea",
+  "Cristea",
+  "Dima",
+  "Dragomir",
+  "Dumitrescu",
+  "Florescu",
+  "Gheorghe",
+  "Grecu",
+  "Iacob",
+  "Ionescu",
+  "Iordache",
+  "Lazar",
+  "Lungu",
+  "Manole",
+  "Marinescu",
+  "Matei",
+  "Mihai",
+  "Moldovan",
+  "Nedelcu",
+  "Niculescu",
+  "Oprea",
+  "Popa",
+  "Popescu",
+  "Radu",
+  "Roman",
+  "Rusu",
+  "Sava",
+  "Stan",
+  "Stanciu",
+  "Stoica",
+  "Toma",
+  "Tudor",
+  "Ungureanu",
+  "Vasile",
+  "Vlad",
+  "Zamfir",
+  "Zaharia",
 ];
 
 const GRUPURI = [
@@ -79,18 +175,19 @@ const GRUPURI = [
 ];
 
 const MENIURI = [
-  "Standard", "Standard", "Standard", "Standard", "Standard",
-  "Vegetarian", "Vegetarian",
+  "Standard",
+  "Standard",
+  "Standard",
+  "Standard",
+  "Standard",
+  "Vegetarian",
+  "Vegetarian",
   "Vegan",
   "Fără gluten",
   "Copil",
 ];
 
-const STATUSURI = [
-  "confirmat", "confirmat", "confirmat", "confirmat",
-  "in_asteptare",
-  "confirmat",
-];
+const STATUSURI = ["confirmat", "confirmat", "confirmat", "confirmat", "in_asteptare", "confirmat"];
 
 // ── UTILITARE ────────────────────────────────────────────────────────────────
 
@@ -206,9 +303,7 @@ function generateTables() {
  */
 function generateGuests(tables) {
   // Construim lista de mese cu locuri disponibile (excludem ring/bar)
-  const seatingTables = tables.filter(
-    (t) => t.type !== "bar" && !t.isRing && t.seats > 0
-  );
+  const seatingTables = tables.filter((t) => t.type !== "bar" && !t.isRing && t.seats > 0);
 
   // Calculăm capacitatea totală disponibilă
   const totalCapacity = seatingTables.reduce((sum, t) => sum + t.seats, 0);
@@ -227,7 +322,8 @@ function generateGuests(tables) {
 
   while (guests.length < TARGET_GUESTS) {
     const grupNume = GRUPURI[grupIndex % GRUPURI.length];
-    const grupSuffix = grupIndex >= GRUPURI.length ? ` ${Math.floor(grupIndex / GRUPURI.length) + 1}` : "";
+    const grupSuffix =
+      grupIndex >= GRUPURI.length ? ` ${Math.floor(grupIndex / GRUPURI.length) + 1}` : "";
     const grupComplet = grupNume + grupSuffix;
     grupIndex++;
 

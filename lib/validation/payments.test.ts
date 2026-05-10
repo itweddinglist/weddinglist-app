@@ -22,7 +22,7 @@ describe("validateCreatePayment", () => {
     expect(result.valid).toBe(true);
     if (!result.valid) return;
     expect(result.data.amount).toBe(1500);
-    expect(result.data.currency).toBe("RON");       // default
+    expect(result.data.currency).toBe("RON"); // default
     expect(result.data.paid_at).toBeNull();
     expect(result.data.payment_method).toBeNull();
     expect(result.data.note).toBeNull();
@@ -31,14 +31,14 @@ describe("validateCreatePayment", () => {
   it("acceptă payload complet", () => {
     const result = validateCreatePayment({
       ...base,
-      currency: "eur",                              // trebuie normalizat la EUR
+      currency: "eur", // trebuie normalizat la EUR
       paid_at: "2026-09-15",
       payment_method: "transfer bancar",
       note: "Avans 50%",
     });
     expect(result.valid).toBe(true);
     if (!result.valid) return;
-    expect(result.data.currency).toBe("EUR");       // normalizat uppercase
+    expect(result.data.currency).toBe("EUR"); // normalizat uppercase
     expect(result.data.paid_at).toBe("2026-09-15");
     expect(result.data.payment_method).toBe("transfer bancar");
     expect(result.data.note).toBe("Avans 50%");
@@ -93,10 +93,10 @@ describe("validateCreatePayment", () => {
   });
 
   it("acceptă amount zecimal valid", () => {
-    const result = validateCreatePayment({ ...base, amount: 1500.50 });
+    const result = validateCreatePayment({ ...base, amount: 1500.5 });
     expect(result.valid).toBe(true);
     if (!result.valid) return;
-    expect(result.data.amount).toBe(1500.50);
+    expect(result.data.amount).toBe(1500.5);
   });
 
   it("eșuează cu currency de 2 caractere", () => {

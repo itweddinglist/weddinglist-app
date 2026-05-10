@@ -68,23 +68,23 @@ export async function assertDevBypassActive(page: Page): Promise<void> {
 
   expect(
     response.status(),
-    "DEV_ENDPOINTS_ENABLED gate failed (404) — verify NODE_ENV=development AND DEV_ENDPOINTS_ENABLED=true in webServer.env",
+    "DEV_ENDPOINTS_ENABLED gate failed (404) — verify NODE_ENV=development AND DEV_ENDPOINTS_ENABLED=true in webServer.env"
   ).toBe(200);
 
   const body = (await response.json()) as DevSessionResponse;
 
   expect(
     body.status,
-    "Session not authenticated — verify NEXT_PUBLIC_DEBUG_AUTH=true propagates to webServer",
+    "Session not authenticated — verify NEXT_PUBLIC_DEBUG_AUTH=true propagates to webServer"
   ).toBe("authenticated");
 
   expect(
     body.app_user_id,
-    "Mock app_user_id mismatch — dev-session.ts may have drifted from DEV_MOCK_IDENTITY",
+    "Mock app_user_id mismatch — dev-session.ts may have drifted from DEV_MOCK_IDENTITY"
   ).toBe(DEV_MOCK_IDENTITY.appUserId);
 
   expect(
     body.wedding_id,
-    "Mock wedding_id mismatch — dev-session.ts may have drifted from DEV_MOCK_IDENTITY",
+    "Mock wedding_id mismatch — dev-session.ts may have drifted from DEV_MOCK_IDENTITY"
   ).toBe(DEV_MOCK_IDENTITY.weddingId);
 }

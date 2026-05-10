@@ -15,31 +15,40 @@
 import type { BudgetItemRow } from "@/types/budget";
 
 export function isBudgetItemPaid(
-  item: Pick<BudgetItemRow, "status">,
+  item: Pick<BudgetItemRow, "status">
 ): item is Pick<BudgetItemRow, "status"> & { status: Extract<BudgetItemRow["status"], "paid"> } {
   return item.status === "paid";
 }
 
 export function isBudgetItemPlanned(
-  item: Pick<BudgetItemRow, "status">,
+  item: Pick<BudgetItemRow, "status">
 ): item is Pick<BudgetItemRow, "status"> & { status: Extract<BudgetItemRow["status"], "planned"> } {
   return item.status === "planned";
 }
 
-export function isBudgetItemConfirmed(
-  item: Pick<BudgetItemRow, "status">,
-): item is Pick<BudgetItemRow, "status"> & { status: Extract<BudgetItemRow["status"], "confirmed"> } {
+export function isBudgetItemConfirmed(item: Pick<BudgetItemRow, "status">): item is Pick<
+  BudgetItemRow,
+  "status"
+> & {
+  status: Extract<BudgetItemRow["status"], "confirmed">;
+} {
   return item.status === "confirmed";
 }
 
-export function isBudgetItemCancelled(
-  item: Pick<BudgetItemRow, "status">,
-): item is Pick<BudgetItemRow, "status"> & { status: Extract<BudgetItemRow["status"], "cancelled"> } {
+export function isBudgetItemCancelled(item: Pick<BudgetItemRow, "status">): item is Pick<
+  BudgetItemRow,
+  "status"
+> & {
+  status: Extract<BudgetItemRow["status"], "cancelled">;
+} {
   return item.status === "cancelled";
 }
 
-export function isBudgetItemActive(
-  item: Pick<BudgetItemRow, "status">,
-): item is Pick<BudgetItemRow, "status"> & { status: Exclude<BudgetItemRow["status"], "cancelled"> } {
+export function isBudgetItemActive(item: Pick<BudgetItemRow, "status">): item is Pick<
+  BudgetItemRow,
+  "status"
+> & {
+  status: Exclude<BudgetItemRow["status"], "cancelled">;
+} {
   return item.status !== "cancelled";
 }

@@ -5,10 +5,7 @@
 // =============================================================================
 
 import { describe, it, expect } from "vitest";
-import {
-  validateCreateBudgetItem,
-  validateUpdateBudgetItem,
-} from "./budget-items";
+import { validateCreateBudgetItem, validateUpdateBudgetItem } from "./budget-items";
 
 const VALID_UUID = "123e4567-e89b-12d3-a456-426614174000";
 const VALID_UUID_2 = "223e4567-e89b-12d3-a456-426614174001";
@@ -27,8 +24,8 @@ describe("validateCreateBudgetItem", () => {
     expect(result.valid).toBe(true);
     if (!result.valid) return;
     expect(result.data.name).toBe("Catering");
-    expect(result.data.status).toBe("planned");         // default
-    expect(result.data.currency).toBe("RON");           // default
+    expect(result.data.status).toBe("planned"); // default
+    expect(result.data.currency).toBe("RON"); // default
     expect(result.data.actual_amount).toBeNull();
     expect(result.data.vendor_id).toBeNull();
     expect(result.data.due_date).toBeNull();
@@ -40,7 +37,7 @@ describe("validateCreateBudgetItem", () => {
       ...base,
       category: "Mâncare",
       actual_amount: 4800,
-      currency: "eur",            // trebuie normalizat la EUR
+      currency: "eur", // trebuie normalizat la EUR
       status: "confirmed",
       vendor_id: VALID_UUID_2,
       due_date: "2026-09-15",
@@ -48,7 +45,7 @@ describe("validateCreateBudgetItem", () => {
     });
     expect(result.valid).toBe(true);
     if (!result.valid) return;
-    expect(result.data.currency).toBe("EUR");           // normalizat uppercase
+    expect(result.data.currency).toBe("EUR"); // normalizat uppercase
     expect(result.data.status).toBe("confirmed");
     expect(result.data.vendor_id).toBe(VALID_UUID_2);
     expect(result.data.due_date).toBe("2026-09-15");

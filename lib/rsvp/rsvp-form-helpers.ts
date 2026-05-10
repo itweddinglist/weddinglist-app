@@ -35,7 +35,7 @@ export function getSharedDietaryNotes(answers: Record<string, EventAnswer>): str
 /** Propaga dietary_notes pe toate raspunsurile accepted; imutabil. */
 export function applyDietaryNotesToAccepted(
   answers: Record<string, EventAnswer>,
-  value: string,
+  value: string
 ): Record<string, EventAnswer> {
   const updated: Record<string, EventAnswer> = { ...answers };
   for (const key of Object.keys(updated)) {

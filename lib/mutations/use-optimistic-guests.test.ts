@@ -37,10 +37,7 @@ function successBody(data: GuestWithRelations) {
   return { success: true, data };
 }
 
-function makeResponse(
-  body: unknown,
-  status = 200
-): Response {
+function makeResponse(body: unknown, status = 200): Response {
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -117,9 +114,7 @@ describe("useOptimisticGuests", () => {
 
   it("initialises guests from serverGuests", () => {
     const initial = [makeGuest()];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(initial, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(initial, { token: TOKEN }));
     expect(result.current.guests).toEqual(initial);
     expect(result.current.pendingIds.size).toBe(0);
   });
@@ -131,9 +126,7 @@ describe("useOptimisticGuests", () => {
     fetchMock.mockResolvedValue(makeResponse(successBody(realGuest)));
 
     const noGuests: GuestWithRelations[] = [];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(noGuests, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(noGuests, { token: TOKEN }));
 
     const input: CreateGuestInput = {
       wedding_id: WEDDING_ID,
@@ -151,7 +144,9 @@ describe("useOptimisticGuests", () => {
     expect(result.current.guests[0].id).toMatch(/^tmp_/);
     expect(result.current.guests[0].first_name).toBe("Maria");
 
-    await act(async () => { await promise; });
+    await act(async () => {
+      await promise;
+    });
   });
 
   it("adds tmpId to pendingIds and removes it after success", async () => {
@@ -159,9 +154,7 @@ describe("useOptimisticGuests", () => {
     fetchMock.mockResolvedValue(makeResponse(successBody(realGuest)));
 
     const noGuests: GuestWithRelations[] = [];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(noGuests, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(noGuests, { token: TOKEN }));
 
     let promise!: Promise<void>;
     act(() => {
@@ -173,7 +166,9 @@ describe("useOptimisticGuests", () => {
 
     expect(result.current.pendingIds.size).toBe(1);
 
-    await act(async () => { await promise; });
+    await act(async () => {
+      await promise;
+    });
 
     expect(result.current.pendingIds.size).toBe(0);
   });
@@ -183,9 +178,7 @@ describe("useOptimisticGuests", () => {
     fetchMock.mockResolvedValue(makeResponse(successBody(realGuest)));
 
     const noGuests: GuestWithRelations[] = [];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(noGuests, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(noGuests, { token: TOKEN }));
 
     await act(async () => {
       await result.current.createGuest({
@@ -206,9 +199,7 @@ describe("useOptimisticGuests", () => {
 
     const onError = vi.fn();
     const noGuests: GuestWithRelations[] = [];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(noGuests, { token: TOKEN, onError })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(noGuests, { token: TOKEN, onError }));
 
     await act(async () => {
       await result.current.createGuest({
@@ -223,15 +214,11 @@ describe("useOptimisticGuests", () => {
 
   it("removes optimistic guest and calls onError on parse failure", async () => {
     // Server returns ok:true but with malformed data
-    fetchMock.mockResolvedValue(
-      makeResponse({ success: true, data: { broken: true } }, 200)
-    );
+    fetchMock.mockResolvedValue(makeResponse({ success: true, data: { broken: true } }, 200));
 
     const onError = vi.fn();
     const noGuests: GuestWithRelations[] = [];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(noGuests, { token: TOKEN, onError })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(noGuests, { token: TOKEN, onError }));
 
     await act(async () => {
       await result.current.createGuest({
@@ -251,13 +238,13 @@ describe("useOptimisticGuests", () => {
     const guest = makeGuest({ id: "g1", first_name: "Ion" });
     let resolveUpdate!: (r: Response) => void;
     fetchMock.mockReturnValue(
-      new Promise<Response>((res) => { resolveUpdate = res; })
+      new Promise<Response>((res) => {
+        resolveUpdate = res;
+      })
     );
 
     const initialGuests = [guest];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(initialGuests, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(initialGuests, { token: TOKEN }));
 
     act(() => {
       result.current.updateGuest("g1", { first_name: "Ioan" });
@@ -268,7 +255,9 @@ describe("useOptimisticGuests", () => {
 
     // Resolve to avoid dangling promise
     resolveUpdate(makeResponse(successBody({ ...guest, first_name: "Ioan" })));
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
   });
 
   it("applies server-confirmed state after successful update", async () => {
@@ -277,9 +266,7 @@ describe("useOptimisticGuests", () => {
     fetchMock.mockResolvedValue(makeResponse(successBody(confirmed)));
 
     const initialGuests = [guest];
-    const { result } = renderHook(() =>
-      useOptimisticGuests(initialGuests, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(initialGuests, { token: TOKEN }));
 
     await act(async () => {
       await result.current.updateGuest("g2", { notes: "VIP" });
@@ -318,8 +305,16 @@ describe("useOptimisticGuests", () => {
     let resolve1!: (r: Response) => void;
     let resolve2!: (r: Response) => void;
     fetchMock
-      .mockReturnValueOnce(new Promise<Response>((r) => { resolve1 = r; }))
-      .mockReturnValueOnce(new Promise<Response>((r) => { resolve2 = r; }));
+      .mockReturnValueOnce(
+        new Promise<Response>((r) => {
+          resolve1 = r;
+        })
+      )
+      .mockReturnValueOnce(
+        new Promise<Response>((r) => {
+          resolve2 = r;
+        })
+      );
 
     const onError = vi.fn();
     const initialGuests = [guest];
@@ -328,17 +323,27 @@ describe("useOptimisticGuests", () => {
     );
 
     // Start edit 1 (first_name → Alexandru Prim)
-    act(() => { result.current.updateGuest("g4", { first_name: "AlexPrim" }); });
+    act(() => {
+      result.current.updateGuest("g4", { first_name: "AlexPrim" });
+    });
     // Start edit 2 immediately (first_name → Alexandru)
-    act(() => { result.current.updateGuest("g4", { first_name: "Alexandru" }); });
+    act(() => {
+      result.current.updateGuest("g4", { first_name: "Alexandru" });
+    });
 
     // Resolve edit 2 with success first
     resolve2(makeResponse(successBody(confirmed2)));
-    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     // Now resolve edit 1 with an error
     resolve1(makeResponse({ success: false, error: { code: "ERR", message: "Stale fail" } }, 500));
-    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     // Edit 2's result should stand — edit 1's rollback was skipped
     expect(result.current.guests[0].first_name).toBe("Alexandru");
@@ -350,20 +355,24 @@ describe("useOptimisticGuests", () => {
     const guests = [makeGuest({ id: "d1" }), makeGuest({ id: "d2" })];
     let resolveDelete!: (r: Response) => void;
     fetchMock.mockReturnValue(
-      new Promise<Response>((r) => { resolveDelete = r; })
+      new Promise<Response>((r) => {
+        resolveDelete = r;
+      })
     );
 
-    const { result } = renderHook(() =>
-      useOptimisticGuests(guests, { token: TOKEN })
-    );
+    const { result } = renderHook(() => useOptimisticGuests(guests, { token: TOKEN }));
 
-    act(() => { result.current.deleteGuest("d1"); });
+    act(() => {
+      result.current.deleteGuest("d1");
+    });
 
     expect(result.current.guests).toHaveLength(1);
     expect(result.current.guests[0].id).toBe("d2");
 
     resolveDelete(makeResponse({ success: true, data: { id: "d1", deleted: true } }));
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
   });
 
   it("restores deleted guest at exact original index on failure", async () => {
@@ -398,7 +407,11 @@ describe("useOptimisticGuests", () => {
 
     let resolve1!: (r: Response) => void;
     fetchMock
-      .mockReturnValueOnce(new Promise<Response>((r) => { resolve1 = r; }))
+      .mockReturnValueOnce(
+        new Promise<Response>((r) => {
+          resolve1 = r;
+        })
+      )
       .mockResolvedValueOnce(makeResponse(successBody(guest))); // second (re-add) succeeds
 
     const onError = vi.fn();
@@ -408,13 +421,20 @@ describe("useOptimisticGuests", () => {
     );
 
     // Delete s1
-    act(() => { result.current.deleteGuest("s1"); });
+    act(() => {
+      result.current.deleteGuest("s1");
+    });
     // Immediately increment opSeq for s1 via a new operation
-    act(() => { result.current.updateGuest("s1", { notes: "irrelevant" }); });
+    act(() => {
+      result.current.updateGuest("s1", { notes: "irrelevant" });
+    });
 
     // Now resolve delete with error — should NOT restore because seq was superseded
     resolve1(makeResponse({ success: false, error: { code: "ERR", message: "Fail" } }, 500));
-    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     // Guest is still absent (rollback was skipped)
     expect(result.current.guests).toHaveLength(0);

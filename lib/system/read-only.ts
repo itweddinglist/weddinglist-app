@@ -14,10 +14,7 @@ import { useState, useEffect } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ReadOnlyReason =
-  | "supabase_down"
-  | "maintenance"
-  | "rpc_error_threshold";
+export type ReadOnlyReason = "supabase_down" | "maintenance" | "rpc_error_threshold";
 
 export type ReadOnlyState =
   | { isReadOnly: false; reason: null }

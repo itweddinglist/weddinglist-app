@@ -35,14 +35,20 @@ type RouteContext = { params: Promise<{ weddingId: string; itemId: string }> };
 export async function GET(request: NextRequest, context: RouteContext): Promise<Response> {
   const { weddingId, itemId } = await context.params;
 
-  if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
-  if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
+  if (!isValidUuid(weddingId))
+    return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
+  if (!isValidUuid(itemId))
+    return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "viewer",
+  });
   if (!access.ok) return access.response;
 
   const { data, error } = await supabaseServer
@@ -67,14 +73,20 @@ export async function PATCH(request: NextRequest, context: RouteContext): Promis
 
   const { weddingId, itemId } = await context.params;
 
-  if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
-  if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
+  if (!isValidUuid(weddingId))
+    return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
+  if (!isValidUuid(itemId))
+    return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   const { data: meta, error: metaError } = await supabaseServer
@@ -120,14 +132,20 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
   const { weddingId, itemId } = await context.params;
 
-  if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
-  if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
+  if (!isValidUuid(weddingId))
+    return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
+  if (!isValidUuid(itemId))
+    return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   const { data: meta, error: metaError } = await supabaseServer

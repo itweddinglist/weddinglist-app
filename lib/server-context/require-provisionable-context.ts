@@ -25,9 +25,7 @@ export type RequireProvisionableResult =
   | { ok: true; identity: ProvisionableIdentity; already_provisioned: boolean }
   | { ok: false; response: NextResponse };
 
-export function requireProvisionableContext(
-  ctx: ServerAppContext
-): RequireProvisionableResult {
+export function requireProvisionableContext(ctx: ServerAppContext): RequireProvisionableResult {
   switch (ctx.status) {
     case "provisioning_pending":
     case "provisioning_failed":

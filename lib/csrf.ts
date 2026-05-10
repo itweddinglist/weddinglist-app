@@ -16,13 +16,8 @@ import type { NextResponse } from "next/server";
 import type { ApiErrorResponse } from "@/types/guests";
 
 function getAllowedOrigins(): Set<string> {
-  const productionOrigin =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://app.weddinglist.ro";
-  return new Set([
-    "http://localhost:3000",
-    "http://localhost:3001",
-    productionOrigin,
-  ]);
+  const productionOrigin = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.weddinglist.ro";
+  return new Set(["http://localhost:3000", "http://localhost:3001", productionOrigin]);
 }
 
 /**
@@ -33,20 +28,14 @@ function getAllowedOrigins(): Set<string> {
  *
  * Call this as the first check inside any mutating handler (POST/PATCH/DELETE).
  */
-export function checkOrigin(
-  request: NextRequest
-): NextResponse<ApiErrorResponse> | null {
+export function checkOrigin(request: NextRequest): NextResponse<ApiErrorResponse> | null {
   const origin = request.headers.get("origin");
 
   // No Origin header — server-to-server, native apps, curl, etc. — allow.
   if (!origin) return null;
 
   if (!getAllowedOrigins().has(origin)) {
-    return errorResponse(
-      403,
-      "FORBIDDEN_ORIGIN",
-      "Cross-origin request not allowed."
-    );
+    return errorResponse(403, "FORBIDDEN_ORIGIN", "Cross-origin request not allowed.");
   }
 
   return null;

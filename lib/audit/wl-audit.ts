@@ -51,10 +51,7 @@ export interface AuditOptions {
 
 // ─── Helper principal ─────────────────────────────────────────────────────────
 
-export async function wl_audit(
-  action: AuditAction,
-  options: AuditOptions = {}
-): Promise<void> {
+export async function wl_audit(action: AuditAction, options: AuditOptions = {}): Promise<void> {
   const {
     request_id = null,
     actor_type = "user",

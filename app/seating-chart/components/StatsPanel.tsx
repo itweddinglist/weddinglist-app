@@ -3,12 +3,12 @@ import React from "react";
 import type { SeatingGuest } from "@/types/seating";
 
 interface StatsPanelProps {
-  showStats: boolean
-  setShowStats: (value: boolean) => void
-  guests: SeatingGuest[]
-  assignedCount: number
-  unassigned: SeatingGuest[]
-  menuStats: Record<string, number>
+  showStats: boolean;
+  setShowStats: (value: boolean) => void;
+  guests: SeatingGuest[];
+  assignedCount: number;
+  unassigned: SeatingGuest[];
+  menuStats: Record<string, number>;
 }
 
 function StatsPanel({

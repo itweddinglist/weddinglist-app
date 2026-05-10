@@ -29,9 +29,7 @@ type ProvisionResponse =
   | { ok: true; app_user_id: string; provisioning_status: "ready" | "already_provisioned" }
   | { ok: false; error: string };
 
-export async function POST(
-  req: NextRequest
-): Promise<NextResponse<ProvisionResponse>> {
+export async function POST(req: NextRequest): Promise<NextResponse<ProvisionResponse>> {
   // Origin check — before rate limiting and auth
   const originCheck = checkOrigin(req);
   if (originCheck) return originCheck as unknown as NextResponse<ProvisionResponse>;
@@ -40,10 +38,7 @@ export async function POST(
   const ip = getClientIp(req);
   const rl = rateLimit(`provision:${ip}`, RATE_LIMIT);
   if (!rl.ok) {
-    return NextResponse.json(
-      { ok: false, error: "Too many requests" },
-      { status: 429 }
-    );
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
   }
 
   // Auth — verifies WP session server-to-server; extracts wp_user_id + email
@@ -69,10 +64,7 @@ export async function POST(
     // 1. Upsert app_user — id and email come exclusively from verified WP context
     const { data: user, error: userError } = await supabaseServer
       .from("app_users")
-      .upsert(
-        { id: identity.app_user_id, email: identity.email },
-        { onConflict: "id" }
-      )
+      .upsert({ id: identity.app_user_id, email: identity.email }, { onConflict: "id" })
       .select("id")
       .single();
 
@@ -86,16 +78,14 @@ export async function POST(
 
     // 2. Upsert identity_link — maps verified wp_user_id → app_user_id
     //    onConflict on (provider, external_user_id) ensures idempotency
-    const { error: linkError } = await supabaseServer
-      .from("identity_links")
-      .upsert(
-        {
-          app_user_id: user.id,
-          provider: "wordpress",
-          external_user_id: String(identity.wp_user_id),
-        },
-        { onConflict: "provider,external_user_id" }
-      );
+    const { error: linkError } = await supabaseServer.from("identity_links").upsert(
+      {
+        app_user_id: user.id,
+        provider: "wordpress",
+        external_user_id: String(identity.wp_user_id),
+      },
+      { onConflict: "provider,external_user_id" }
+    );
 
     if (linkError) {
       console.error("[provision] identity_links upsert failed:", linkError.message);
@@ -110,7 +100,6 @@ export async function POST(
       app_user_id: user.id,
       provisioning_status: "ready",
     });
-
   } catch (error) {
     console.error("[provision] Unexpected error:", error);
     return NextResponse.json(

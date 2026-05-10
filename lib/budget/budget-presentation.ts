@@ -107,7 +107,10 @@ export type BudgetStatusTransition = {
  *   - testele isValidBudgetStatusTransition (negative cases)
  *   - eventual schema DB constraints
  */
-export const BUDGET_STATUS_TRANSITIONS: Record<BudgetItemStatus, readonly BudgetStatusTransition[]> = {
+export const BUDGET_STATUS_TRANSITIONS: Record<
+  BudgetItemStatus,
+  readonly BudgetStatusTransition[]
+> = {
   planned: [
     { to: "confirmed", label: "Confirmă" },
     { to: "cancelled", label: "Anulează" },
@@ -124,7 +127,7 @@ export const BUDGET_STATUS_TRANSITIONS: Record<BudgetItemStatus, readonly Budget
  * Returnează lista tranzițiilor valide din statusul curent.
  */
 export function getBudgetStatusTransitions(
-  from: BudgetItemStatus,
+  from: BudgetItemStatus
 ): readonly BudgetStatusTransition[] {
   return BUDGET_STATUS_TRANSITIONS[from];
 }
@@ -134,7 +137,7 @@ export function getBudgetStatusTransitions(
  */
 export function isValidBudgetStatusTransition(
   from: BudgetItemStatus,
-  to: BudgetItemStatus,
+  to: BudgetItemStatus
 ): boolean {
   return BUDGET_STATUS_TRANSITIONS[from].some((t) => t.to === to);
 }

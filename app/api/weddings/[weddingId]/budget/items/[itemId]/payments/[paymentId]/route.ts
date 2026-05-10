@@ -38,15 +38,22 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
   const { weddingId, itemId, paymentId } = await context.params;
 
-  if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
-  if (!isValidUuid(itemId)) return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
-  if (!isValidUuid(paymentId)) return errorResponse(400, "INVALID_ID", "Payment ID must be a valid UUID.");
+  if (!isValidUuid(weddingId))
+    return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
+  if (!isValidUuid(itemId))
+    return errorResponse(400, "INVALID_ID", "Item ID must be a valid UUID.");
+  if (!isValidUuid(paymentId))
+    return errorResponse(400, "INVALID_ID", "Payment ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   // Verifică existență + ownership budget_item

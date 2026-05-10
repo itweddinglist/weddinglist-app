@@ -27,8 +27,14 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
 
   // Culoare avatar bazată pe primul caracter
   const colors = [
-    "#C9907A", "#48BB78", "#ECC94B", "#9F7AEA",
-    "#F687B3", "#76E4F7", "#FC8181", "#68D391",
+    "#C9907A",
+    "#48BB78",
+    "#ECC94B",
+    "#9F7AEA",
+    "#F687B3",
+    "#76E4F7",
+    "#FC8181",
+    "#68D391",
   ];
   const colorIndex = guest.first_name.charCodeAt(0) % colors.length;
   const avatarColor = colors[colorIndex];
@@ -48,11 +54,11 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
       }}
     >
       {/* Nume */}
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         <div className="flex items-center gap-3">
           {/* Avatar */}
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium"
             style={{
               background: `${avatarColor}22`,
               border: `1.5px solid ${avatarColor}`,
@@ -63,10 +69,7 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span
-                className="text-sm font-medium"
-                style={{ color: "var(--navy)" }}
-              >
+              <span className="text-sm font-medium" style={{ color: "var(--navy)" }}>
                 {guest.display_name}
               </span>
               {guest.is_vip && (
@@ -88,10 +91,10 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
       </td>
 
       {/* Grup */}
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         {guest.guest_group ? (
           <span
-            className="text-xs px-2 py-1 rounded-full"
+            className="rounded-full px-2 py-1 text-xs"
             style={{
               background: "var(--cream)",
               color: "var(--muted)",
@@ -100,26 +103,28 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
             {guest.guest_group.name}
           </span>
         ) : (
-          <span className="text-xs" style={{ color: "var(--cream-line)" }}>—</span>
+          <span className="text-xs" style={{ color: "var(--cream-line)" }}>
+            —
+          </span>
         )}
       </td>
 
       {/* Parte */}
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         <span className="text-sm" style={{ color: "var(--muted)" }}>
           {guest.side ? SIDE_LABELS[guest.side] : "—"}
         </span>
       </td>
 
       {/* Status */}
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         <GuestStatusBadge status={status as any} />
       </td>
 
       {/* Evenimente */}
-      <td className="py-3 px-4">
+      <td className="px-4 py-3">
         <span
-          className="text-xs px-2 py-1 rounded-full"
+          className="rounded-full px-2 py-1 text-xs"
           style={{
             background: "var(--cream)",
             color: "var(--muted)",
@@ -130,11 +135,11 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
       </td>
 
       {/* Acțiuni */}
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             onClick={() => onEdit(guest)}
-            className="p-1.5 rounded-lg transition-colors"
+            className="rounded-lg p-1.5 transition-colors"
             style={{ color: "var(--muted)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--cream)";
@@ -150,7 +155,7 @@ export default function GuestRow({ guest, onEdit, onDelete, isHighlighted }: Pro
           </button>
           <button
             onClick={() => onDelete(guest.id)}
-            className="p-1.5 rounded-lg transition-colors"
+            className="rounded-lg p-1.5 transition-colors"
             style={{ color: "var(--muted)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "rgba(229,62,62,0.08)";

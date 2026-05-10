@@ -34,10 +34,14 @@ const selectStyle = {
 };
 
 export default function GuestFilters({
-  search, onSearchChange,
-  filterStatus, onFilterStatusChange,
-  filterSide, onFilterSideChange,
-  filterGroup, onFilterGroupChange,
+  search,
+  onSearchChange,
+  filterStatus,
+  onFilterStatusChange,
+  filterSide,
+  onFilterSideChange,
+  filterGroup,
+  onFilterGroupChange,
   groups,
 }: Props) {
   const hasActiveFilters =
@@ -52,7 +56,7 @@ export default function GuestFilters({
 
   return (
     <div
-      className="flex items-center gap-3 mb-6 flex-wrap"
+      className="mb-6 flex flex-wrap items-center gap-3"
       style={{
         background: "white",
         borderRadius: "12px",
@@ -61,11 +65,11 @@ export default function GuestFilters({
       }}
     >
       {/* Search */}
-      <div className="relative flex-1 min-w-48">
+      <div className="relative min-w-48 flex-1">
         <Search
           size={15}
           strokeWidth={1.8}
-          className="absolute left-3 top-1/2 -translate-y-1/2"
+          className="absolute top-1/2 left-3 -translate-y-1/2"
           style={{ color: "var(--muted)" }}
         />
         <input
@@ -73,7 +77,7 @@ export default function GuestFilters({
           placeholder="Caută invitat..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-lg outline-none"
+          className="w-full rounded-lg py-2 pr-4 pl-9 text-sm outline-none"
           style={{
             border: "1px solid var(--cream-line)",
             background: "var(--ivory)",
@@ -84,7 +88,7 @@ export default function GuestFilters({
         {search && (
           <button
             onClick={() => onSearchChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2"
+            className="absolute top-1/2 right-3 -translate-y-1/2"
             style={{ color: "var(--muted)" }}
           >
             <X size={13} />
@@ -139,7 +143,7 @@ export default function GuestFilters({
       {hasActiveFilters && (
         <button
           onClick={clearAll}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all"
           style={{ color: "var(--muted)", background: "var(--cream)" }}
         >
           <X size={12} />

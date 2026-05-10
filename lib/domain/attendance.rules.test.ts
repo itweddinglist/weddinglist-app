@@ -9,7 +9,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { isAttendanceAttending, isAttendanceDeclined, isAttendanceMaybe, isAttendancePending } from "./attendance.rules";
+import {
+  isAttendanceAttending,
+  isAttendanceDeclined,
+  isAttendanceMaybe,
+  isAttendancePending,
+} from "./attendance.rules";
 import type { AttendanceStatus } from "@/types/guests";
 
 describe("isAttendanceAttending", () => {

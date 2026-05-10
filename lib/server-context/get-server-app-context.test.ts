@@ -74,9 +74,7 @@ describe("getServerAppContext", () => {
       data: AUTHENTICATED_BOOTSTRAP,
     });
 
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: WP_COOKIE })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: WP_COOKIE }));
 
     expect(ctx.status).toBe("authenticated");
     if (ctx.status !== "authenticated") return;
@@ -102,9 +100,7 @@ describe("getServerAppContext", () => {
       },
     });
 
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: WP_COOKIE })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: WP_COOKIE }));
 
     expect(ctx.status).toBe("unauthenticated");
   });
@@ -116,9 +112,7 @@ describe("getServerAppContext", () => {
       message: "WordPress nu răspunde",
     });
 
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: WP_COOKIE })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: WP_COOKIE }));
 
     expect(ctx.status).toBe("wp_unavailable");
     if (ctx.status !== "wp_unavailable") return;
@@ -132,9 +126,7 @@ describe("getServerAppContext", () => {
       message: "Connection refused",
     });
 
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: WP_COOKIE })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: WP_COOKIE }));
 
     expect(ctx.status).toBe("wp_unavailable");
     if (ctx.status !== "wp_unavailable") return;
@@ -182,9 +174,7 @@ describe("getServerAppContext", () => {
   });
 
   it("Cookie fără wordpress_logged_in_ → unauthenticated fără WP call", async () => {
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: "session_id=abc; other=xyz" })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: "session_id=abc; other=xyz" }));
 
     expect(ctx.status).toBe("unauthenticated");
     expect(mockWithCircuitBreaker).not.toHaveBeenCalled();
@@ -209,9 +199,7 @@ describe("getServerAppContext", () => {
       },
     });
 
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: WP_COOKIE })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: WP_COOKIE }));
 
     expect(ctx.status).toBe("provisioning_pending");
   });
@@ -235,17 +223,13 @@ describe("getServerAppContext", () => {
       },
     });
 
-    const ctx = await getServerAppContext(
-      makeRequest({ cookie: WP_COOKIE })
-    );
+    const ctx = await getServerAppContext(makeRequest({ cookie: WP_COOKIE }));
 
     expect(ctx.status).toBe("provisioning_failed");
   });
 
   it("request_id din x-request-id header", async () => {
-    const ctx = await getServerAppContext(
-      makeRequest({ "x-request-id": "req-123" })
-    );
+    const ctx = await getServerAppContext(makeRequest({ "x-request-id": "req-123" }));
 
     expect(ctx.request_id).toBe("req-123");
   });

@@ -32,9 +32,7 @@ export function getDevSession(): BootstrapResponse | null {
       plan_tier: null,
     },
     app_user_id: DEV_MOCK_IDS.APP_USER_ID,
-    weddings: [
-      { id: DEV_MOCK_IDS.WEDDING_ID, title: "Nuntă Dev", role: "owner" },
-    ],
+    weddings: [{ id: DEV_MOCK_IDS.WEDDING_ID, title: "Nuntă Dev", role: "owner" }],
     active_wedding_id: DEV_MOCK_IDS.WEDDING_ID,
     active_event_id: DEV_MOCK_IDS.EVENT_ID,
     provisioning_status: "ready",

@@ -30,22 +30,17 @@ export async function fetchWordPressBootstrap(): Promise<BootstrapResponse> {
     throw new Error("Missing NEXT_PUBLIC_WP_BASE_URL env variable");
   }
 
-  const response = await fetch(
-    `${wpBaseUrl}/wp-json/weddinglist/v1/bootstrap`,
-    {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    }
-  );
+  const response = await fetch(`${wpBaseUrl}/wp-json/weddinglist/v1/bootstrap`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
 
   if (!response.ok) {
-    throw new Error(
-      `Bootstrap request failed with status ${response.status}`
-    );
+    throw new Error(`Bootstrap request failed with status ${response.status}`);
   }
 
   return response.json() as Promise<BootstrapResponse>;

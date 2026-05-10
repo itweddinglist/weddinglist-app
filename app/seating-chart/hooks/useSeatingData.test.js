@@ -31,9 +31,15 @@ function makeMockStorage() {
   let store = {};
   return {
     getItem: (key) => store[key] ?? null,
-    setItem: (key, val) => { store[key] = String(val); },
-    removeItem: (key) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key, val) => {
+      store[key] = String(val);
+    },
+    removeItem: (key) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 }
 
@@ -85,14 +91,38 @@ describe("useSeatingData — return shape", () => {
   it("returnează toate cheile cerute", () => {
     const { result } = renderData();
     const keys = [
-      "guests", "tables", "nextId", "hydrated", "newTableIds",
-      "guestsByTable", "realTables", "totalSeats", "assignedCount",
-      "unassigned", "progress", "menuStats", "guestMeta", "groupColorMap",
-      "tablesRef", "guestsRef", "spawnCounterRef", "setTables",
-      "saveAction", "undo", "assignGuest", "unassignGuest", "magicFill",
-      "getNextTableName", "createTable", "clearNewTableHighlight",
-      "deleteTable", "rotateTable", "saveEdit", "resetPlan",
-      "getGuestTableId", "filteredUnassigned",
+      "guests",
+      "tables",
+      "nextId",
+      "hydrated",
+      "newTableIds",
+      "guestsByTable",
+      "realTables",
+      "totalSeats",
+      "assignedCount",
+      "unassigned",
+      "progress",
+      "menuStats",
+      "guestMeta",
+      "groupColorMap",
+      "tablesRef",
+      "guestsRef",
+      "spawnCounterRef",
+      "setTables",
+      "saveAction",
+      "undo",
+      "assignGuest",
+      "unassignGuest",
+      "magicFill",
+      "getNextTableName",
+      "createTable",
+      "clearNewTableHighlight",
+      "deleteTable",
+      "rotateTable",
+      "saveEdit",
+      "resetPlan",
+      "getGuestTableId",
+      "filteredUnassigned",
     ];
     for (const key of keys) {
       expect(result.current).toHaveProperty(key);
@@ -138,7 +168,9 @@ describe("useSeatingData — saveAction + undo", () => {
   it("undo fără history → ok:false + SHOW_TOAST yellow", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.undo(); });
+    act(() => {
+      res = result.current.undo();
+    });
     expect(res.ok).toBe(false);
     expect(res.effects[0].type).toBe("SHOW_TOAST");
     expect(res.effects[0].payload.toastType).toBe("yellow");
@@ -146,27 +178,41 @@ describe("useSeatingData — saveAction + undo", () => {
 
   it("assignGuest + undo → guest revine neatribuit", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBe(3);
     let res;
-    act(() => { res = result.current.undo(); });
+    act(() => {
+      res = result.current.undo();
+    });
     expect(res.ok).toBe(true);
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBeNull();
   });
 
   it("undo ok:true → SHOW_TOAST rose", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
     let res;
-    act(() => { res = result.current.undo(); });
+    act(() => {
+      res = result.current.undo();
+    });
     expect(res.effects[0].payload.toastType).toBe("rose");
   });
 
   it("multiple undo-uri restaurează stările succesiv", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
-    act(() => { result.current.assignGuest(2, 3); });
-    act(() => { result.current.undo(); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
+    act(() => {
+      result.current.assignGuest(2, 3);
+    });
+    act(() => {
+      result.current.undo();
+    });
     expect(result.current.guests.find((g) => g.id === 2).tableId).toBeNull();
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBe(3);
   });
@@ -178,7 +224,9 @@ describe("useSeatingData — assignGuest", () => {
   it("assign valid → ok:true + guest.tableId setat", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(1, 3); });
+    act(() => {
+      res = result.current.assignGuest(1, 3);
+    });
     expect(res.ok).toBe(true);
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBe(3);
   });
@@ -186,7 +234,9 @@ describe("useSeatingData — assignGuest", () => {
   it("assign valid → efecte SHOW_TOAST green + CLEAR_CLICKED_SEAT", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(1, 3); });
+    act(() => {
+      res = result.current.assignGuest(1, 3);
+    });
     const types = res.effects.map((e) => e.type);
     expect(types).toContain("SHOW_TOAST");
     expect(types).toContain("CLEAR_CLICKED_SEAT");
@@ -196,7 +246,9 @@ describe("useSeatingData — assignGuest", () => {
   it("assign pe masă bar/ring → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(1, 1); }); // id 1 = Ring Dans
+    act(() => {
+      res = result.current.assignGuest(1, 1);
+    }); // id 1 = Ring Dans
     expect(res.ok).toBe(false);
     expect(res.effects).toHaveLength(0);
   });
@@ -204,21 +256,23 @@ describe("useSeatingData — assignGuest", () => {
   it("assign guest inexistent → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(9999, 3); });
+    act(() => {
+      res = result.current.assignGuest(9999, 3);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("assign tabel inexistent → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(1, 9999); });
+    act(() => {
+      res = result.current.assignGuest(1, 9999);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("masă plină → ok:false + SHOW_TOAST yellow", () => {
-    const fullGuests = INITIAL_GUESTS.map((g, i) =>
-      i < 8 ? { ...g, tableId: 3 } : { ...g }
-    );
+    const fullGuests = INITIAL_GUESTS.map((g, i) => (i < 8 ? { ...g, tableId: 3 } : { ...g }));
     loadStorageState.mockReturnValueOnce({
       data: { guests: fullGuests, tables: buildTemplate(), nextId: 10 },
       ok: true,
@@ -226,7 +280,9 @@ describe("useSeatingData — assignGuest", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(9, 3); }); // guest id 9 (index 8) neatribuit
+    act(() => {
+      res = result.current.assignGuest(9, 3);
+    }); // guest id 9 (index 8) neatribuit
     expect(res.ok).toBe(false);
     expect(res.effects[0].payload.toastType).toBe("yellow");
   });
@@ -242,7 +298,9 @@ describe("useSeatingData — assignGuest", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.assignGuest(1, 3); }); // deja la masa 3
+    act(() => {
+      res = result.current.assignGuest(1, 3);
+    }); // deja la masa 3
     expect(res.ok).toBe(false);
   });
 });
@@ -261,7 +319,9 @@ describe("useSeatingData — unassignGuest", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.unassignGuest(1); });
+    act(() => {
+      res = result.current.unassignGuest(1);
+    });
     expect(res.ok).toBe(true);
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBeNull();
   });
@@ -277,7 +337,9 @@ describe("useSeatingData — unassignGuest", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.unassignGuest(1); });
+    act(() => {
+      res = result.current.unassignGuest(1);
+    });
     const types = res.effects.map((e) => e.type);
     expect(types).toContain("SHOW_TOAST");
     expect(types).toContain("CLEAR_CLICKED_SEAT");
@@ -287,21 +349,27 @@ describe("useSeatingData — unassignGuest", () => {
   it("unassign null guestId → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.unassignGuest(null); });
+    act(() => {
+      res = result.current.unassignGuest(null);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("unassign guest deja neatribuit → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.unassignGuest(1); });
+    act(() => {
+      res = result.current.unassignGuest(1);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("unassign guest inexistent → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.unassignGuest(9999); });
+    act(() => {
+      res = result.current.unassignGuest(9999);
+    });
     expect(res.ok).toBe(false);
   });
 });
@@ -318,7 +386,9 @@ describe("useSeatingData — magicFill", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     expect(res.ok).toBe(false);
     expect(res.effects[0].payload.toastType).toBe("yellow");
   });
@@ -334,7 +404,9 @@ describe("useSeatingData — magicFill", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     expect(calculateMagicFill).toHaveBeenCalled();
     expect(res.ok).toBe(true);
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBe(3);
@@ -352,7 +424,9 @@ describe("useSeatingData — magicFill", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     const toast = res.effects.find(
       (e) => e.type === "SHOW_TOAST" && e.payload.toastType === "green"
     );
@@ -371,7 +445,9 @@ describe("useSeatingData — magicFill", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     const roseToast = res.effects.find(
       (e) => e.type === "SHOW_TOAST" && e.payload.toastType === "rose"
     );
@@ -389,7 +465,9 @@ describe("useSeatingData — magicFill", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     const yellows = res.effects.filter(
       (e) => e.type === "SHOW_TOAST" && e.payload.toastType === "yellow"
     );
@@ -407,7 +485,9 @@ describe("useSeatingData — magicFill", () => {
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     const limitToast = res.effects.find(
       (e) => e.type === "SHOW_TOAST" && e.payload.message.includes("partiala")
     );
@@ -421,7 +501,9 @@ describe("useSeatingData — createTable", () => {
   it("fără nume → ok:false + SHOW_TOAST red", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.createTable({ type: "round", seats: 8, name: "" }); });
+    act(() => {
+      res = result.current.createTable({ type: "round", seats: 8, name: "" });
+    });
     expect(res.ok).toBe(false);
     expect(res.effects[0].payload.toastType).toBe("red");
   });
@@ -429,7 +511,9 @@ describe("useSeatingData — createTable", () => {
   it("whitespace-only name → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.createTable({ type: "round", seats: 8, name: "   " }); });
+    act(() => {
+      res = result.current.createTable({ type: "round", seats: 8, name: "   " });
+    });
     expect(res.ok).toBe(false);
   });
 
@@ -437,7 +521,9 @@ describe("useSeatingData — createTable", () => {
     const { result } = renderData();
     const initialCount = result.current.tables.length;
     let res;
-    act(() => { res = result.current.createTable({ type: "round", seats: 8, name: "Masa Test" }); });
+    act(() => {
+      res = result.current.createTable({ type: "round", seats: 8, name: "Masa Test" });
+    });
     expect(res.ok).toBe(true);
     expect(result.current.tables.length).toBe(initialCount + 1);
   });
@@ -445,7 +531,9 @@ describe("useSeatingData — createTable", () => {
   it("cu nume valid → efecte SELECT_TABLE + SHOW_TOAST green + CLOSE_MODAL", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.createTable({ type: "round", seats: 8, name: "Masa Test" }); });
+    act(() => {
+      res = result.current.createTable({ type: "round", seats: 8, name: "Masa Test" });
+    });
     const types = res.effects.map((e) => e.type);
     expect(types).toContain("SELECT_TABLE");
     expect(types).toContain("SHOW_TOAST");
@@ -456,13 +544,17 @@ describe("useSeatingData — createTable", () => {
   it("tip bar fără nume → ok:true (bar nu necesită nume)", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.createTable({ type: "bar", seats: 0, name: "" }); });
+    act(() => {
+      res = result.current.createTable({ type: "bar", seats: 0, name: "" });
+    });
     expect(res.ok).toBe(true);
   });
 
   it("masă nouă apare cu proprietățile corecte", () => {
     const { result } = renderData();
-    act(() => { result.current.createTable({ type: "round", seats: 6, name: "Nova" }); });
+    act(() => {
+      result.current.createTable({ type: "round", seats: 6, name: "Nova" });
+    });
     const newTable = result.current.tables.find((t) => t.name === "Nova");
     expect(newTable).toBeTruthy();
     expect(newTable.seats).toBe(6);
@@ -473,7 +565,9 @@ describe("useSeatingData — createTable", () => {
   it("nextId crește după createTable", () => {
     const { result } = renderData();
     const initialNextId = result.current.nextId;
-    act(() => { result.current.createTable({ type: "round", seats: 8, name: "Test" }); });
+    act(() => {
+      result.current.createTable({ type: "round", seats: 8, name: "Test" });
+    });
     expect(result.current.nextId).toBe(initialNextId + 1);
   });
 });
@@ -484,14 +578,18 @@ describe("useSeatingData — deleteTable", () => {
   it("masă inexistentă → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.deleteTable(9999); });
+    act(() => {
+      res = result.current.deleteTable(9999);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("masă existentă → returnează confirmRequired cu titlu", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.deleteTable(3); });
+    act(() => {
+      res = result.current.deleteTable(3);
+    });
     expect(res.ok).toBe(true);
     expect(res.confirmRequired).toBeTruthy();
     expect(res.confirmRequired.title).toContain("Masa 1");
@@ -501,8 +599,12 @@ describe("useSeatingData — deleteTable", () => {
   it("onConfirm → masa dispare din tables", () => {
     const { result } = renderData();
     let deleteRes;
-    act(() => { deleteRes = result.current.deleteTable(3); });
-    act(() => { deleteRes.confirmRequired.onConfirm(); });
+    act(() => {
+      deleteRes = result.current.deleteTable(3);
+    });
+    act(() => {
+      deleteRes.confirmRequired.onConfirm();
+    });
     expect(result.current.tables.find((t) => t.id === 3)).toBeUndefined();
   });
 
@@ -517,17 +619,25 @@ describe("useSeatingData — deleteTable", () => {
     });
     const { result } = renderData();
     let deleteRes;
-    act(() => { deleteRes = result.current.deleteTable(3); });
-    act(() => { deleteRes.confirmRequired.onConfirm(); });
+    act(() => {
+      deleteRes = result.current.deleteTable(3);
+    });
+    act(() => {
+      deleteRes.confirmRequired.onConfirm();
+    });
     expect(result.current.guests.find((g) => g.id === 1).tableId).toBeNull();
   });
 
   it("onConfirm returnează efecte CLOSE_EDIT_PANEL + SELECT_TABLE(null) + SHOW_TOAST red", () => {
     const { result } = renderData();
     let deleteRes;
-    act(() => { deleteRes = result.current.deleteTable(3); });
+    act(() => {
+      deleteRes = result.current.deleteTable(3);
+    });
     let confirmRes;
-    act(() => { confirmRes = deleteRes.confirmRequired.onConfirm(); });
+    act(() => {
+      confirmRes = deleteRes.confirmRequired.onConfirm();
+    });
     expect(confirmRes.ok).toBe(true);
     const types = confirmRes.effects.map((e) => e.type);
     expect(types).toContain("CLOSE_EDIT_PANEL");
@@ -540,7 +650,9 @@ describe("useSeatingData — deleteTable", () => {
   it("ring → sub-text specific", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.deleteTable(1); }); // Ring Dans
+    act(() => {
+      res = result.current.deleteTable(1);
+    }); // Ring Dans
     expect(res.confirmRequired.sub).toContain("Ring");
   });
 });
@@ -550,26 +662,34 @@ describe("useSeatingData — deleteTable", () => {
 describe("useSeatingData — rotateTable", () => {
   it("rotateTable(3, 90) → rotation devine 90", () => {
     const { result } = renderData();
-    act(() => { result.current.rotateTable(3, 90); });
+    act(() => {
+      result.current.rotateTable(3, 90);
+    });
     expect(result.current.tables.find((t) => t.id === 3).rotation).toBe(90);
   });
 
   it("rotateTable(3, 360) → rotation rămâne 0", () => {
     const { result } = renderData();
-    act(() => { result.current.rotateTable(3, 360); });
+    act(() => {
+      result.current.rotateTable(3, 360);
+    });
     expect(result.current.tables.find((t) => t.id === 3).rotation).toBe(0);
   });
 
   it("rotateTable(3, -90) → rotation devine 270", () => {
     const { result } = renderData();
-    act(() => { result.current.rotateTable(3, -90); });
+    act(() => {
+      result.current.rotateTable(3, -90);
+    });
     expect(result.current.tables.find((t) => t.id === 3).rotation).toBe(270);
   });
 
   it("rotateTable → returnează ok:true + effects gol", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.rotateTable(3, 45); });
+    act(() => {
+      res = result.current.rotateTable(3, 45);
+    });
     expect(res.ok).toBe(true);
     expect(res.effects).toHaveLength(0);
   });
@@ -581,20 +701,26 @@ describe("useSeatingData — saveEdit", () => {
   it("editName gol → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.saveEdit("", 8, 3); });
+    act(() => {
+      res = result.current.saveEdit("", 8, 3);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("editName whitespace → ok:false", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.saveEdit("   ", 8, 3); });
+    act(() => {
+      res = result.current.saveEdit("   ", 8, 3);
+    });
     expect(res.ok).toBe(false);
   });
 
   it("saveEdit valid → tabelă actualizată cu noul nume și scaune", () => {
     const { result } = renderData();
-    act(() => { result.current.saveEdit("Masa Actualizată", 10, 3); });
+    act(() => {
+      result.current.saveEdit("Masa Actualizată", 10, 3);
+    });
     const updated = result.current.tables.find((t) => t.id === 3);
     expect(updated.name).toBe("Masa Actualizată");
     expect(updated.seats).toBe(10);
@@ -603,7 +729,9 @@ describe("useSeatingData — saveEdit", () => {
   it("saveEdit → ok:true + efecte CLOSE_EDIT_PANEL + SHOW_TOAST rose", () => {
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.saveEdit("Test", 8, 3); });
+    act(() => {
+      res = result.current.saveEdit("Test", 8, 3);
+    });
     expect(res.ok).toBe(true);
     const types = res.effects.map((e) => e.type);
     expect(types).toContain("CLOSE_EDIT_PANEL");
@@ -621,9 +749,7 @@ describe("useSeatingData — guestsByTable", () => {
   });
 
   it("cu 2 invitați la masa 3 → guestsByTable[3].length === 2", () => {
-    const guests = INITIAL_GUESTS.map((g, i) =>
-      i < 2 ? { ...g, tableId: 3 } : { ...g }
-    );
+    const guests = INITIAL_GUESTS.map((g, i) => (i < 2 ? { ...g, tableId: 3 } : { ...g }));
     loadStorageState.mockReturnValueOnce({
       data: { guests, tables: buildTemplate(), nextId: 10 },
       ok: true,
@@ -669,7 +795,9 @@ describe("useSeatingData — stats", () => {
 
   it("assignedCount crește după assignGuest", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
     expect(result.current.assignedCount).toBe(1);
   });
 
@@ -734,7 +862,9 @@ describe("useSeatingData — stats", () => {
 
   it("unassigned scade după assignGuest", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
     expect(result.current.unassigned.length).toBe(ELIGIBLE_COUNT - 1);
   });
 });
@@ -757,11 +887,9 @@ describe("useSeatingData — filteredUnassigned", () => {
     const { result } = renderData();
     const res = result.current.filteredUnassigned("Ion");
     expect(res.length).toBeGreaterThanOrEqual(1);
-    expect(
-      res.every((g) =>
-        `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().includes("ion")
-      )
-    ).toBe(true);
+    expect(res.every((g) => `${g.prenume} ${g.nume} ${g.grup}`.toLowerCase().includes("ion"))).toBe(
+      true
+    );
   });
 
   it("query case-insensitive", () => {
@@ -778,7 +906,9 @@ describe("useSeatingData — filteredUnassigned", () => {
 
   it("invitații asignați nu apar în rezultate", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
     const res = result.current.filteredUnassigned("");
     expect(res.find((g) => g.id === 1)).toBeUndefined();
   });
@@ -801,7 +931,9 @@ describe("useSeatingData — getGuestTableId", () => {
 
   it("guest atribuit → tableId corect", () => {
     const { result } = renderData();
-    act(() => { result.current.assignGuest(1, 3); });
+    act(() => {
+      result.current.assignGuest(1, 3);
+    });
     expect(result.current.getGuestTableId(1)).toBe(3);
   });
 
@@ -855,55 +987,89 @@ describe("isSeatingEligible", () => {
 // ── Test 16 — unassigned filtrare RSVP declined ───────────────────────────────
 
 function makeGuest(overrides) {
-  return { id: 99, prenume: "Test", nume: "Test", grup: "", status: "", meniu: "Standard", tableId: null, ...overrides };
+  return {
+    id: 99,
+    prenume: "Test",
+    nume: "Test",
+    grup: "",
+    status: "",
+    meniu: "Standard",
+    tableId: null,
+    ...overrides,
+  };
 }
 
 describe("useSeatingData — unassigned filtrare RSVP", () => {
   it("declined fără loc → nu apare în unassigned", () => {
-    const declinedGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "declined" }] });
+    const declinedGuest = makeGuest({
+      id: 99,
+      tableId: null,
+      guest_events: [{ attendance_status: "declined" }],
+    });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [declinedGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.unassigned.find((g) => g.id === 99)).toBeUndefined();
   });
 
   it("declined cu loc alocat → nu apare în unassigned", () => {
-    const declinedWithSeat = makeGuest({ id: 99, tableId: 3, guest_events: [{ attendance_status: "declined" }] });
+    const declinedWithSeat = makeGuest({
+      id: 99,
+      tableId: 3,
+      guest_events: [{ attendance_status: "declined" }],
+    });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [declinedWithSeat], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.unassigned.find((g) => g.id === 99)).toBeUndefined();
   });
 
   it("pending fără loc → apare în unassigned", () => {
-    const pendingGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "pending" }] });
+    const pendingGuest = makeGuest({
+      id: 99,
+      tableId: null,
+      guest_events: [{ attendance_status: "pending" }],
+    });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [pendingGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
   });
 
   it("attending fără loc → apare în unassigned", () => {
-    const attendingGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "attending" }] });
+    const attendingGuest = makeGuest({
+      id: 99,
+      tableId: null,
+      guest_events: [{ attendance_status: "attending" }],
+    });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [attendingGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
   });
 
   it("null attendance_status → apare în unassigned", () => {
-    const nullStatusGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: null }] });
+    const nullStatusGuest = makeGuest({
+      id: 99,
+      tableId: null,
+      guest_events: [{ attendance_status: null }],
+    });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [nullStatusGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
@@ -913,7 +1079,8 @@ describe("useSeatingData — unassigned filtrare RSVP", () => {
     const noEventsGuest = makeGuest({ id: 99, tableId: null, guest_events: [] });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [noEventsGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.unassigned.find((g) => g.id === 99)).toBeTruthy();
@@ -924,10 +1091,15 @@ describe("useSeatingData — unassigned filtrare RSVP", () => {
 
 describe("useSeatingData — assignedCount include declined cu loc", () => {
   it("declined cu loc → assignedCount îl numără (realitate fizică)", () => {
-    const declinedWithSeat = makeGuest({ id: 99, tableId: 3, guest_events: [{ attendance_status: "declined" }] });
+    const declinedWithSeat = makeGuest({
+      id: 99,
+      tableId: 3,
+      guest_events: [{ attendance_status: "declined" }],
+    });
     loadStorageState.mockReturnValueOnce({
       data: { guests: [declinedWithSeat], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     expect(result.current.assignedCount).toBe(1);
@@ -938,15 +1110,22 @@ describe("useSeatingData — assignedCount include declined cu loc", () => {
 
 describe("useSeatingData — Magic Fill ignoră declined", () => {
   it("singurul guest neatribuit e declined → magicFill ok:false", () => {
-    const declinedGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "declined" }] });
+    const declinedGuest = makeGuest({
+      id: 99,
+      tableId: null,
+      guest_events: [{ attendance_status: "declined" }],
+    });
     const allOthersAssigned = INITIAL_GUESTS.map((g) => ({ ...g, tableId: 3 }));
     loadStorageState.mockReturnValueOnce({
       data: { guests: [...allOthersAssigned, declinedGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     expect(res.ok).toBe(false);
     expect(res.effects[0].payload.toastType).toBe("yellow");
   });
@@ -960,15 +1139,22 @@ describe("useSeatingData — Magic Fill ignoră declined", () => {
       skippedGroups: [],
       limitReached: false,
     });
-    const declinedGuest = makeGuest({ id: 99, tableId: null, guest_events: [{ attendance_status: "declined" }] });
+    const declinedGuest = makeGuest({
+      id: 99,
+      tableId: null,
+      guest_events: [{ attendance_status: "declined" }],
+    });
     // guest id:1 rămâne neatribuit (eligible)
     loadStorageState.mockReturnValueOnce({
       data: { guests: [...INITIAL_GUESTS, declinedGuest], tables: buildTemplate(), nextId: 10 },
-      ok: true, source: "storage",
+      ok: true,
+      source: "storage",
     });
     const { result } = renderData();
     let res;
-    act(() => { res = result.current.magicFill(); });
+    act(() => {
+      res = result.current.magicFill();
+    });
     expect(res.ok).toBe(true);
     expect(calculateMagicFill).toHaveBeenCalled();
   });

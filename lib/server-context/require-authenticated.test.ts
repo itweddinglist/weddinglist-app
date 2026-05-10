@@ -4,10 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 import { requireAuthenticatedContext } from "./require-authenticated";
-import type {
-  ServerAppContext,
-  AuthenticatedContext,
-} from "./types";
+import type { ServerAppContext, AuthenticatedContext } from "./types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -35,9 +32,23 @@ function makeCtx(status: ServerAppContext["status"]): ServerAppContext {
     case "wp_unavailable":
       return { ...BASE, status: "wp_unavailable", reason: "timeout" };
     case "provisioning_pending":
-      return { ...BASE, status: "provisioning_pending", app_user_id: "u1", wp_user_id: 42, email: "test@example.com", display_name: "Test User" };
+      return {
+        ...BASE,
+        status: "provisioning_pending",
+        app_user_id: "u1",
+        wp_user_id: 42,
+        email: "test@example.com",
+        display_name: "Test User",
+      };
     case "provisioning_failed":
-      return { ...BASE, status: "provisioning_failed", app_user_id: "u1", wp_user_id: 42, email: "test@example.com", display_name: "Test User" };
+      return {
+        ...BASE,
+        status: "provisioning_failed",
+        app_user_id: "u1",
+        wp_user_id: 42,
+        email: "test@example.com",
+        display_name: "Test User",
+      };
   }
 }
 
@@ -57,7 +68,7 @@ describe("requireAuthenticatedContext", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(401);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("SESSION_REQUIRED");
   });
 
@@ -66,7 +77,7 @@ describe("requireAuthenticatedContext", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(503);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("AUTH_SERVICE_UNAVAILABLE");
   });
 
@@ -75,7 +86,7 @@ describe("requireAuthenticatedContext", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(409);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("PROVISIONING_PENDING");
   });
 
@@ -84,7 +95,7 @@ describe("requireAuthenticatedContext", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(403);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("PROVISIONING_FAILED");
   });
 });

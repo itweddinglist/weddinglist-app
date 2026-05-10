@@ -30,9 +30,9 @@ export async function fetchAndAllocateIds(
     const { data: guestMaps, error: guestError } = await supabase.rpc(
       "allocate_seating_numeric_ids_batch",
       {
-        p_wedding_id:   weddingId,
-        p_event_id:     eventId,
-        p_entity_type:  "guest",
+        p_wedding_id: weddingId,
+        p_event_id: eventId,
+        p_entity_type: "guest",
         p_entity_uuids: guestUuids,
       }
     );
@@ -53,9 +53,9 @@ export async function fetchAndAllocateIds(
     const { data: tableMaps, error: tableError } = await supabase.rpc(
       "allocate_seating_numeric_ids_batch",
       {
-        p_wedding_id:   weddingId,
-        p_event_id:     eventId,
-        p_entity_type:  "table",
+        p_wedding_id: weddingId,
+        p_event_id: eventId,
+        p_entity_type: "table",
         p_entity_uuids: tableUuids,
       }
     );

@@ -9,22 +9,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { ReactNode, CSSProperties, FormEvent, ChangeEvent } from "react";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  CreditCard,
-  ChevronDown,
-  ChevronUp,
-  X,
-} from "lucide-react";
+import { Plus, Edit2, Trash2, CreditCard, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useSession } from "@/app/lib/auth/session/use-session";
-import type {
-  BudgetItemRow,
-  PaymentRow,
-  BudgetSummary,
-  BudgetItemStatus,
-} from "@/types/budget";
+import type { BudgetItemRow, PaymentRow, BudgetSummary, BudgetItemStatus } from "@/types/budget";
 import {
   isBudgetItemPaid,
   isBudgetItemPlanned,
@@ -54,13 +41,7 @@ interface Toast {
   message: string;
 }
 
-function ToastStack({
-  toasts,
-  onDismiss,
-}: {
-  toasts: Toast[];
-  onDismiss: (id: string) => void;
-}) {
+function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
   if (toasts.length === 0) return null;
   return (
     <div
@@ -84,13 +65,8 @@ function ToastStack({
             gap: "0.75rem",
             padding: "0.75rem 1rem",
             borderRadius: "10px",
-            background:
-              t.type === "success"
-                ? "rgba(72,187,120,0.12)"
-                : "rgba(229,62,62,0.12)",
-            border: `1px solid ${
-              t.type === "success" ? "var(--green)" : "var(--red)"
-            }`,
+            background: t.type === "success" ? "rgba(72,187,120,0.12)" : "rgba(229,62,62,0.12)",
+            border: `1px solid ${t.type === "success" ? "var(--green)" : "var(--red)"}`,
             boxShadow: "0 4px 16px rgba(19,23,46,0.1)",
           }}
         >
@@ -109,8 +85,7 @@ function ToastStack({
               flex: 1,
               fontSize: "0.85rem",
               lineHeight: 1.4,
-              color:
-                t.type === "success" ? "var(--green)" : "var(--red)",
+              color: t.type === "success" ? "var(--green)" : "var(--red)",
             }}
           >
             {t.message}
@@ -158,13 +133,7 @@ function StatusBadge({ status }: { status: BudgetItemStatus }) {
 
 // ─── ModalOverlay ──────────────────────────────────────────────────────────────
 
-function ModalOverlay({
-  onClose,
-  children,
-}: {
-  onClose: () => void;
-  children: ReactNode;
-}) {
+function ModalOverlay({ onClose, children }: { onClose: () => void; children: ReactNode }) {
   return (
     <div
       style={{
@@ -214,24 +183,21 @@ function ItemModal({
   const isPaid = item ? isBudgetItemPaid(item) : false;
 
   const [form, setForm] = useState<ItemFormState>({
-    name:             item?.name                               ?? "",
-    category:         item?.category                          ?? "",
-    estimated_amount: item ? String(item.estimated_amount)    : "",
-    actual_amount:    item?.actual_amount != null
-                        ? String(item.actual_amount)
-                        : "",
-    currency:         item?.currency                          ?? "RON",
-    status:           item?.status                            ?? "planned",
-    due_date:         item?.due_date                          ?? "",
-    notes:            item?.notes                             ?? "",
+    name: item?.name ?? "",
+    category: item?.category ?? "",
+    estimated_amount: item ? String(item.estimated_amount) : "",
+    actual_amount: item?.actual_amount != null ? String(item.actual_amount) : "",
+    currency: item?.currency ?? "RON",
+    status: item?.status ?? "planned",
+    due_date: item?.due_date ?? "",
+    notes: item?.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   function fieldHandler(key: keyof ItemFormState) {
-    return (
-      e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-    ) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    return (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -240,14 +206,14 @@ function ItemModal({
     setFormError(null);
 
     const body: Record<string, unknown> = {
-      name:             form.name,
-      category:         form.category || null,
+      name: form.name,
+      category: form.category || null,
       estimated_amount: parseFloat(form.estimated_amount) || 0,
-      actual_amount:    form.actual_amount ? parseFloat(form.actual_amount) : null,
-      currency:         form.currency || "RON",
-      status:           form.status,
-      due_date:         form.due_date || null,
-      notes:            form.notes || null,
+      actual_amount: form.actual_amount ? parseFloat(form.actual_amount) : null,
+      currency: form.currency || "RON",
+      status: form.status,
+      due_date: form.due_date || null,
+      notes: form.notes || null,
     };
 
     try {
@@ -268,10 +234,7 @@ function ItemModal({
       };
 
       if (!res.ok || !json.success) {
-        const msg =
-          json.error?.message ??
-          json.error?.errors?.[0]?.message ??
-          "Eroare la salvare.";
+        const msg = json.error?.message ?? json.error?.errors?.[0]?.message ?? "Eroare la salvare.";
         setFormError(msg);
         return;
       }
@@ -579,11 +542,11 @@ function PaymentModal({
   onClose: () => void;
 }) {
   const [form, setForm] = useState<PaymentFormState>({
-    amount:         "",
-    currency:       item.currency,
-    paid_at:        new Date().toISOString().slice(0, 10),
+    amount: "",
+    currency: item.currency,
+    paid_at: new Date().toISOString().slice(0, 10),
     payment_method: "",
-    note:           "",
+    note: "",
   });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -599,20 +562,17 @@ function PaymentModal({
     setFormError(null);
 
     try {
-      const res = await fetch(
-        `/api/weddings/${weddingId}/budget/items/${item.id}/payments`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount:         parseFloat(form.amount),
-            currency:       form.currency || item.currency,
-            paid_at:        form.paid_at || null,
-            payment_method: form.payment_method || null,
-            note:           form.note || null,
-          }),
-        }
-      );
+      const res = await fetch(`/api/weddings/${weddingId}/budget/items/${item.id}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: parseFloat(form.amount),
+          currency: form.currency || item.currency,
+          paid_at: form.paid_at || null,
+          payment_method: form.payment_method || null,
+          note: form.note || null,
+        }),
+      });
       const json = (await res.json()) as {
         success: boolean;
         data?: PaymentRow;
@@ -620,10 +580,7 @@ function PaymentModal({
       };
 
       if (!res.ok || !json.success) {
-        const msg =
-          json.error?.message ??
-          json.error?.errors?.[0]?.message ??
-          "Eroare la salvare.";
+        const msg = json.error?.message ?? json.error?.errors?.[0]?.message ?? "Eroare la salvare.";
         setFormError(msg);
         return;
       }
@@ -801,9 +758,7 @@ function PaymentModal({
             </div>
           )}
 
-          <div
-            style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}
-          >
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
             <button
               type="button"
               onClick={onClose}
@@ -888,8 +843,7 @@ function IconBtn({
 
 export default function BudgetPage() {
   const session = useSession();
-  const weddingId =
-    session.status === "authenticated" ? session.activeWeddingId : null;
+  const weddingId = session.status === "authenticated" ? session.activeWeddingId : null;
 
   const [items, setItems] = useState<BudgetItemRow[]>([]);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
@@ -897,12 +851,8 @@ export default function BudgetPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Payments: lazy-loaded per item
-  const [paymentsMap, setPaymentsMap] = useState<Record<string, PaymentRow[]>>(
-    {}
-  );
-  const [loadingPayments, setLoadingPayments] = useState<
-    Record<string, boolean>
-  >({});
+  const [paymentsMap, setPaymentsMap] = useState<Record<string, PaymentRow[]>>({});
+  const [loadingPayments, setLoadingPayments] = useState<Record<string, boolean>>({});
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   // Modals
@@ -918,22 +868,17 @@ export default function BudgetPage() {
   // ── Toast ──────────────────────────────────────────────────────────────────
 
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map()
-  );
+  const toastTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  const addToast = useCallback(
-    (type: ToastType, message: string, ms = 3500) => {
-      const id = `${Date.now()}-${Math.random()}`;
-      setToasts((prev) => [...prev, { id, type, message }].slice(-3));
-      const timer = setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-        toastTimers.current.delete(id);
-      }, ms);
-      toastTimers.current.set(id, timer);
-    },
-    []
-  );
+  const addToast = useCallback((type: ToastType, message: string, ms = 3500) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setToasts((prev) => [...prev, { id, type, message }].slice(-3));
+    const timer = setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+      toastTimers.current.delete(id);
+    }, ms);
+    toastTimers.current.set(id, timer);
+  }, []);
 
   const removeToast = useCallback((id: string) => {
     const timer = toastTimers.current.get(id);
@@ -979,9 +924,7 @@ export default function BudgetPage() {
       setItems(itemsJson.data ?? []);
       setSummary(summaryJson.data ?? null);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Eroare necunoscută."
-      );
+      setError(err instanceof Error ? err.message : "Eroare necunoscută.");
     } finally {
       setIsLoading(false);
     }
@@ -1004,9 +947,7 @@ export default function BudgetPage() {
 
       setLoadingPayments((prev) => ({ ...prev, [itemId]: true }));
       try {
-        const res = await fetch(
-          `/api/weddings/${weddingId}/budget/items/${itemId}/payments`
-        );
+        const res = await fetch(`/api/weddings/${weddingId}/budget/items/${itemId}/payments`);
         const json = (await res.json()) as {
           success: boolean;
           data?: PaymentRow[];
@@ -1043,14 +984,11 @@ export default function BudgetPage() {
     async (item: BudgetItemRow, toStatus: BudgetItemStatus) => {
       if (!weddingId) return;
       try {
-        const res = await fetch(
-          `/api/weddings/${weddingId}/budget/items/${item.id}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: toStatus }),
-          }
-        );
+        const res = await fetch(`/api/weddings/${weddingId}/budget/items/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: toStatus }),
+        });
         const json = (await res.json()) as {
           success: boolean;
           data?: BudgetItemRow;
@@ -1060,9 +998,7 @@ export default function BudgetPage() {
           addToast("error", json.error?.message ?? "Eroare la actualizare.");
           return;
         }
-        setItems((prev) =>
-          prev.map((i) => (i.id === item.id ? json.data! : i))
-        );
+        setItems((prev) => prev.map((i) => (i.id === item.id ? json.data! : i)));
         addToast("success", `Status: ${getBudgetStatusLabel(toStatus)}`);
       } catch {
         addToast("error", "Eroare de rețea.");
@@ -1079,15 +1015,13 @@ export default function BudgetPage() {
         addToast("error", "Un item plătit nu poate fi șters.");
         return;
       }
-      if (!confirm(`Ștergi "${item.name}"? Acțiunea nu poate fi anulată.`))
-        return;
+      if (!confirm(`Ștergi "${item.name}"? Acțiunea nu poate fi anulată.`)) return;
       if (!weddingId) return;
 
       try {
-        const res = await fetch(
-          `/api/weddings/${weddingId}/budget/items/${item.id}`,
-          { method: "DELETE" }
-        );
+        const res = await fetch(`/api/weddings/${weddingId}/budget/items/${item.id}`, {
+          method: "DELETE",
+        });
         const json = (await res.json()) as {
           success: boolean;
           error?: { message?: string };
@@ -1165,10 +1099,7 @@ export default function BudgetPage() {
     (payment: PaymentRow) => {
       setPaymentsMap((prev) => ({
         ...prev,
-        [payment.budget_item_id]: [
-          ...(prev[payment.budget_item_id] ?? []),
-          payment,
-        ],
+        [payment.budget_item_id]: [...(prev[payment.budget_item_id] ?? []), payment],
       }));
       setPaymentModal({ open: false, item: null });
       void fetchData();
@@ -1181,9 +1112,9 @@ export default function BudgetPage() {
 
   if (session.status === "loading") {
     return (
-      <div className="flex items-center justify-center min-h-64">
+      <div className="flex min-h-64 items-center justify-center">
         <div
-          className="w-8 h-8 rounded-full border-2 animate-spin"
+          className="h-8 w-8 animate-spin rounded-full border-2"
           style={{
             borderColor: "var(--rose)",
             borderTopColor: "transparent",
@@ -1196,15 +1127,15 @@ export default function BudgetPage() {
   if (session.status !== "authenticated" || !weddingId) {
     return (
       <div
-        className="rounded-xl p-12 text-center max-w-md mx-auto mt-16"
+        className="mx-auto mt-16 max-w-md rounded-xl p-12 text-center"
         style={{
           background: "white",
           boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
         }}
       >
-        <div className="text-4xl mb-4">🔐</div>
+        <div className="mb-4 text-4xl">🔐</div>
         <h3
-          className="text-lg font-light mb-2"
+          className="mb-2 text-lg font-light"
           style={{ fontFamily: "var(--font-display)", color: "var(--navy)" }}
         >
           Sesiune inactivă
@@ -1219,9 +1150,7 @@ export default function BudgetPage() {
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const currency = summary?.currency ?? "RON";
-  const deRamasDePlata = summary
-    ? summary.total_estimated - summary.total_paid
-    : 0;
+  const deRamasDePlata = summary ? summary.total_estimated - summary.total_paid : 0;
 
   function fmtAmount(n: number) {
     return n.toLocaleString("ro-RO", {
@@ -1234,11 +1163,10 @@ export default function BudgetPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--ivory)" }}>
-      <div className="max-w-7xl mx-auto px-6 py-8">
-
+      <div className="mx-auto max-w-7xl px-6 py-8">
         {/* ── Header ── */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
               <h1
                 className="text-4xl font-light"
@@ -1252,17 +1180,15 @@ export default function BudgetPage() {
                   Nuntă
                 </em>
               </h1>
-              <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+              <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
                 {items.length === 0
                   ? "Nicio cheltuială înregistrată"
-                  : `${items.length} cheltuiel${
-                      items.length === 1 ? "ă" : "i"
-                    } înregistrate`}
+                  : `${items.length} cheltuiel${items.length === 1 ? "ă" : "i"} înregistrate`}
               </p>
             </div>
             <button
               onClick={() => setItemModal({ open: true, item: null })}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all"
+              className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all"
               style={{ background: "var(--rose)", color: "white" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "var(--rose-hover)";
@@ -1325,9 +1251,7 @@ export default function BudgetPage() {
                   }}
                 >
                   {isLoading ? (
-                    <span style={{ color: "var(--muted)", fontSize: "1.2rem" }}>
-                      ...
-                    </span>
+                    <span style={{ color: "var(--muted)", fontSize: "1.2rem" }}>...</span>
                   ) : (
                     <>
                       {stat.value}
@@ -1345,10 +1269,7 @@ export default function BudgetPage() {
                     </>
                   )}
                 </div>
-                <div
-                  className="text-xs font-medium mt-2"
-                  style={{ color: "var(--muted)" }}
-                >
+                <div className="mt-2 text-xs font-medium" style={{ color: "var(--muted)" }}>
                   {stat.label}
                 </div>
               </div>
@@ -1367,8 +1288,7 @@ export default function BudgetPage() {
                 color: "var(--color-warning-text)",
               }}
             >
-              ⚠ Ai cheltuieli în valute diferite — totalurile sunt calculate
-              global, fără conversie.
+              ⚠ Ai cheltuieli în valute diferite — totalurile sunt calculate global, fără conversie.
             </div>
           )}
         </div>
@@ -1382,12 +1302,12 @@ export default function BudgetPage() {
               border: "1px solid var(--cream-line)",
             }}
           >
-            <p className="text-sm mb-3" style={{ color: "var(--red)" }}>
+            <p className="mb-3 text-sm" style={{ color: "var(--red)" }}>
               {error}
             </p>
             <button
               onClick={() => void fetchData()}
-              className="px-4 py-2 rounded-full text-sm font-medium"
+              className="rounded-full px-4 py-2 text-sm font-medium"
               style={{ background: "var(--rose)", color: "white" }}
             >
               Încearcă din nou
@@ -1396,7 +1316,7 @@ export default function BudgetPage() {
         ) : isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div
-              className="w-8 h-8 rounded-full border-2 animate-spin"
+              className="h-8 w-8 animate-spin rounded-full border-2"
               style={{
                 borderColor: "var(--rose)",
                 borderTopColor: "transparent",
@@ -1414,7 +1334,7 @@ export default function BudgetPage() {
           >
             <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>💰</div>
             <h3
-              className="text-lg font-light mb-2"
+              className="mb-2 text-lg font-light"
               style={{
                 fontFamily: "var(--font-display)",
                 color: "var(--navy)",
@@ -1422,12 +1342,12 @@ export default function BudgetPage() {
             >
               Nicio cheltuială încă
             </h3>
-            <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
+            <p className="mb-6 text-sm" style={{ color: "var(--muted)" }}>
               Adaugă prima cheltuială pentru a urmări bugetul nunții tale.
             </p>
             <button
               onClick={() => setItemModal({ open: true, item: null })}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium"
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium"
               style={{ background: "var(--rose)", color: "white" }}
             >
               <Plus size={15} strokeWidth={1.8} />
@@ -1442,8 +1362,7 @@ export default function BudgetPage() {
               const payments = paymentsMap[item.id] ?? [];
               const payLoading = loadingPayments[item.id] ?? false;
               const transitions = getBudgetStatusTransitions(item.status);
-              const canAddPayment =
-                isBudgetItemPlanned(item) || isBudgetItemConfirmed(item);
+              const canAddPayment = isBudgetItemPlanned(item) || isBudgetItemConfirmed(item);
 
               return (
                 <div
@@ -1453,10 +1372,9 @@ export default function BudgetPage() {
                     borderRadius: "12px",
                     boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
                     overflow: "hidden",
-                    border:
-                      isBudgetItemCancelled(item)
-                        ? "1px solid rgba(160,174,192,0.3)"
-                        : "1px solid transparent",
+                    border: isBudgetItemCancelled(item)
+                      ? "1px solid rgba(160,174,192,0.3)"
+                      : "1px solid transparent",
                     opacity: isBudgetItemCancelled(item) ? 0.7 : 1,
                   }}
                 >
@@ -1514,13 +1432,10 @@ export default function BudgetPage() {
                             flexWrap: "wrap",
                           }}
                         >
-                          <span
-                            style={{ fontSize: "0.8rem", color: "var(--muted)" }}
-                          >
+                          <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
                             Estimat:{" "}
                             <strong style={{ color: "var(--navy)" }}>
-                              {item.estimated_amount.toLocaleString("ro-RO")}{" "}
-                              {item.currency}
+                              {item.estimated_amount.toLocaleString("ro-RO")} {item.currency}
                             </strong>
                           </span>
                           {item.actual_amount != null && (
@@ -1532,8 +1447,7 @@ export default function BudgetPage() {
                             >
                               Actual:{" "}
                               <strong style={{ color: "var(--navy)" }}>
-                                {item.actual_amount.toLocaleString("ro-RO")}{" "}
-                                {item.currency}
+                                {item.actual_amount.toLocaleString("ro-RO")} {item.currency}
                               </strong>
                             </span>
                           )}
@@ -1545,9 +1459,7 @@ export default function BudgetPage() {
                               }}
                             >
                               Scadență:{" "}
-                              <strong style={{ color: "var(--navy)" }}>
-                                {item.due_date}
-                              </strong>
+                              <strong style={{ color: "var(--navy)" }}>{item.due_date}</strong>
                             </span>
                           )}
                         </div>
@@ -1582,9 +1494,7 @@ export default function BudgetPage() {
                           return (
                             <button
                               key={t.to}
-                              onClick={() =>
-                                void handleStatusTransition(item, t.to)
-                              }
+                              onClick={() => void handleStatusTransition(item, t.to)}
                               style={{
                                 padding: "0.3rem 0.75rem",
                                 borderRadius: "999px",
@@ -1610,9 +1520,7 @@ export default function BudgetPage() {
                         {/* Add payment */}
                         {canAddPayment && (
                           <IconBtn
-                            onClick={() =>
-                              setPaymentModal({ open: true, item })
-                            }
+                            onClick={() => setPaymentModal({ open: true, item })}
                             title="Adaugă plată"
                           >
                             <CreditCard size={15} strokeWidth={1.8} />
@@ -1671,7 +1579,7 @@ export default function BudgetPage() {
                           }}
                         >
                           <div
-                            className="w-5 h-5 rounded-full border-2 animate-spin"
+                            className="h-5 w-5 animate-spin rounded-full border-2"
                             style={{
                               borderColor: "var(--rose)",
                               borderTopColor: "transparent",
@@ -1692,9 +1600,7 @@ export default function BudgetPage() {
                             <>
                               {" — "}
                               <button
-                                onClick={() =>
-                                  setPaymentModal({ open: true, item })
-                                }
+                                onClick={() => setPaymentModal({ open: true, item })}
                                 style={{
                                   background: "none",
                                   border: "none",
@@ -1739,9 +1645,7 @@ export default function BudgetPage() {
                             </span>
                             {canAddPayment && (
                               <button
-                                onClick={() =>
-                                  setPaymentModal({ open: true, item })
-                                }
+                                onClick={() => setPaymentModal({ open: true, item })}
                                 style={{
                                   fontSize: "0.72rem",
                                   color: "var(--rose)",
@@ -1785,8 +1689,7 @@ export default function BudgetPage() {
                                     color: "var(--navy)",
                                   }}
                                 >
-                                  {p.amount.toLocaleString("ro-RO")}{" "}
-                                  {p.currency}
+                                  {p.amount.toLocaleString("ro-RO")} {p.currency}
                                 </span>
                                 {p.paid_at && (
                                   <span
@@ -1822,9 +1725,7 @@ export default function BudgetPage() {
                               </div>
                               {canAddPayment && (
                                 <button
-                                  onClick={() =>
-                                    void handleDeletePayment(item, p.id)
-                                  }
+                                  onClick={() => void handleDeletePayment(item, p.id)}
                                   title="Șterge plată"
                                   style={{
                                     padding: "0.25rem",
@@ -1841,8 +1742,7 @@ export default function BudgetPage() {
                                     e.currentTarget.style.color = "var(--red)";
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.color =
-                                      "var(--muted)";
+                                    e.currentTarget.style.color = "var(--muted)";
                                   }}
                                 >
                                   <Trash2 size={14} strokeWidth={1.8} />

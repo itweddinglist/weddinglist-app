@@ -23,10 +23,7 @@ export async function computeRequestHash(
   payload: Record<string, unknown>,
   clientOperationId: string
 ): Promise<string> {
-  const deterministicPayload = JSON.stringify(
-    payload,
-    Object.keys(payload).sort()
-  );
+  const deterministicPayload = JSON.stringify(payload, Object.keys(payload).sort());
 
   const raw = appUserId + weddingId + deterministicPayload + clientOperationId;
   const encoded = new TextEncoder().encode(raw);
@@ -83,12 +80,12 @@ export async function withIdempotency<T>(
     .from("idempotency_keys")
     // @ts-expect-error: Cat4-json-response - Record<string, unknown> not assignable to Json (missing index signature) - fix in PR 1.6
     .insert({
-      request_hash:        requestHash,
+      request_hash: requestHash,
       client_operation_id: clientOperationId,
-      app_user_id:         appUserId,
-      wedding_id:          weddingId,
-      rpc_name:            rpcName,
-      response:            result as Record<string, unknown>,
+      app_user_id: appUserId,
+      wedding_id: weddingId,
+      rpc_name: rpcName,
+      response: result as Record<string, unknown>,
     });
 
   if (insertError) {

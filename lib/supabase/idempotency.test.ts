@@ -6,23 +6,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ── Mock supabaseServer — hoisted so vi.mock factory can reference them ───────
 
-const {
-  mockFrom,
-  mockSelect,
-  mockEq,
-  mockMaybeSingle,
-  mockInsert,
-  mockThrowOnError,
-} = vi.hoisted(() => {
-  const mockMaybeSingle = vi.fn();
-  const mockEq = vi.fn(() => ({ maybeSingle: mockMaybeSingle }));
-  const mockSelect = vi.fn(() => ({ eq: mockEq }));
-  const mockThrowOnError = vi.fn(() => Promise.resolve({ error: null }));
-  const mockInsert = vi.fn(() => ({ throwOnError: mockThrowOnError }));
-  const mockFrom = vi.fn(() => ({ select: mockSelect, insert: mockInsert }));
+const { mockFrom, mockSelect, mockEq, mockMaybeSingle, mockInsert, mockThrowOnError } = vi.hoisted(
+  () => {
+    const mockMaybeSingle = vi.fn();
+    const mockEq = vi.fn(() => ({ maybeSingle: mockMaybeSingle }));
+    const mockSelect = vi.fn(() => ({ eq: mockEq }));
+    const mockThrowOnError = vi.fn(() => Promise.resolve({ error: null }));
+    const mockInsert = vi.fn(() => ({ throwOnError: mockThrowOnError }));
+    const mockFrom = vi.fn(() => ({ select: mockSelect, insert: mockInsert }));
 
-  return { mockFrom, mockSelect, mockEq, mockMaybeSingle, mockInsert, mockThrowOnError };
-});
+    return { mockFrom, mockSelect, mockEq, mockMaybeSingle, mockInsert, mockThrowOnError };
+  }
+);
 
 vi.mock("@/app/lib/supabase/server", () => ({
   supabaseServer: { from: mockFrom },
@@ -33,10 +28,10 @@ import { computeRequestHash, withIdempotency } from "./idempotency";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const APP_USER_ID = "00000000-0000-0000-0000-000000000001";
-const WEDDING_ID  = "00000000-0000-0000-0000-000000000002";
-const CLIENT_OP   = "00000000-0000-0000-0000-000000000003";
-const PAYLOAD     = { b: 2, a: 1 };
-const RPC_NAME    = "test_rpc";
+const WEDDING_ID = "00000000-0000-0000-0000-000000000002";
+const CLIENT_OP = "00000000-0000-0000-0000-000000000003";
+const PAYLOAD = { b: 2, a: 1 };
+const RPC_NAME = "test_rpc";
 
 function makeExecute<T>(value: T) {
   return vi.fn(() => Promise.resolve(value));
@@ -85,7 +80,14 @@ describe("withIdempotency", () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
 
     const execute = makeExecute({ seats: 42 });
-    const result = await withIdempotency("hash-1", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-1", execute);
+    const result = await withIdempotency(
+      "hash-1",
+      APP_USER_ID,
+      WEDDING_ID,
+      RPC_NAME,
+      "op-id-1",
+      execute
+    );
 
     expect(execute).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ seats: 42 });
@@ -99,7 +101,14 @@ describe("withIdempotency", () => {
     });
 
     const execute = makeExecute({ seats: 99 });
-    const result = await withIdempotency("hash-2", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-2", execute);
+    const result = await withIdempotency(
+      "hash-2",
+      APP_USER_ID,
+      WEDDING_ID,
+      RPC_NAME,
+      "op-id-2",
+      execute
+    );
 
     expect(execute).not.toHaveBeenCalled();
     expect(result).toEqual({ seats: 99 });
@@ -129,7 +138,14 @@ describe("withIdempotency", () => {
     mockMaybeSingle.mockResolvedValue({ data: { response: cached }, error: null });
 
     const execute = makeExecute({ tables: [] });
-    const result = await withIdempotency("hash-4", APP_USER_ID, WEDDING_ID, RPC_NAME, "op-id-4", execute);
+    const result = await withIdempotency(
+      "hash-4",
+      APP_USER_ID,
+      WEDDING_ID,
+      RPC_NAME,
+      "op-id-4",
+      execute
+    );
 
     expect(result).toEqual(cached);
     expect(execute).not.toHaveBeenCalled();

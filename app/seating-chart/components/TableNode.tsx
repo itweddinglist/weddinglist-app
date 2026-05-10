@@ -15,57 +15,57 @@ const NEW_TABLE_FILL = "rgba(236,201,75,0.15)";
 // ── LOCAL TYPES ───────────────────────────────────────────────────────────────
 
 interface DragOverValue {
-  id: number
-  full?: boolean
+  id: number;
+  full?: boolean;
 }
 
 interface DraggingTableState {
-  id: number
-  ox: number
-  oy: number
-  dw: number
-  dh: number
+  id: number;
+  ox: number;
+  oy: number;
+  dw: number;
+  dh: number;
 }
 
 interface ClickedSeatState {
-  guest: SeatingGuest
-  tableId: number
-  x: number
-  y: number
+  guest: SeatingGuest;
+  tableId: number;
+  x: number;
+  y: number;
 }
 
 interface HoveredGuestState {
-  guest: SeatingGuest
-  x: number
-  y: number
+  guest: SeatingGuest;
+  x: number;
+  y: number;
 }
 
 interface TableNodeImplProps {
-  t: SeatingTable
-  assignedGuests: SeatingGuest[]
-  dragOver: DragOverValue | null
-  selectedTableId: number | null
-  lockMode: boolean
-  screenToSVG: (clientX: number, clientY: number) => { x: number; y: number } | null
-  assignGuest: (gId: string, tableId: number) => void
-  setSelectedTableId: (id: number | null) => void
-  setEditName: (name: string) => void
-  setEditSeats: (value: number) => void
-  setEditPanel: (panel: { tableId: number; x?: number; y?: number } | null) => void
-  setHoveredGuest: (value: HoveredGuestState | null) => void
-  setClickedSeat: (value: ClickedSeatState | null) => void
-  setIsDraggingGuest: (value: boolean) => void
-  setDragOver: (value: DragOverValue | null) => void
-  draggingTableRef: React.MutableRefObject<DraggingTableState | null>
-  wasMovedRef: React.MutableRefObject<boolean>
-  isHighlighted?: boolean
-  highlightGuestId?: number | null
-  highlightGroupId?: string | null
-  isFocused?: boolean
-  vzoom: number
-  newTableIds?: Set<number> | null
-  clearNewTableHighlight?: ((tableId: number) => void) | null
-  spaceDownRef?: React.MutableRefObject<boolean> | null
+  t: SeatingTable;
+  assignedGuests: SeatingGuest[];
+  dragOver: DragOverValue | null;
+  selectedTableId: number | null;
+  lockMode: boolean;
+  screenToSVG: (clientX: number, clientY: number) => { x: number; y: number } | null;
+  assignGuest: (gId: string, tableId: number) => void;
+  setSelectedTableId: (id: number | null) => void;
+  setEditName: (name: string) => void;
+  setEditSeats: (value: number) => void;
+  setEditPanel: (panel: { tableId: number; x?: number; y?: number } | null) => void;
+  setHoveredGuest: (value: HoveredGuestState | null) => void;
+  setClickedSeat: (value: ClickedSeatState | null) => void;
+  setIsDraggingGuest: (value: boolean) => void;
+  setDragOver: (value: DragOverValue | null) => void;
+  draggingTableRef: React.MutableRefObject<DraggingTableState | null>;
+  wasMovedRef: React.MutableRefObject<boolean>;
+  isHighlighted?: boolean;
+  highlightGuestId?: number | null;
+  highlightGroupId?: string | null;
+  isFocused?: boolean;
+  vzoom: number;
+  newTableIds?: Set<number> | null;
+  clearNewTableHighlight?: ((tableId: number) => void) | null;
+  spaceDownRef?: React.MutableRefObject<boolean> | null;
 }
 
 function TableNodeImpl({
@@ -103,8 +103,8 @@ function TableNodeImpl({
   const dth = d.th as number;
   const dcx = d.cx as number;
   const dcy = d.cy as number;
-  const dr  = d.r  as number;
-  const ds  = d.s  as number;
+  const dr = d.r as number;
+  const ds = d.s as number;
   const dpad = d.pad as number;
 
   const cx = t.x + d.w / 2,
@@ -131,23 +131,36 @@ function TableNodeImpl({
   const bw = isDragTarget || isSelected ? 2.5 : isNew ? 2 : 1.5;
   const bDash = isNew ? "6,3" : "none";
   // Border culoare occupancy — doar la zoom 0.2-0.4, doar dacă nu e drag/selected/new
-  const occupancyBs = (vzoom >= 0.2 && vzoom < 0.4 && !isDragTarget && !isSelected && !isNew && !isHighlighted && assignedGuests.length > 0)
-    ? (assignedGuests.length >= t.seats ? "#E53E3E"
-      : assignedGuests.length / t.seats >= 0.8 ? "#ECC94B"
-      : "#48BB78")
-    : bs;
+  const occupancyBs =
+    vzoom >= 0.2 &&
+    vzoom < 0.4 &&
+    !isDragTarget &&
+    !isSelected &&
+    !isNew &&
+    !isHighlighted &&
+    assignedGuests.length > 0
+      ? assignedGuests.length >= t.seats
+        ? "#E53E3E"
+        : assignedGuests.length / t.seats >= 0.8
+          ? "#ECC94B"
+          : "#48BB78"
+      : bs;
 
   const seatPositions = useMemo(() => getSeatPositions(t), [t.type, t.seats, t.isRing]);
   const fillColor = getSeatFillColor(assignedGuests.length, t.seats);
   const occupancyText = assignedGuests.length + "/" + t.seats;
-    const shortName = vzoom < 0.5
-    ? (t.type === "bar"
-      ? t.name.split(" ")[0]
-      : t.name.startsWith("Masa ") ? t.name.slice(5) : t.name)
-    : t.name;
+  const shortName =
+    vzoom < 0.5
+      ? t.type === "bar"
+        ? t.name.split(" ")[0]
+        : t.name.startsWith("Masa ")
+          ? t.name.slice(5)
+          : t.name
+      : t.name;
   const isDraggingThisTable = draggingTableRef?.current?.id === t.id;
   const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isDimmedByGroup = highlightGroupId != null && !assignedGuests.some((g) => g.grup === highlightGroupId);
+  const isDimmedByGroup =
+    highlightGroupId != null && !assignedGuests.some((g) => g.grup === highlightGroupId);
   const tableOpacity = !isFocused ? 0.5 : isDimmedByGroup ? 0.3 : 1;
 
   const handleMouseDown = (e: React.MouseEvent<SVGGElement>) => {
@@ -166,7 +179,11 @@ function TableNodeImpl({
   return (
     <g
       transform={rot ? `rotate(${rot},${cx},${cy})` : ""}
-      style={{ cursor: lockMode ? "default" : "move", opacity: tableOpacity, willChange: "transform" }}
+      style={{
+        cursor: lockMode ? "default" : "move",
+        opacity: tableOpacity,
+        willChange: "transform",
+      }}
       onClick={(e) => {
         e.stopPropagation();
         setSelectedTableId(t.id);
@@ -203,359 +220,739 @@ function TableNodeImpl({
         {/* ULTRA-LOW ZOOM — dreptunghi simplu + occupancy */}
         {vzoom < 0.2 && (
           <>
-            <rect x={0} y={0} width={d.w} height={d.h} rx="6"
+            <rect
+              x={0}
+              y={0}
+              width={d.w}
+              height={d.h}
+              rx="6"
               fill={isNew ? NEW_TABLE_FILL : "rgba(196,168,130,0.15)"}
-              stroke={bs} strokeWidth={bw} vectorEffect="non-scaling-stroke"
+              stroke={bs}
+              strokeWidth={bw}
+              vectorEffect="non-scaling-stroke"
             />
             {!t.isRing && t.seats > 0 && (
-              <text x={d.w / 2} y={d.h / 2 + 5} textAnchor="middle" fill={fillColor}
-                fontSize="16" fontFamily="DM Sans,sans-serif" fontWeight="700"
-                style={{ pointerEvents: "none" }}>
+              <text
+                x={d.w / 2}
+                y={d.h / 2 + 5}
+                textAnchor="middle"
+                fill={fillColor}
+                fontSize="16"
+                fontFamily="DM Sans,sans-serif"
+                fontWeight="700"
+                style={{ pointerEvents: "none" }}
+              >
                 {occupancyText}
               </text>
             )}
           </>
         )}
         {/* FULL RENDER — vzoom >= 0.2 */}
-        {vzoom >= 0.2 && <>
-        {/* RING DANS */}
-        {t.isRing && (
+        {vzoom >= 0.2 && (
           <>
-                        <circle
-              cx={d.w / 2}
-              cy={d.h / 2}
-              r={Math.min(dtw, dth) / 2}
-              fill="rgba(196,168,130,0.04)"
-              stroke={isSelected ? "#B794F4" : "rgba(196,168,130,0.35)"}
-              strokeWidth={isSelected ? 2 : 1.5}
-              strokeDasharray="6,4"
-              vectorEffect="non-scaling-stroke"
-              style={{ pointerEvents: "none" }}
-            />
-            <text
-              x={d.w / 2}
-              y={d.h / 2}
-              textAnchor="middle"
-              fill="#1E2340"
-              fontSize="20"
-              fontFamily="Cormorant Garamond,serif"
-              fontWeight="400"
-              fontStyle="italic"
-              style={{ pointerEvents: "none" }}
-              opacity="0.9"
-            >
-              {t.name}
-            </text>
-                        {/* Hit zone transparent pentru drag/click/doubleclick */}
-            <rect x={0} y={0} width={d.w} height={d.h} fill="transparent" stroke="none"
-              style={{ pointerEvents: "all", cursor: "move" }} />
-          </>
-        )}
-
-        {/* BAR */}
-        {!t.isRing && t.type === "bar" && (
-          <>
-            <path
-              d={`M 8,${dth} A ${dtw / 2},${dth} 0 0,1 ${dtw + 8},${dth} Z`}
-              fill={isNew ? NEW_TABLE_FILL : "rgba(72,187,120,0.08)"}
-              stroke={isSelected ? "#B794F4" : isNew ? NEW_TABLE_STROKE : "rgba(72,187,120,0.45)"}
-              strokeWidth={bw}
-              strokeDasharray={bDash}
-              filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
-              vectorEffect="non-scaling-stroke"
-            />
-            {vzoom >= 0.4 && (
+            {/* RING DANS */}
+            {t.isRing && (
               <>
-                <text x={dtw / 2 + 8} y={dth * 0.62} textAnchor="middle" fill="#276749" fontSize="10"
-                  fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
-                  style={{ pointerEvents: "none" }}>
-                  {shortName}
-                </text>
-                <text x={dtw / 2 + 8} y={dth * 0.82} textAnchor="middle" fill="#48BB78" fontSize="7.5"
-                  fontFamily="DM Sans,sans-serif" style={{ pointerEvents: "none" }}>
-                  🍹 decor
-                </text>
-              </>
-            )}
-            {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={dtw / 2 + 8} y={dth * 0.7} textAnchor="middle" fill="#276749" fontSize="32"
-                fontFamily="Cormorant Garamond,serif" fontWeight="600" fontStyle="italic"
-                style={{ pointerEvents: "none" }}>
-                {shortName}
-              </text>
-            )}
-          </>
-        )}
-
-        {/* ROUND */}
-        {t.type === "round" && (
-          <>
-            <circle
-              cx={dcx}
-              cy={dcy}
-              r={dr}
-              fill={isNew ? NEW_TABLE_FILL : "#FAF7F2"}
-              stroke={occupancyBs}
-              strokeWidth={bw}
-              strokeDasharray={bDash}
-              filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
-              vectorEffect="non-scaling-stroke"
-            />
-            {vzoom >= 0.4 && (
-              <circle cx={dcx} cy={dcy} r={dr - 10} fill="none"
-                stroke="rgba(201,144,122,0.1)" strokeWidth="1"
-                style={{ pointerEvents: "none" }} />
-            )}
-            {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
-              const arcR = dr - 28;
-              const pct = assignedGuests.length / t.seats;
-              const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
-              const startAngle = -Math.PI / 2;
-              const endAngle = startAngle + pct * 2 * Math.PI;
-              const x1 = dcx + arcR * Math.cos(startAngle);
-              const y1 = dcy + arcR * Math.sin(startAngle);
-              const x2 = dcx + arcR * Math.cos(endAngle);
-              const y2 = dcy + arcR * Math.sin(endAngle);
-              const largeArc = pct > 0.5 ? 1 : 0;
-              if (assignedGuests.length >= t.seats)
-                return <circle cx={dcx} cy={dcy} r={arcR} fill="none" stroke={arcColor}
-                  strokeWidth="3" opacity={isSelected ? 0.7 : 0.5}
-                  style={{ pointerEvents: "none" }} />;
-              return <path d={`M ${x1} ${y1} A ${arcR} ${arcR} 0 ${largeArc} 1 ${x2} ${y2}`}
-                fill="none" stroke={arcColor} strokeWidth="3" strokeLinecap="round"
-                opacity={isSelected ? 0.7 : 0.5}
-                style={{ pointerEvents: "none" }} />;
-            })()}
-            {vzoom >= 0.5 && (
-              <>
-                <text x={dcx} y={dcy - 10} textAnchor="middle" fill="#1E2340" fontSize="15"
-                  fontFamily="Cormorant Garamond,serif" fontWeight="700" style={{ pointerEvents: "none" }}>
-                  {shortName}
-                </text>
-                <text x={dcx} y={dcy + 8} textAnchor="middle" fill={fillColor} fontSize="12"
-                  fontFamily="DM Sans,sans-serif" fontWeight="700"
-                  style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
-                  {occupancyText}
-                </text>
-              </>
-            )}
-            {vzoom >= 0.4 && vzoom < 0.5 && (
-              <>
-                <text x={dcx} y={dcy - 8} textAnchor="middle" fill="#1E2340" fontSize="32"
-                  fontFamily="Cormorant Garamond,serif" fontWeight="700"
-                  style={{ pointerEvents: "none" }}>
-                  {shortName}
-                </text>
-                <text x={dcx} y={dcy + 10} textAnchor="middle" fill={fillColor} fontSize="12"
-                  fontFamily="DM Sans,sans-serif" fontWeight="700"
-                  style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}>
-                  {occupancyText}
-                </text>
-              </>
-            )}
-            {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={dcx} y={dcy + 6} textAnchor="middle" fill="#1E2340" fontSize="32"
-                fontFamily="Cormorant Garamond,serif" fontWeight="700"
-                style={{ pointerEvents: "none" }}>
-                {shortName}
-              </text>
-            )}
-          </>
-        )}
-
-        {/* SQUARE */}
-        {t.type === "square" && (
-          <>
-            <rect x={dpad} y={dpad} width={ds} height={ds} rx="10"
-              fill={isNew ? NEW_TABLE_FILL : "white"}
-              stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
-              filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
-              vectorEffect="non-scaling-stroke" />
-            {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
-              const pct = assignedGuests.length / t.seats;
-              const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
-              const perimeter = (ds + ds) * 2;
-              const dashLen = pct * perimeter;
-              return <rect x={dpad} y={dpad} width={ds} height={ds} rx="10"
-                fill="none" stroke={arcColor} strokeWidth="3"
-                strokeDasharray={`${dashLen} ${perimeter}`}
-                opacity={isSelected ? 0.7 : 0.5}
-                style={{ pointerEvents: "none" }}/>;
-            })()}
-            {vzoom >= 0.4 && (
-              <>
-                <text x={dpad + ds / 2} y={dpad + ds / 2 - 10} textAnchor="middle"
-                  fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
-                  style={{ pointerEvents: "none" }}>{shortName}</text>
-                <text x={dpad + ds / 2} y={dpad + ds / 2 + 8} textAnchor="middle"
-                  fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
-                  style={{ pointerEvents: "none" }}>{occupancyText}</text>
-              </>
-            )}
-            {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={dpad + ds / 2} y={dpad + ds / 2 + 10} textAnchor="middle"
-                fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif" fontWeight="600"
-                style={{ pointerEvents: "none" }}>{shortName}</text>
-            )}
-          </>
-        )}
-
-        {/* PREZIDIU */}
-        {t.type === "prezidiu" && (
-          <>
-            <rect x="25" y="22" width={dtw} height={dth} rx="12"
-              fill={isNew ? NEW_TABLE_FILL : "rgba(201,144,122,0.07)"}
-              stroke={isDragTarget ? "#C9907A" : isSelected ? "#B794F4" : isNew ? NEW_TABLE_STROKE : "rgba(201,144,122,0.4)"}
-              strokeWidth={bw} strokeDasharray={bDash}
-              filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-prez)"}
-              vectorEffect="non-scaling-stroke" />
-            {vzoom >= 0.4 && (
-              <>
-                <text x={25 + dtw / 2} y={22 + dth / 2 - 8} textAnchor="middle"
-                  fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif"
-                  fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{shortName}</text>
-                <text x={25 + dtw / 2} y={22 + dth / 2 + 10} textAnchor="middle"
-                  fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
-                  style={{ pointerEvents: "none" }}>{occupancyText}</text>
-              </>
-            )}
-            {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={25 + dtw / 2} y={22 + dth / 2 + 6} textAnchor="middle"
-                fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif"
-                fontWeight="600" fontStyle="italic" style={{ pointerEvents: "none" }}>{shortName}</text>
-            )}
-          </>
-        )}
-
-        {/* RECT */}
-        {t.type === "rect" && (
-          <>
-            <rect x="25" y="22" width={dtw} height={dth} rx="10"
-              fill={isNew ? NEW_TABLE_FILL : "white"}
-              stroke={occupancyBs} strokeWidth={bw} strokeDasharray={bDash}
-              filter={isDraggingThisTable || vzoom < 0.3 ? "none" : isSelected ? "url(#glow-sel)" : "url(#shadow-sm)"}
-              vectorEffect="non-scaling-stroke" />
-            {t.seats > 0 && assignedGuests.length > 0 && vzoom >= 0.4 && !isDraggingThisTable && (() => {
-              const pct = assignedGuests.length / t.seats;
-              const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
-              const perimeter = (dtw + dth) * 2;
-              const dashLen = pct * perimeter;
-              return <rect x="25" y="22" width={dtw} height={dth} rx="10"
-                fill="none" stroke={arcColor} strokeWidth="3"
-                strokeDasharray={`${dashLen} ${perimeter}`}
-                opacity={isSelected ? 0.7 : 0.5}
-                style={{ pointerEvents: "none" }}/>;
-            })()}
-            {vzoom >= 0.4 && (
-              <>
-                <text x={25 + dtw / 2} y={22 + dth / 2 - 8} textAnchor="middle"
-                  fill="#13172E" fontSize="13" fontFamily="Cormorant Garamond,serif" fontWeight="600"
-                  style={{ pointerEvents: "none" }}>{shortName}</text>
-                <text x={25 + dtw / 2} y={22 + dth / 2 + 10} textAnchor="middle"
-                  fill={fillColor} fontSize="11" fontFamily="DM Sans,sans-serif" fontWeight="700"
-                  style={{ pointerEvents: "none" }}>{occupancyText}</text>
-              </>
-            )}
-            {vzoom >= 0.2 && vzoom < 0.4 && (
-              <text x={25 + dtw / 2} y={22 + dth / 2 + 6} textAnchor="middle"
-                fill="#13172E" fontSize="32" fontFamily="Cormorant Garamond,serif" fontWeight="600"
-                style={{ pointerEvents: "none" }}>{shortName}</text>
-            )}
-          </>
-        )}
-
-        {/* SEATS */}
-        {vzoom >= 0.4 && seatPositions.map((pos, idx) => {
-          const guest = assignedGuests[idx];
-          const gc = guest ? getGroupColor(guest.grup) : "#48BB78";
-          if (guest) {
-            const isDeclinedGuest = guest.meta?.isDeclined ?? false;
-            const highlightDimmed = highlightGuestId != null && assignedGuests.some(g => g.id === highlightGuestId) && highlightGuestId !== guest.id;
-            const guestOpacity = (highlightDimmed ? 0.25 : 1) * (isDeclinedGuest ? 0.5 : 1);
-            // TODO: draggable is not in SVGProps<SVGGElement> but is supported at runtime on SVG elements
-            const svgDraggable = { draggable: "true" } as unknown as React.SVGProps<SVGGElement>;
-            return (
-              <g key={idx} {...svgDraggable} style={{ cursor: "pointer", opacity: guestOpacity }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setHoveredGuest(null);
-                  setClickedSeat({ guest, tableId: t.id, x: e.clientX + 14, y: e.clientY - 14 });
-                }}
-                onMouseDown={(e) => { e.stopPropagation(); }}
-                onDragStart={(e) => {
-                  e.stopPropagation();
-                  setIsDraggingGuest(true);
-                  setHoveredGuest(null);
-                  e.dataTransfer.setData("guestId", String(guest.id));
-                  e.dataTransfer.setData("fromTableId", String(t.id));
-                }}
-                onDragEnd={() => setIsDraggingGuest(false)}
-                onMouseEnter={(e) => { e.stopPropagation(); clearTimeout(tooltipTimeoutRef.current as ReturnType<typeof setTimeout>); setHoveredGuest({ guest, x: e.clientX, y: e.clientY }); }}
-                onMouseLeave={(e) => { e.stopPropagation(); tooltipTimeoutRef.current = setTimeout(() => setHoveredGuest(null), 250); }}
+                <circle
+                  cx={d.w / 2}
+                  cy={d.h / 2}
+                  r={Math.min(dtw, dth) / 2}
+                  fill="rgba(196,168,130,0.04)"
+                  stroke={isSelected ? "#B794F4" : "rgba(196,168,130,0.35)"}
+                  strokeWidth={isSelected ? 2 : 1.5}
+                  strokeDasharray="6,4"
+                  vectorEffect="non-scaling-stroke"
+                  style={{ pointerEvents: "none" }}
+                />
+                <text
+                  x={d.w / 2}
+                  y={d.h / 2}
+                  textAnchor="middle"
+                  fill="#1E2340"
+                  fontSize="20"
+                  fontFamily="Cormorant Garamond,serif"
+                  fontWeight="400"
+                  fontStyle="italic"
+                  style={{ pointerEvents: "none" }}
+                  opacity="0.9"
                 >
-                  <circle cx={pos.x} cy={pos.y} r="18" fill={gc} stroke="white" strokeWidth="2"
-                    style={{ pointerEvents: "none", cursor: "pointer" }}
+                  {t.name}
+                </text>
+                {/* Hit zone transparent pentru drag/click/doubleclick */}
+                <rect
+                  x={0}
+                  y={0}
+                  width={d.w}
+                  height={d.h}
+                  fill="transparent"
+                  stroke="none"
+                  style={{ pointerEvents: "all", cursor: "move" }}
+                />
+              </>
+            )}
+
+            {/* BAR */}
+            {!t.isRing && t.type === "bar" && (
+              <>
+                <path
+                  d={`M 8,${dth} A ${dtw / 2},${dth} 0 0,1 ${dtw + 8},${dth} Z`}
+                  fill={isNew ? NEW_TABLE_FILL : "rgba(72,187,120,0.08)"}
+                  stroke={
+                    isSelected ? "#B794F4" : isNew ? NEW_TABLE_STROKE : "rgba(72,187,120,0.45)"
+                  }
+                  strokeWidth={bw}
+                  strokeDasharray={bDash}
+                  filter={
+                    isDraggingThisTable || vzoom < 0.3
+                      ? "none"
+                      : isSelected
+                        ? "url(#glow-sel)"
+                        : "url(#shadow-sm)"
+                  }
+                  vectorEffect="non-scaling-stroke"
+                />
+                {vzoom >= 0.4 && (
+                  <>
+                    <text
+                      x={dtw / 2 + 8}
+                      y={dth * 0.62}
+                      textAnchor="middle"
+                      fill="#276749"
+                      fontSize="10"
+                      fontFamily="Cormorant Garamond,serif"
+                      fontWeight="600"
+                      fontStyle="italic"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {shortName}
+                    </text>
+                    <text
+                      x={dtw / 2 + 8}
+                      y={dth * 0.82}
+                      textAnchor="middle"
+                      fill="#48BB78"
+                      fontSize="7.5"
+                      fontFamily="DM Sans,sans-serif"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      🍹 decor
+                    </text>
+                  </>
+                )}
+                {vzoom >= 0.2 && vzoom < 0.4 && (
+                  <text
+                    x={dtw / 2 + 8}
+                    y={dth * 0.7}
+                    textAnchor="middle"
+                    fill="#276749"
+                    fontSize="32"
+                    fontFamily="Cormorant Garamond,serif"
+                    fontWeight="600"
+                    fontStyle="italic"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {shortName}
+                  </text>
+                )}
+              </>
+            )}
+
+            {/* ROUND */}
+            {t.type === "round" && (
+              <>
+                <circle
+                  cx={dcx}
+                  cy={dcy}
+                  r={dr}
+                  fill={isNew ? NEW_TABLE_FILL : "#FAF7F2"}
+                  stroke={occupancyBs}
+                  strokeWidth={bw}
+                  strokeDasharray={bDash}
+                  filter={
+                    isDraggingThisTable || vzoom < 0.3
+                      ? "none"
+                      : isSelected
+                        ? "url(#glow-sel)"
+                        : "url(#shadow-sm)"
+                  }
+                  vectorEffect="non-scaling-stroke"
+                />
+                {vzoom >= 0.4 && (
+                  <circle
+                    cx={dcx}
+                    cy={dcy}
+                    r={dr - 10}
+                    fill="none"
+                    stroke="rgba(201,144,122,0.1)"
+                    strokeWidth="1"
+                    style={{ pointerEvents: "none" }}
                   />
-                {!isDraggingThisTable && (
-                  <text x={pos.x} y={pos.y + 4} textAnchor="middle" fill="white" fontSize="10"
-                    fontFamily="DM Sans,sans-serif" fontWeight="700"
-                    style={{ pointerEvents: "none", userSelect: "none" }}>
-                    {(guest.prenume?.[0] ?? '') + (guest.nume?.[0] ?? '')}
+                )}
+                {t.seats > 0 &&
+                  assignedGuests.length > 0 &&
+                  vzoom >= 0.4 &&
+                  !isDraggingThisTable &&
+                  (() => {
+                    const arcR = dr - 28;
+                    const pct = assignedGuests.length / t.seats;
+                    const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
+                    const startAngle = -Math.PI / 2;
+                    const endAngle = startAngle + pct * 2 * Math.PI;
+                    const x1 = dcx + arcR * Math.cos(startAngle);
+                    const y1 = dcy + arcR * Math.sin(startAngle);
+                    const x2 = dcx + arcR * Math.cos(endAngle);
+                    const y2 = dcy + arcR * Math.sin(endAngle);
+                    const largeArc = pct > 0.5 ? 1 : 0;
+                    if (assignedGuests.length >= t.seats)
+                      return (
+                        <circle
+                          cx={dcx}
+                          cy={dcy}
+                          r={arcR}
+                          fill="none"
+                          stroke={arcColor}
+                          strokeWidth="3"
+                          opacity={isSelected ? 0.7 : 0.5}
+                          style={{ pointerEvents: "none" }}
+                        />
+                      );
+                    return (
+                      <path
+                        d={`M ${x1} ${y1} A ${arcR} ${arcR} 0 ${largeArc} 1 ${x2} ${y2}`}
+                        fill="none"
+                        stroke={arcColor}
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        opacity={isSelected ? 0.7 : 0.5}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    );
+                  })()}
+                {vzoom >= 0.5 && (
+                  <>
+                    <text
+                      x={dcx}
+                      y={dcy - 10}
+                      textAnchor="middle"
+                      fill="#1E2340"
+                      fontSize="15"
+                      fontFamily="Cormorant Garamond,serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {shortName}
+                    </text>
+                    <text
+                      x={dcx}
+                      y={dcy + 8}
+                      textAnchor="middle"
+                      fill={fillColor}
+                      fontSize="12"
+                      fontFamily="DM Sans,sans-serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {occupancyText}
+                    </text>
+                  </>
+                )}
+                {vzoom >= 0.4 && vzoom < 0.5 && (
+                  <>
+                    <text
+                      x={dcx}
+                      y={dcy - 8}
+                      textAnchor="middle"
+                      fill="#1E2340"
+                      fontSize="32"
+                      fontFamily="Cormorant Garamond,serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {shortName}
+                    </text>
+                    <text
+                      x={dcx}
+                      y={dcy + 10}
+                      textAnchor="middle"
+                      fill={fillColor}
+                      fontSize="12"
+                      fontFamily="DM Sans,sans-serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {occupancyText}
+                    </text>
+                  </>
+                )}
+                {vzoom >= 0.2 && vzoom < 0.4 && (
+                  <text
+                    x={dcx}
+                    y={dcy + 6}
+                    textAnchor="middle"
+                    fill="#1E2340"
+                    fontSize="32"
+                    fontFamily="Cormorant Garamond,serif"
+                    fontWeight="700"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {shortName}
                   </text>
                 )}
-                {vzoom >= 0.5 && !isDraggingThisTable && (
-                  isDeclinedGuest ? (
-                    <>
-                      <circle cx={pos.x + 10} cy={pos.y - 10} r="6"
-                        fill="#E53E3E" stroke="white" strokeWidth="1.2"
-                        style={{ pointerEvents: "none" }} />
-                      <text x={pos.x + 10} y={pos.y - 7} textAnchor="middle"
-                        fill="white" fontSize="7" fontWeight="700"
-                        fontFamily="DM Sans,sans-serif"
-                        style={{ pointerEvents: "none" }}>✕</text>
-                    </>
-                  ) : (
-                    <circle cx={pos.x + 10} cy={pos.y - 10} r="4"
-                      fill={guest.status === "confirmat" ? "#48BB78" : "#ECC94B"}
-                      stroke="white" strokeWidth="1.2" style={{ pointerEvents: "none" }} />
-                  )
+              </>
+            )}
+
+            {/* SQUARE */}
+            {t.type === "square" && (
+              <>
+                <rect
+                  x={dpad}
+                  y={dpad}
+                  width={ds}
+                  height={ds}
+                  rx="10"
+                  fill={isNew ? NEW_TABLE_FILL : "white"}
+                  stroke={occupancyBs}
+                  strokeWidth={bw}
+                  strokeDasharray={bDash}
+                  filter={
+                    isDraggingThisTable || vzoom < 0.3
+                      ? "none"
+                      : isSelected
+                        ? "url(#glow-sel)"
+                        : "url(#shadow-sm)"
+                  }
+                  vectorEffect="non-scaling-stroke"
+                />
+                {t.seats > 0 &&
+                  assignedGuests.length > 0 &&
+                  vzoom >= 0.4 &&
+                  !isDraggingThisTable &&
+                  (() => {
+                    const pct = assignedGuests.length / t.seats;
+                    const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
+                    const perimeter = (ds + ds) * 2;
+                    const dashLen = pct * perimeter;
+                    return (
+                      <rect
+                        x={dpad}
+                        y={dpad}
+                        width={ds}
+                        height={ds}
+                        rx="10"
+                        fill="none"
+                        stroke={arcColor}
+                        strokeWidth="3"
+                        strokeDasharray={`${dashLen} ${perimeter}`}
+                        opacity={isSelected ? 0.7 : 0.5}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    );
+                  })()}
+                {vzoom >= 0.4 && (
+                  <>
+                    <text
+                      x={dpad + ds / 2}
+                      y={dpad + ds / 2 - 10}
+                      textAnchor="middle"
+                      fill="#13172E"
+                      fontSize="13"
+                      fontFamily="Cormorant Garamond,serif"
+                      fontWeight="600"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {shortName}
+                    </text>
+                    <text
+                      x={dpad + ds / 2}
+                      y={dpad + ds / 2 + 8}
+                      textAnchor="middle"
+                      fill={fillColor}
+                      fontSize="11"
+                      fontFamily="DM Sans,sans-serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {occupancyText}
+                    </text>
+                  </>
                 )}
-                {highlightGuestId === guest.id && (
-                  <circle cx={pos.x} cy={pos.y} r="19" fill="none" stroke="#C9907A"
-                    strokeWidth="2" opacity="0.8"
-                    style={{ pointerEvents: "none" }} />
-                )}
-                {vzoom >= 0.4 && !isDraggingThisTable && (
-                  <text x={pos.x} y={(t.type === "rect" || t.type === "prezidiu") ? (pos.y < cy - t.y ? pos.y - 20 : pos.y + 28) : pos.y + 28} textAnchor="middle" fill="#1E2340" fontSize="9"
-                    fontFamily="DM Sans,sans-serif" fontWeight="500"
-                    style={{ pointerEvents: "none", userSelect: "none" }} opacity="0.9">
-                    {guest.prenume} {guest.nume?.[0] ?? ''}.
+                {vzoom >= 0.2 && vzoom < 0.4 && (
+                  <text
+                    x={dpad + ds / 2}
+                    y={dpad + ds / 2 + 10}
+                    textAnchor="middle"
+                    fill="#13172E"
+                    fontSize="32"
+                    fontFamily="Cormorant Garamond,serif"
+                    fontWeight="600"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {shortName}
                   </text>
                 )}
-                <circle cx={pos.x} cy={pos.y} r="24" fill="transparent" stroke="none"
-                  style={{ pointerEvents: "all", cursor: "pointer" }} />
-              </g>
-            );
-          }
-          if (assignedGuests.length === 0 && vzoom < 0.5) return null;
-          return (
-            <g key={`empty-${idx}`}>
-              <circle cx={pos.x} cy={pos.y} r="16" fill="white" stroke="#C4A882"
-                strokeWidth="1.2" opacity="0.9"
-                style={{ pointerEvents: "none" }} />
-              <circle cx={pos.x} cy={pos.y} r="28" fill="transparent" stroke="none"
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const gId = e.dataTransfer.getData("guestId");
-                  if (gId) assignGuest(gId, t.id);
-                }}
-              />
-            </g>
-          );
-        })}
-        </>}
+              </>
+            )}
+
+            {/* PREZIDIU */}
+            {t.type === "prezidiu" && (
+              <>
+                <rect
+                  x="25"
+                  y="22"
+                  width={dtw}
+                  height={dth}
+                  rx="12"
+                  fill={isNew ? NEW_TABLE_FILL : "rgba(201,144,122,0.07)"}
+                  stroke={
+                    isDragTarget
+                      ? "#C9907A"
+                      : isSelected
+                        ? "#B794F4"
+                        : isNew
+                          ? NEW_TABLE_STROKE
+                          : "rgba(201,144,122,0.4)"
+                  }
+                  strokeWidth={bw}
+                  strokeDasharray={bDash}
+                  filter={
+                    isDraggingThisTable || vzoom < 0.3
+                      ? "none"
+                      : isSelected
+                        ? "url(#glow-sel)"
+                        : "url(#shadow-prez)"
+                  }
+                  vectorEffect="non-scaling-stroke"
+                />
+                {vzoom >= 0.4 && (
+                  <>
+                    <text
+                      x={25 + dtw / 2}
+                      y={22 + dth / 2 - 8}
+                      textAnchor="middle"
+                      fill="#13172E"
+                      fontSize="13"
+                      fontFamily="Cormorant Garamond,serif"
+                      fontWeight="600"
+                      fontStyle="italic"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {shortName}
+                    </text>
+                    <text
+                      x={25 + dtw / 2}
+                      y={22 + dth / 2 + 10}
+                      textAnchor="middle"
+                      fill={fillColor}
+                      fontSize="11"
+                      fontFamily="DM Sans,sans-serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {occupancyText}
+                    </text>
+                  </>
+                )}
+                {vzoom >= 0.2 && vzoom < 0.4 && (
+                  <text
+                    x={25 + dtw / 2}
+                    y={22 + dth / 2 + 6}
+                    textAnchor="middle"
+                    fill="#13172E"
+                    fontSize="32"
+                    fontFamily="Cormorant Garamond,serif"
+                    fontWeight="600"
+                    fontStyle="italic"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {shortName}
+                  </text>
+                )}
+              </>
+            )}
+
+            {/* RECT */}
+            {t.type === "rect" && (
+              <>
+                <rect
+                  x="25"
+                  y="22"
+                  width={dtw}
+                  height={dth}
+                  rx="10"
+                  fill={isNew ? NEW_TABLE_FILL : "white"}
+                  stroke={occupancyBs}
+                  strokeWidth={bw}
+                  strokeDasharray={bDash}
+                  filter={
+                    isDraggingThisTable || vzoom < 0.3
+                      ? "none"
+                      : isSelected
+                        ? "url(#glow-sel)"
+                        : "url(#shadow-sm)"
+                  }
+                  vectorEffect="non-scaling-stroke"
+                />
+                {t.seats > 0 &&
+                  assignedGuests.length > 0 &&
+                  vzoom >= 0.4 &&
+                  !isDraggingThisTable &&
+                  (() => {
+                    const pct = assignedGuests.length / t.seats;
+                    const arcColor = assignedGuests.length >= t.seats ? "#E53E3E" : "#8BA888";
+                    const perimeter = (dtw + dth) * 2;
+                    const dashLen = pct * perimeter;
+                    return (
+                      <rect
+                        x="25"
+                        y="22"
+                        width={dtw}
+                        height={dth}
+                        rx="10"
+                        fill="none"
+                        stroke={arcColor}
+                        strokeWidth="3"
+                        strokeDasharray={`${dashLen} ${perimeter}`}
+                        opacity={isSelected ? 0.7 : 0.5}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    );
+                  })()}
+                {vzoom >= 0.4 && (
+                  <>
+                    <text
+                      x={25 + dtw / 2}
+                      y={22 + dth / 2 - 8}
+                      textAnchor="middle"
+                      fill="#13172E"
+                      fontSize="13"
+                      fontFamily="Cormorant Garamond,serif"
+                      fontWeight="600"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {shortName}
+                    </text>
+                    <text
+                      x={25 + dtw / 2}
+                      y={22 + dth / 2 + 10}
+                      textAnchor="middle"
+                      fill={fillColor}
+                      fontSize="11"
+                      fontFamily="DM Sans,sans-serif"
+                      fontWeight="700"
+                      style={{ pointerEvents: "none" }}
+                    >
+                      {occupancyText}
+                    </text>
+                  </>
+                )}
+                {vzoom >= 0.2 && vzoom < 0.4 && (
+                  <text
+                    x={25 + dtw / 2}
+                    y={22 + dth / 2 + 6}
+                    textAnchor="middle"
+                    fill="#13172E"
+                    fontSize="32"
+                    fontFamily="Cormorant Garamond,serif"
+                    fontWeight="600"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {shortName}
+                  </text>
+                )}
+              </>
+            )}
+
+            {/* SEATS */}
+            {vzoom >= 0.4 &&
+              seatPositions.map((pos, idx) => {
+                const guest = assignedGuests[idx];
+                const gc = guest ? getGroupColor(guest.grup) : "#48BB78";
+                if (guest) {
+                  const isDeclinedGuest = guest.meta?.isDeclined ?? false;
+                  const highlightDimmed =
+                    highlightGuestId != null &&
+                    assignedGuests.some((g) => g.id === highlightGuestId) &&
+                    highlightGuestId !== guest.id;
+                  const guestOpacity = (highlightDimmed ? 0.25 : 1) * (isDeclinedGuest ? 0.5 : 1);
+                  // TODO: draggable is not in SVGProps<SVGGElement> but is supported at runtime on SVG elements
+                  const svgDraggable = {
+                    draggable: "true",
+                  } as unknown as React.SVGProps<SVGGElement>;
+                  return (
+                    <g
+                      key={idx}
+                      {...svgDraggable}
+                      style={{ cursor: "pointer", opacity: guestOpacity }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHoveredGuest(null);
+                        setClickedSeat({
+                          guest,
+                          tableId: t.id,
+                          x: e.clientX + 14,
+                          y: e.clientY - 14,
+                        });
+                      }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onDragStart={(e) => {
+                        e.stopPropagation();
+                        setIsDraggingGuest(true);
+                        setHoveredGuest(null);
+                        e.dataTransfer.setData("guestId", String(guest.id));
+                        e.dataTransfer.setData("fromTableId", String(t.id));
+                      }}
+                      onDragEnd={() => setIsDraggingGuest(false)}
+                      onMouseEnter={(e) => {
+                        e.stopPropagation();
+                        clearTimeout(tooltipTimeoutRef.current as ReturnType<typeof setTimeout>);
+                        setHoveredGuest({ guest, x: e.clientX, y: e.clientY });
+                      }}
+                      onMouseLeave={(e) => {
+                        e.stopPropagation();
+                        tooltipTimeoutRef.current = setTimeout(() => setHoveredGuest(null), 250);
+                      }}
+                    >
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r="18"
+                        fill={gc}
+                        stroke="white"
+                        strokeWidth="2"
+                        style={{ pointerEvents: "none", cursor: "pointer" }}
+                      />
+                      {!isDraggingThisTable && (
+                        <text
+                          x={pos.x}
+                          y={pos.y + 4}
+                          textAnchor="middle"
+                          fill="white"
+                          fontSize="10"
+                          fontFamily="DM Sans,sans-serif"
+                          fontWeight="700"
+                          style={{ pointerEvents: "none", userSelect: "none" }}
+                        >
+                          {(guest.prenume?.[0] ?? "") + (guest.nume?.[0] ?? "")}
+                        </text>
+                      )}
+                      {vzoom >= 0.5 &&
+                        !isDraggingThisTable &&
+                        (isDeclinedGuest ? (
+                          <>
+                            <circle
+                              cx={pos.x + 10}
+                              cy={pos.y - 10}
+                              r="6"
+                              fill="#E53E3E"
+                              stroke="white"
+                              strokeWidth="1.2"
+                              style={{ pointerEvents: "none" }}
+                            />
+                            <text
+                              x={pos.x + 10}
+                              y={pos.y - 7}
+                              textAnchor="middle"
+                              fill="white"
+                              fontSize="7"
+                              fontWeight="700"
+                              fontFamily="DM Sans,sans-serif"
+                              style={{ pointerEvents: "none" }}
+                            >
+                              ✕
+                            </text>
+                          </>
+                        ) : (
+                          <circle
+                            cx={pos.x + 10}
+                            cy={pos.y - 10}
+                            r="4"
+                            fill={guest.status === "confirmat" ? "#48BB78" : "#ECC94B"}
+                            stroke="white"
+                            strokeWidth="1.2"
+                            style={{ pointerEvents: "none" }}
+                          />
+                        ))}
+                      {highlightGuestId === guest.id && (
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y}
+                          r="19"
+                          fill="none"
+                          stroke="#C9907A"
+                          strokeWidth="2"
+                          opacity="0.8"
+                          style={{ pointerEvents: "none" }}
+                        />
+                      )}
+                      {vzoom >= 0.4 && !isDraggingThisTable && (
+                        <text
+                          x={pos.x}
+                          y={
+                            t.type === "rect" || t.type === "prezidiu"
+                              ? pos.y < cy - t.y
+                                ? pos.y - 20
+                                : pos.y + 28
+                              : pos.y + 28
+                          }
+                          textAnchor="middle"
+                          fill="#1E2340"
+                          fontSize="9"
+                          fontFamily="DM Sans,sans-serif"
+                          fontWeight="500"
+                          style={{ pointerEvents: "none", userSelect: "none" }}
+                          opacity="0.9"
+                        >
+                          {guest.prenume} {guest.nume?.[0] ?? ""}.
+                        </text>
+                      )}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r="24"
+                        fill="transparent"
+                        stroke="none"
+                        style={{ pointerEvents: "all", cursor: "pointer" }}
+                      />
+                    </g>
+                  );
+                }
+                if (assignedGuests.length === 0 && vzoom < 0.5) return null;
+                return (
+                  <g key={`empty-${idx}`}>
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r="16"
+                      fill="white"
+                      stroke="#C4A882"
+                      strokeWidth="1.2"
+                      opacity="0.9"
+                      style={{ pointerEvents: "none" }}
+                    />
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r="28"
+                      fill="transparent"
+                      stroke="none"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const gId = e.dataTransfer.getData("guestId");
+                        if (gId) assignGuest(gId, t.id);
+                      }}
+                    />
+                  </g>
+                );
+              })}
+          </>
+        )}
       </g>
     </g>
   );

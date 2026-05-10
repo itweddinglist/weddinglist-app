@@ -22,15 +22,18 @@ export default function GuestListHeader({ stats, onAddGuest, onImport }: Props) 
   return (
     <div className="mb-8">
       {/* Titlu */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1
             className="text-4xl font-light"
             style={{ fontFamily: "var(--font-display)", color: "var(--navy)" }}
           >
-            Listă <em className="italic" style={{ color: "var(--rose)" }}>Invitați</em>
+            Listă{" "}
+            <em className="italic" style={{ color: "var(--rose)" }}>
+              Invitați
+            </em>
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+          <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
             {stats.total} invitați înregistrați
           </p>
         </div>
@@ -39,7 +42,7 @@ export default function GuestListHeader({ stats, onAddGuest, onImport }: Props) 
         <div className="flex items-center gap-3">
           <button
             onClick={onImport}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all"
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all"
             style={{
               border: "1px solid var(--rose)",
               color: "var(--rose)",
@@ -58,7 +61,7 @@ export default function GuestListHeader({ stats, onAddGuest, onImport }: Props) 
 
           <button
             onClick={onAddGuest}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all"
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all"
             style={{ background: "var(--rose)", color: "white" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "var(--rose-hover)";
@@ -120,10 +123,7 @@ export default function GuestListHeader({ stats, onAddGuest, onImport }: Props) 
             >
               {stat.value}
             </div>
-            <div
-              className="text-xs font-medium mt-2"
-              style={{ color: "var(--muted)" }}
-            >
+            <div className="mt-2 text-xs font-medium" style={{ color: "var(--muted)" }}>
               {stat.label}
             </div>
           </div>

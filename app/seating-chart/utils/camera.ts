@@ -9,9 +9,22 @@ export const PAN_PAD = 1000;
 type CameraAction =
   | { type: "CAM_SET"; vx: number; vy: number; z: number; canvasW?: number; canvasH?: number }
   | { type: "CAM_PAN_BY"; dxWorld: number; dyWorld: number; canvasW?: number; canvasH?: number }
-  | { type: "CAM_ZOOM_AT_NORM"; factor: number; nx: number; ny: number; canvasW?: number; canvasH?: number }
+  | {
+      type: "CAM_ZOOM_AT_NORM";
+      factor: number;
+      nx: number;
+      ny: number;
+      canvasW?: number;
+      canvasH?: number;
+    };
 
-export function clampCam(vx: number, vy: number, z: number, canvasW: number, canvasH: number): CameraState {
+export function clampCam(
+  vx: number,
+  vy: number,
+  z: number,
+  canvasW: number,
+  canvasH: number
+): CameraState {
   const vw = canvasW / z;
   const vh = canvasH / z;
   return {

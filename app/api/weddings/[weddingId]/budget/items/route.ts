@@ -31,13 +31,18 @@ type RouteContext = { params: Promise<{ weddingId: string }> };
 export async function GET(request: NextRequest, context: RouteContext): Promise<Response> {
   const { weddingId } = await context.params;
 
-  if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
+  if (!isValidUuid(weddingId))
+    return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "viewer",
+  });
   if (!access.ok) return access.response;
 
   const { searchParams } = new URL(request.url);
@@ -70,13 +75,18 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
 
   const { weddingId } = await context.params;
 
-  if (!isValidUuid(weddingId)) return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
+  if (!isValidUuid(weddingId))
+    return errorResponse(400, "INVALID_ID", "Wedding ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   let body: unknown;

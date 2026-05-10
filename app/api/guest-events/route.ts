@@ -31,7 +31,11 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   const weddingId = request.nextUrl.searchParams.get("wedding_id");
   if (!weddingId || !isValidUuid(weddingId)) {
-    return errorResponse(400, "INVALID_WEDDING_ID", "A valid wedding_id query parameter is required.");
+    return errorResponse(
+      400,
+      "INVALID_WEDDING_ID",
+      "A valid wedding_id query parameter is required."
+    );
   }
 
   // event_id is required — this endpoint is scoped per event, not per wedding
@@ -40,7 +44,11 @@ export async function GET(request: NextRequest): Promise<Response> {
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id query parameter is required.");
   }
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "viewer",
+  });
   if (!access.ok) return access.response;
 
   try {
@@ -83,7 +91,11 @@ export async function POST(request: NextRequest): Promise<Response> {
   if (!validation.valid) return validationErrorResponse(validation.errors);
   const input = validation.data;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: input.wedding_id, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: input.wedding_id,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   try {
@@ -96,7 +108,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       .maybeSingle();
 
     if (eventError || !event) {
-      return errorResponse(400, "INVALID_EVENT", "Event does not exist or belongs to a different wedding.");
+      return errorResponse(
+        400,
+        "INVALID_EVENT",
+        "Event does not exist or belongs to a different wedding."
+      );
     }
 
     // Verify guest belongs to this wedding (cross-wedding guard)
@@ -108,7 +124,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       .maybeSingle();
 
     if (guestError || !guest) {
-      return errorResponse(400, "INVALID_GUEST", "Guest does not exist or belongs to a different wedding.");
+      return errorResponse(
+        400,
+        "INVALID_GUEST",
+        "Guest does not exist or belongs to a different wedding."
+      );
     }
 
     const { data, error } = await supabaseServer
@@ -126,9 +146,24 @@ export async function POST(request: NextRequest): Promise<Response> {
       .single();
 
     if (error) {
-      if (error.code === "23505") return errorResponse(409, "ALREADY_ASSOCIATED", "This guest is already associated with this event.");
-      if (error.code === "23503") return errorResponse(400, "FK_VIOLATION", "A referenced record (event or guest) does not exist.");
-      if (error.code === "23514") return errorResponse(400, "CONSTRAINT_VIOLATION", "Data violates a database constraint. Check attendance_status value.");
+      if (error.code === "23505")
+        return errorResponse(
+          409,
+          "ALREADY_ASSOCIATED",
+          "This guest is already associated with this event."
+        );
+      if (error.code === "23503")
+        return errorResponse(
+          400,
+          "FK_VIOLATION",
+          "A referenced record (event or guest) does not exist."
+        );
+      if (error.code === "23514")
+        return errorResponse(
+          400,
+          "CONSTRAINT_VIOLATION",
+          "Data violates a database constraint. Check attendance_status value."
+        );
       return internalErrorResponse(error, "POST /api/guest-events");
     }
 

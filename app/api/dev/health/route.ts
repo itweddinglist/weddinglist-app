@@ -24,10 +24,7 @@ export async function GET(): Promise<NextResponse> {
   // ── Supabase ping ────────────────────────────────────────────────────────
   let supabase: "ok" | "error" = "ok";
   try {
-    const { error } = await supabaseServer
-      .from("app_users")
-      .select("id")
-      .limit(1);
+    const { error } = await supabaseServer.from("app_users").select("id").limit(1);
     if (error) supabase = "error";
   } catch {
     supabase = "error";

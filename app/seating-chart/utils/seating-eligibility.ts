@@ -4,7 +4,7 @@
 // Un guest este eligibil pentru seating dacă nu a refuzat explicit (RSVP declined).
 // =============================================================================
 
-import type { SeatingGuestWithEvents } from '@/types/seating'
+import type { SeatingGuestWithEvents } from "@/types/seating";
 
 /**
  * Returns true if a guest should appear in the unassigned list and
@@ -20,5 +20,5 @@ import type { SeatingGuestWithEvents } from '@/types/seating'
  */
 export function isSeatingEligible(guest: SeatingGuestWithEvents): boolean {
   const status = guest.guest_events[0]?.attendance_status;
-  return status !== 'declined';
+  return status !== "declined";
 }

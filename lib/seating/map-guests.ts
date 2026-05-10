@@ -10,10 +10,10 @@ import type { SeatingEventProjection } from "@/types/guests";
 // Status mapping: guest_events.attendance_status → format intern seating
 const STATUS_MAP: Record<string, string> = {
   attending: "confirmat",
-  declined:  "declinat",
-  maybe:     "in_asteptare",
-  invited:   "in_asteptare",
-  pending:   "in_asteptare",
+  declined: "declinat",
+  maybe: "in_asteptare",
+  invited: "in_asteptare",
+  pending: "in_asteptare",
 };
 
 function mapStatus(status: string | null | undefined): string {
@@ -22,7 +22,7 @@ function mapStatus(status: string | null | undefined): string {
 }
 
 export interface GuestWithEventData {
-  id: string;                    // UUID
+  id: string; // UUID
   first_name: string;
   last_name: string | null;
   guest_group?: { name: string } | null;
@@ -47,9 +47,9 @@ export function mapGuestsToSeating(
       // Cauze posibile: allocate_seating_numeric_ids_batch n-a rulat sau a picat parțial.
       // Guest-ul e omis din seating — va reapărea la next load după re-alocare.
       console.warn(
-        `[mapGuests] Guest ${guest.id} (${guest.first_name} ${guest.last_name ?? ''}) ` +
-        `lipsește din id bridge — omis din seating. ` +
-        `Verifică allocate_seating_numeric_ids_batch.`
+        `[mapGuests] Guest ${guest.id} (${guest.first_name} ${guest.last_name ?? ""}) ` +
+          `lipsește din id bridge — omis din seating. ` +
+          `Verifică allocate_seating_numeric_ids_batch.`
       );
       continue;
     }
@@ -62,9 +62,9 @@ export function mapGuestsToSeating(
     // pentru guest fara date RSVP). Observabil in logs pentru debugging.
     if (!guest.guest_events || guest.guest_events.length === 0) {
       console.warn(
-        `[mapGuests] Guest ${guest.id} (${guest.first_name} ${guest.last_name ?? ''}) ` +
-        `fara guest_events — apare ca eligibil implicit in seating. ` +
-        `Verifica query-ul din /seating/load daca asta nu e asteptat.`
+        `[mapGuests] Guest ${guest.id} (${guest.first_name} ${guest.last_name ?? ""}) ` +
+          `fara guest_events — apare ca eligibil implicit in seating. ` +
+          `Verifica query-ul din /seating/load daca asta nu e asteptat.`
       );
     }
 

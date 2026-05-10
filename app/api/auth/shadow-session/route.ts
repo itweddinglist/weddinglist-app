@@ -64,18 +64,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (existing) {
       // Rule 1: shadow can never extend shadow
       if (existing.auth_source === "shadow") {
-        return NextResponse.json(
-          { ok: false, error: "SHADOW_CHAIN_REJECTED" },
-          { status: 401 }
-        );
+        return NextResponse.json({ ok: false, error: "SHADOW_CHAIN_REJECTED" }, { status: 401 });
       }
 
       // Rule 2: absolute lifetime ceiling
       if (nowSeconds > existing.absolute_issued_at + SHADOW_MAX_LIFETIME_SECONDS) {
-        return NextResponse.json(
-          { ok: false, error: "SHADOW_LIFETIME_EXCEEDED" },
-          { status: 401 }
-        );
+        return NextResponse.json({ ok: false, error: "SHADOW_LIFETIME_EXCEEDED" }, { status: 401 });
       }
 
       // Preserve the original WP-backed issuance timestamp

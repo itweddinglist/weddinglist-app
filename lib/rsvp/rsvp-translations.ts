@@ -5,7 +5,7 @@
 // Adaugă EN: copiezi obiectul ro, traduci valorile, gata.
 // =============================================================================
 
-export type RsvpLocale = 'ro'; // | 'en' | 'hu' — adaugă după launch
+export type RsvpLocale = "ro"; // | 'en' | 'hu' — adaugă după launch
 
 export interface RsvpTranslations {
   // Pagina publică
@@ -70,57 +70,59 @@ export interface RsvpTranslations {
 
 const ro: RsvpTranslations = {
   page: {
-    title: 'Confirmare participare',
-    subtitle: 'Ne bucurăm să te avem alături',
-    loading: 'Se încarcă invitația...',
-    error_invalid: 'Linkul de invitație nu este valid.',
-    error_expired: 'Linkul de invitație a expirat. Contactează cuplul pentru un link nou.',
-    error_used: 'Ai confirmat deja participarea. Contactează cuplul dacă dorești să modifici răspunsul.',
-    error_generic: 'A apărut o eroare. Te rugăm să încerci din nou.',
+    title: "Confirmare participare",
+    subtitle: "Ne bucurăm să te avem alături",
+    loading: "Se încarcă invitația...",
+    error_invalid: "Linkul de invitație nu este valid.",
+    error_expired: "Linkul de invitație a expirat. Contactează cuplul pentru un link nou.",
+    error_used:
+      "Ai confirmat deja participarea. Contactează cuplul dacă dorești să modifici răspunsul.",
+    error_generic: "A apărut o eroare. Te rugăm să încerci din nou.",
   },
   response: {
-    label_attend: 'Confirm participarea',
-    label_decline: 'Nu pot ajunge',
-    label_maybe: 'Poate particip',
-    heading_events: 'Evenimente',
-    heading_meal: 'Preferință meniu',
-    heading_notes: 'Observații',
-    meal_standard: 'Meniu standard',
-    meal_vegetarian: 'Meniu vegetarian',
-    notes_placeholder: 'Alergii, preferințe sau orice altceva...',
-    notes_label: 'Observații și alergii (opțional)',
+    label_attend: "Confirm participarea",
+    label_decline: "Nu pot ajunge",
+    label_maybe: "Poate particip",
+    heading_events: "Evenimente",
+    heading_meal: "Preferință meniu",
+    heading_notes: "Observații",
+    meal_standard: "Meniu standard",
+    meal_vegetarian: "Meniu vegetarian",
+    notes_placeholder: "Alergii, preferințe sau orice altceva...",
+    notes_label: "Observații și alergii (opțional)",
   },
   submit: {
-    button: 'Trimite răspunsul',
-    button_loading: 'Se trimite...',
-    success_title: 'Mulțumim!',
-    success_subtitle: 'Răspunsul tău a fost înregistrat. Te așteptăm cu drag.',
-    error_required: 'Te rugăm să selectezi un răspuns pentru fiecare eveniment.',
-    error_generic: 'A apărut o eroare la trimiterea răspunsului. Încearcă din nou.',
+    button: "Trimite răspunsul",
+    button_loading: "Se trimite...",
+    success_title: "Mulțumim!",
+    success_subtitle: "Răspunsul tău a fost înregistrat. Te așteptăm cu drag.",
+    error_required: "Te rugăm să selectezi un răspuns pentru fiecare eveniment.",
+    error_generic: "A apărut o eroare la trimiterea răspunsului. Încearcă din nou.",
   },
   status: {
-    pending: 'În așteptare',
-    accepted: 'Confirmat',
-    declined: 'Refuzat',
-    maybe: 'Poate',
+    pending: "În așteptare",
+    accepted: "Confirmat",
+    declined: "Refuzat",
+    maybe: "Poate",
   },
   dashboard: {
-    title: 'RSVP',
-    total: 'Total invitați',
-    confirmed: 'Confirmați',
-    declined: 'Refuzați',
-    pending: 'În așteptare',
-    maybe: 'Poate',
-    response_rate: 'Rată răspuns',
-    send_invitations: 'Trimite invitații',
-    send_reminder: 'Trimite reminder',
-    add_manual: 'Adaugă manual',
-    opened_not_answered: 'A deschis dar nu a răspuns',
-    copy_link: 'Copiază link',
-    generate_qr: 'Generează QR',
-    mark_sent: 'Marchează trimis',
-    resend: 'Retrimite',
-    whatsapp_message: 'Bună, {firstName}! Ne-ar face mare plăcere să fii alături de noi. Confirmă participarea aici: {rsvpLink}',
+    title: "RSVP",
+    total: "Total invitați",
+    confirmed: "Confirmați",
+    declined: "Refuzați",
+    pending: "În așteptare",
+    maybe: "Poate",
+    response_rate: "Rată răspuns",
+    send_invitations: "Trimite invitații",
+    send_reminder: "Trimite reminder",
+    add_manual: "Adaugă manual",
+    opened_not_answered: "A deschis dar nu a răspuns",
+    copy_link: "Copiază link",
+    generate_qr: "Generează QR",
+    mark_sent: "Marchează trimis",
+    resend: "Retrimite",
+    whatsapp_message:
+      "Bună, {firstName}! Ne-ar face mare plăcere să fii alături de noi. Confirmă participarea aici: {rsvpLink}",
   },
 };
 
@@ -131,7 +133,7 @@ const translations: Record<RsvpLocale, RsvpTranslations> = {
   ro,
 };
 
-export function getTranslations(locale: RsvpLocale = 'ro'): RsvpTranslations {
+export function getTranslations(locale: RsvpLocale = "ro"): RsvpTranslations {
   return translations[locale] ?? translations.ro;
 }
 

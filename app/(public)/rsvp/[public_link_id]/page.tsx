@@ -22,11 +22,7 @@ const t = getTranslations("ro");
 
 type PageState = "loading" | "ready" | "error" | "submitted";
 
-export default function RsvpPage({
-  params,
-}: {
-  params: Promise<{ public_link_id: string }>;
-}) {
+export default function RsvpPage({ params }: { params: Promise<{ public_link_id: string }> }) {
   const [publicLinkId, setPublicLinkId] = useState<string | null>(null);
   const [pageState, setPageState] = useState<PageState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -121,11 +117,7 @@ export default function RsvpPage({
     }
   };
 
-  const updateAnswer = (
-    guestEventId: string,
-    field: keyof EventAnswer,
-    value: string | null
-  ) => {
+  const updateAnswer = (guestEventId: string, field: keyof EventAnswer, value: string | null) => {
     setAnswers((prev) => ({
       ...prev,
       [guestEventId]: { ...prev[guestEventId], [field]: value },
@@ -182,10 +174,26 @@ export default function RsvpPage({
     <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
-        <p style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--rose)", marginBottom: "0.5rem" }}>
+        <p
+          style={{
+            fontSize: "0.75rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--rose)",
+            marginBottom: "0.5rem",
+          }}
+        >
           weddinglist
         </p>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2.2rem", fontWeight: 300, color: "var(--navy)", margin: 0 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "2.2rem",
+            fontWeight: 300,
+            color: "var(--navy)",
+            margin: 0,
+          }}
+        >
           {t.page.subtitle}
         </h1>
         <p style={{ color: "var(--muted)", marginTop: "0.5rem", fontSize: "1rem" }}>
@@ -211,7 +219,9 @@ export default function RsvpPage({
                   {event.event_date && (
                     <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0.2rem 0 0" }}>
                       {new Date(event.event_date).toLocaleDateString("ro-RO", {
-                        day: "numeric", month: "long", year: "numeric",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
                       })}
                     </p>
                   )}
@@ -252,7 +262,9 @@ export default function RsvpPage({
                         }}
                       >
                         {meal === "standard" ? "🍽 " : "🥗 "}
-                        {meal === "standard" ? t.response.meal_standard : t.response.meal_vegetarian}
+                        {meal === "standard"
+                          ? t.response.meal_standard
+                          : t.response.meal_vegetarian}
                       </button>
                     ))}
                   </div>
@@ -287,7 +299,15 @@ export default function RsvpPage({
           tabIndex={-1}
           aria-hidden="true"
           autoComplete="off"
-          style={{ position: "fixed", opacity: 0, top: 0, left: 0, height: 0, width: 0, pointerEvents: "none" }}
+          style={{
+            position: "fixed",
+            opacity: 0,
+            top: 0,
+            left: 0,
+            height: 0,
+            width: 0,
+            pointerEvents: "none",
+          }}
         />
 
         {/* Submit error */}
@@ -312,7 +332,14 @@ export default function RsvpPage({
       </div>
 
       {/* Footer */}
-      <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--muted)", marginTop: "2rem" }}>
+      <p
+        style={{
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "var(--muted)",
+          marginTop: "2rem",
+        }}
+      >
         Powered by weddinglist.ro
       </p>
     </div>
@@ -390,18 +417,18 @@ const styles = {
     background: isRsvpAccepted(status)
       ? "rgba(72,187,120,0.12)"
       : isRsvpDeclined(status)
-      ? "rgba(229,62,62,0.12)"
-      : "rgba(236,201,75,0.12)",
+        ? "rgba(229,62,62,0.12)"
+        : "rgba(236,201,75,0.12)",
     borderColor: isRsvpAccepted(status)
       ? "var(--green)"
       : isRsvpDeclined(status)
-      ? "var(--red)"
-      : "var(--yellow)",
+        ? "var(--red)"
+        : "var(--yellow)",
     color: isRsvpAccepted(status)
       ? "var(--green)"
       : isRsvpDeclined(status)
-      ? "var(--red)"
-      : "var(--yellow)",
+        ? "var(--red)"
+        : "var(--yellow)",
     fontWeight: 500,
   }),
   mealBtnActive: {

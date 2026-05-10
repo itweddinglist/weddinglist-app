@@ -32,9 +32,7 @@ export default function GlobalError({ error, reset }) {
             alignItems: "center",
           }}
         >
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, margin: 0 }}>
-            {"A apărut o eroare"}
-          </h1>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, margin: 0 }}>{"A apărut o eroare"}</h1>
           <p style={{ fontSize: "0.95rem", color: "#7a7f99", margin: 0 }}>
             {"Ceva nu a mers cum trebuie. Echipa a fost notificată."}
           </p>

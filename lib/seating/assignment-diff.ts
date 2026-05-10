@@ -5,13 +5,10 @@
 
 import type { AssignmentState, AssignmentDiff } from "./types";
 
-export function diffAssignments(
-  prev: AssignmentState,
-  current: AssignmentState
-): AssignmentDiff {
-  const toAssign:   AssignmentDiff["toAssign"]   = [];
+export function diffAssignments(prev: AssignmentState, current: AssignmentState): AssignmentDiff {
+  const toAssign: AssignmentDiff["toAssign"] = [];
   const toUnassign: AssignmentDiff["toUnassign"] = [];
-  const toMove:     AssignmentDiff["toMove"]     = [];
+  const toMove: AssignmentDiff["toMove"] = [];
 
   const allGuestIds = new Set([
     ...Object.keys(prev).map(Number),
@@ -19,7 +16,7 @@ export function diffAssignments(
   ]);
 
   for (const guestId of allGuestIds) {
-    const prevTableId    = prev[guestId]    ?? null;
+    const prevTableId = prev[guestId] ?? null;
     const currentTableId = current[guestId] ?? null;
 
     if (prevTableId === currentTableId) continue;
@@ -27,9 +24,9 @@ export function diffAssignments(
     if (prevTableId !== null && currentTableId !== null) {
       // Move: era la o masă, acum la alta
       toMove.push({
-        guestNumericId:     guestId,
+        guestNumericId: guestId,
         fromTableNumericId: prevTableId,
-        toTableNumericId:   currentTableId,
+        toTableNumericId: currentTableId,
       });
     } else if (currentTableId !== null) {
       // Assign nou

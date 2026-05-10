@@ -1,6 +1,11 @@
 import { buildTemplate, INITIAL_GUESTS } from "./geometry.ts";
 import { clampCam, getInitialCam } from "./camera.ts";
-import type { SeatingGuest, SeatingGuestWithEvents, SeatingTable, CameraState } from "@/types/seating";
+import type {
+  SeatingGuest,
+  SeatingGuestWithEvents,
+  SeatingTable,
+  CameraState,
+} from "@/types/seating";
 
 // Browser-only. Consumă doar din
 // useEffect sau client components.
@@ -31,27 +36,27 @@ export const LEGACY_STORAGE_KEYS: string[] = [
 // ── TIPURI INTERNE ────────────────────────────────────────────────────────────
 
 interface StorageData {
-  guests: SeatingGuestWithEvents[]
-  tables: SeatingTable[]
-  nextId: number
-  cam: CameraState
+  guests: SeatingGuestWithEvents[];
+  tables: SeatingTable[];
+  nextId: number;
+  cam: CameraState;
 }
 
 interface CleanupResult {
-  removed: string[]
-  failed: string[]
+  removed: string[];
+  failed: string[];
 }
 
 interface LoadStorageResult {
-  ok: true
-  source: "default" | "storage"
-  data: StorageData
-  cleanup: CleanupResult
+  ok: true;
+  source: "default" | "storage";
+  data: StorageData;
+  cleanup: CleanupResult;
 }
 
 interface SaveStorageResult {
-  ok: boolean
-  error: unknown
+  ok: boolean;
+  error: unknown;
 }
 
 // ── CLEANUP ───────────────────────────────────────────────────────────────────
@@ -124,8 +129,15 @@ export function sanitizeLoadedTables(tables: any): SeatingTable[] {
 }
 
 // TODO: guests: any — boundary cu localStorage; output este SeatingGuestWithEvents[] validat
-export function sanitizeLoadedGuests(guests: any, tables: SeatingTable[]): SeatingGuestWithEvents[] {
-  if (!Array.isArray(guests)) return INITIAL_GUESTS.map((g) => ({ ...g, guest_events: Array.isArray(g.guest_events) ? g.guest_events : [] }));
+export function sanitizeLoadedGuests(
+  guests: any,
+  tables: SeatingTable[]
+): SeatingGuestWithEvents[] {
+  if (!Array.isArray(guests))
+    return INITIAL_GUESTS.map((g) => ({
+      ...g,
+      guest_events: Array.isArray(g.guest_events) ? g.guest_events : [],
+    }));
   const tableIds = new Set(tables.map((t) => Number(t.id)));
   const valid = guests.filter(isValidGuest).map((g) => ({
     ...g,
@@ -133,7 +145,11 @@ export function sanitizeLoadedGuests(guests: any, tables: SeatingTable[]): Seati
     tableId: g.tableId != null && tableIds.has(Number(g.tableId)) ? Number(g.tableId) : null,
     guest_events: Array.isArray(g.guest_events) ? g.guest_events : [],
   }));
-  if (valid.length === 0) return INITIAL_GUESTS.map((g) => ({ ...g, guest_events: Array.isArray(g.guest_events) ? g.guest_events : [] }));
+  if (valid.length === 0)
+    return INITIAL_GUESTS.map((g) => ({
+      ...g,
+      guest_events: Array.isArray(g.guest_events) ? g.guest_events : [],
+    }));
   return valid;
 }
 

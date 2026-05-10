@@ -40,7 +40,10 @@ export type CreateGuestEventValidation =
 
 export function validateCreateGuestEvent(body: unknown): CreateGuestEventValidation {
   if (!body || typeof body !== "object") {
-    return { valid: false, errors: [{ field: "body", message: "Request body must be a JSON object." }] };
+    return {
+      valid: false,
+      errors: [{ field: "body", message: "Request body must be a JSON object." }],
+    };
   }
 
   const input = body as Record<string, unknown>;
@@ -96,7 +99,10 @@ export type UpdateGuestEventValidation =
 
 export function validateUpdateGuestEvent(body: unknown): UpdateGuestEventValidation {
   if (!body || typeof body !== "object") {
-    return { valid: false, errors: [{ field: "body", message: "Request body must be a JSON object." }] };
+    return {
+      valid: false,
+      errors: [{ field: "body", message: "Request body must be a JSON object." }],
+    };
   }
 
   const input = body as Record<string, unknown>;
@@ -152,7 +158,10 @@ export type BulkCreateValidation =
 
 export function validateBulkCreateGuestEvents(body: unknown): BulkCreateValidation {
   if (!body || typeof body !== "object") {
-    return { valid: false, errors: [{ field: "body", message: "Request body must be a JSON object." }] };
+    return {
+      valid: false,
+      errors: [{ field: "body", message: "Request body must be a JSON object." }],
+    };
   }
 
   const input = body as Record<string, unknown>;
