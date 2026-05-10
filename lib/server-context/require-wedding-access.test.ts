@@ -82,7 +82,7 @@ describe("requireWeddingAccess", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(403);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("FORBIDDEN");
   });
 
@@ -98,7 +98,7 @@ describe("requireWeddingAccess", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(403);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("INSUFFICIENT_ROLE");
   });
 
@@ -112,7 +112,7 @@ describe("requireWeddingAccess", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.response.status).toBe(400);
-    const body = await result.response.json() as { error: { code: string } };
+    const body = (await result.response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("WEDDING_ID_REQUIRED");
     expect(mockMaybySingle).not.toHaveBeenCalled();
   });

@@ -12,9 +12,7 @@ export type RequireAuthenticatedResult =
   | { ok: true; ctx: AuthenticatedContext }
   | { ok: false; response: NextResponse };
 
-export function requireAuthenticatedContext(
-  ctx: ServerAppContext
-): RequireAuthenticatedResult {
+export function requireAuthenticatedContext(ctx: ServerAppContext): RequireAuthenticatedResult {
   switch (ctx.status) {
     case "authenticated":
       return { ok: true, ctx };

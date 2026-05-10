@@ -7,42 +7,42 @@
 
 // ── Tipuri ────────────────────────────────────────────────────────────────────
 
-export type TaskPriority = "HIGH" | "MEDIUM" | "LOW"
+export type TaskPriority = "HIGH" | "MEDIUM" | "LOW";
 
 export type Task = {
-  id: string
-  priority: TaskPriority
-  title: string
-  description: string
-  action_label: string
-  action_path: string
-}
+  id: string;
+  priority: TaskPriority;
+  title: string;
+  description: string;
+  action_label: string;
+  action_path: string;
+};
 
 export type TaskEngineContext = {
-  daysUntilWedding: number
-  guestsTotal: number
-  guestsUnassigned: number
-  rsvpPending: number
-  rsvpSentCount: number
-  hasLocation: boolean
-  hasCatering: boolean
-  vendorsInProgressCount: number
-  budgetTotal: number
-  budgetPaid: number
-  paymentDueSoonCount: number  // plăți scadente în < 3 zile
-  tablesTotal: number
-  seatedGuestsTotal: number
-}
+  daysUntilWedding: number;
+  guestsTotal: number;
+  guestsUnassigned: number;
+  rsvpPending: number;
+  rsvpSentCount: number;
+  hasLocation: boolean;
+  hasCatering: boolean;
+  vendorsInProgressCount: number;
+  budgetTotal: number;
+  budgetPaid: number;
+  paymentDueSoonCount: number; // plăți scadente în < 3 zile
+  tablesTotal: number;
+  seatedGuestsTotal: number;
+};
 
 export type TaskEngineResult = {
-  primary: Task | null
-  secondary: Task[]
-}
+  primary: Task | null;
+  secondary: Task[];
+};
 
 // ── Reguli în ordine de prioritate ───────────────────────────────────────────
 
 function buildCandidates(ctx: TaskEngineContext): Task[] {
-  const tasks: Task[] = []
+  const tasks: Task[] = [];
 
   // Regula 1 — Nu există locație rezervată
   if (!ctx.hasLocation) {
@@ -53,7 +53,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: "Nicio locație nu a fost confirmată încă.",
       action_label: "Caută furnizori",
       action_path: "/vendors",
-    })
+    });
   }
 
   // Regula 2 — Nu există catering rezervat
@@ -65,7 +65,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: "Niciun furnizor de catering nu a fost confirmat.",
       action_label: "Caută furnizori",
       action_path: "/vendors",
-    })
+    });
   }
 
   // Regula 3 — Există invitați fără loc la mese
@@ -77,12 +77,12 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: "Plasează invitații rămași în planul de mese.",
       action_label: "Deschide Plan Mese",
       action_path: "/seating-chart",
-    })
+    });
   }
 
   // Regula 4 — RSVP nu a fost trimis sau e urgent
   if (ctx.rsvpSentCount === 0 && ctx.guestsTotal > 0) {
-    const priority: TaskPriority = ctx.daysUntilWedding < 30 ? "HIGH" : "MEDIUM"
+    const priority: TaskPriority = ctx.daysUntilWedding < 30 ? "HIGH" : "MEDIUM";
     tasks.push({
       id: "rsvp_not_sent",
       priority,
@@ -90,12 +90,12 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: `${ctx.guestsTotal} invitați așteaptă să fie contactați.`,
       action_label: "Deschide RSVP",
       action_path: "/rsvp",
-    })
+    });
   }
 
   // Regula 4b — RSVP trimis dar mulți în așteptare
   if (ctx.rsvpSentCount > 0 && ctx.rsvpPending > 0) {
-    const priority: TaskPriority = ctx.daysUntilWedding < 30 ? "HIGH" : "MEDIUM"
+    const priority: TaskPriority = ctx.daysUntilWedding < 30 ? "HIGH" : "MEDIUM";
     tasks.push({
       id: "rsvp_pending",
       priority,
@@ -103,12 +103,12 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: "Urmărește răspunsurile RSVP și retrimite invitațiile.",
       action_label: "Vezi RSVP",
       action_path: "/rsvp",
-    })
+    });
   }
 
   // Regula 5 — Buget problematic
   if (ctx.budgetTotal > 0) {
-    const paidPercent = Math.round((ctx.budgetPaid / ctx.budgetTotal) * 100)
+    const paidPercent = Math.round((ctx.budgetPaid / ctx.budgetTotal) * 100);
     if (paidPercent < 20 && ctx.daysUntilWedding < 60) {
       tasks.push({
         id: "budget_low_paid",
@@ -117,7 +117,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
         description: `Doar ${paidPercent}% din buget a fost achitat.`,
         action_label: "Vezi Buget",
         action_path: "/budget",
-      })
+      });
     }
   }
 
@@ -130,7 +130,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: "Ai plăți care trebuie efectuate în următoarele 3 zile.",
       action_label: "Vezi Buget",
       action_path: "/budget",
-    })
+    });
   }
 
   // Regula 7 — Vendors în progres
@@ -142,7 +142,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
       description: "Finalizează contractele cu furnizorii în progres.",
       action_label: "Vezi Furnizori",
       action_path: "/vendors",
-    })
+    });
   }
 
   // Regula 8 — Fallback contextual
@@ -155,7 +155,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
         description: "Începe lista de invitați pentru nunta ta.",
         action_label: "Listă Invitați",
         action_path: "/guest-list",
-      })
+      });
     } else if (ctx.tablesTotal === 0) {
       tasks.push({
         id: "create_first_table",
@@ -164,7 +164,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
         description: "Ai invitați dar nicio masă configurată.",
         action_label: "Plan Mese",
         action_path: "/seating-chart",
-      })
+      });
     } else if (ctx.guestsUnassigned === 0 && ctx.guestsTotal > 0) {
       tasks.push({
         id: "all_seated",
@@ -173,7 +173,7 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
         description: "Planul de mese e complet. Exportă-l pentru restaurant.",
         action_label: "Exportă PDF",
         action_path: "/export",
-      })
+      });
     } else {
       tasks.push({
         id: "continue_planning",
@@ -182,26 +182,26 @@ function buildCandidates(ctx: TaskEngineContext): Task[] {
         description: "Verifică toate modulele și asigură-te că totul e la zi.",
         action_label: "Vezi Export",
         action_path: "/export",
-      })
+      });
     }
   }
 
-  return tasks
+  return tasks;
 }
 
 // ── Funcție principală ────────────────────────────────────────────────────────
 
 export function generateTasks(ctx: TaskEngineContext): TaskEngineResult {
-  const candidates = buildCandidates(ctx)
+  const candidates = buildCandidates(ctx);
 
   // Sortează: HIGH > MEDIUM > LOW
-  const priorityOrder: Record<TaskPriority, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 }
+  const priorityOrder: Record<TaskPriority, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
   const sorted = [...candidates].sort(
     (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-  )
+  );
 
-  const primary = sorted[0] ?? null
-  const secondary = sorted.slice(1, 3)
+  const primary = sorted[0] ?? null;
+  const secondary = sorted.slice(1, 3);
 
-  return { primary, secondary }
+  return { primary, secondary };
 }

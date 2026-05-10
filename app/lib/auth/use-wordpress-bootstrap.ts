@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  fetchWordPressBootstrap,
-  type BootstrapResponse,
-} from "./fetch-wordpress-bootstrap";
+import { fetchWordPressBootstrap, type BootstrapResponse } from "./fetch-wordpress-bootstrap";
 
 type BootstrapState =
   | { status: "loading" }
@@ -33,8 +30,7 @@ export function useWordPressBootstrap(): BootstrapState {
       } catch (error) {
         if (!isMounted) return;
 
-        const message =
-          error instanceof Error ? error.message : "Unknown bootstrap error";
+        const message = error instanceof Error ? error.message : "Unknown bootstrap error";
 
         setState({ status: "error", message });
       }

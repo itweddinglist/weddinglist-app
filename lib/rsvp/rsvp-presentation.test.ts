@@ -1,18 +1,9 @@
 import { describe, it, expect } from "vitest";
 import type { RsvpAttendanceStatus } from "@/types/rsvp";
-import {
-  RSVP_STATUS_COLORS_HEX,
-  getStatusColorHex,
-  getStatusLabel,
-} from "./rsvp-presentation";
+import { RSVP_STATUS_COLORS_HEX, getStatusColorHex, getStatusLabel } from "./rsvp-presentation";
 import { getTranslations } from "./rsvp-translations";
 
-const ALL_STATUSES: RsvpAttendanceStatus[] = [
-  "accepted",
-  "declined",
-  "maybe",
-  "pending",
-];
+const ALL_STATUSES: RsvpAttendanceStatus[] = ["accepted", "declined", "maybe", "pending"];
 
 describe("RSVP_STATUS_COLORS_HEX", () => {
   it("defines a hex value for every status", () => {

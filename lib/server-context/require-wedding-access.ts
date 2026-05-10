@@ -66,11 +66,7 @@ export async function requireWeddingAccess({
   if (!isMemberRow(data)) {
     return {
       ok: false,
-      response: errorResponse(
-        403,
-        "FORBIDDEN",
-        "You are not a member of this wedding."
-      ),
+      response: errorResponse(403, "FORBIDDEN", "You are not a member of this wedding."),
     };
   }
 

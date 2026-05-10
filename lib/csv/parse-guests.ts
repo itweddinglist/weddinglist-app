@@ -58,7 +58,7 @@ const HEADER_ALIASES: Record<string, CsvColumnName> = {
   grup: "group",
   notite: "notes",
   notițe: "notes",
-  "notă": "notes",
+  notă: "notes",
   nota: "notes",
   parte: "side",
 };
@@ -187,7 +187,10 @@ export function mapHeaders(
     return {
       error:
         "CSV must contain a 'first_name' or 'prenume' column. " +
-        `Found columns: ${headerRow.map((h) => h.trim()).filter(Boolean).join(", ")}`,
+        `Found columns: ${headerRow
+          .map((h) => h.trim())
+          .filter(Boolean)
+          .join(", ")}`,
     };
   }
 
@@ -336,9 +339,7 @@ export function parseGuestsCsv(csvText: string): CsvParseResult {
   }
 
   // 4. Data rows (skip header, skip blank lines)
-  const dataRows = rawRows.slice(1).filter((row) =>
-    row.some((cell) => cell.trim().length > 0)
-  );
+  const dataRows = rawRows.slice(1).filter((row) => row.some((cell) => cell.trim().length > 0));
 
   const totalDataRows = dataRows.length;
 

@@ -6,8 +6,8 @@
 import type { NumericIdMap, SeatingGuest } from "./types";
 
 export interface SeatAssignmentRow {
-  guest_id: string;    // UUID
-  table_id: string;    // UUID (derivat din seat → table)
+  guest_id: string; // UUID
+  table_id: string; // UUID (derivat din seat → table)
 }
 
 /**

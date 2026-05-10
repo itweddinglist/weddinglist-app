@@ -34,7 +34,10 @@ export type CreateGuestValidation =
 
 export function validateCreateGuest(body: unknown): CreateGuestValidation {
   if (!body || typeof body !== "object") {
-    return { valid: false, errors: [{ field: "body", message: "Request body must be a JSON object." }] };
+    return {
+      valid: false,
+      errors: [{ field: "body", message: "Request body must be a JSON object." }],
+    };
   }
 
   const input = body as Record<string, unknown>;
@@ -60,7 +63,10 @@ export function validateCreateGuest(body: unknown): CreateGuestValidation {
   if (input.display_name !== undefined && input.display_name !== null) {
     displayName = sanitizeName(input.display_name);
     if (!displayName) {
-      errors.push({ field: "display_name", message: "display_name cannot be empty when provided." });
+      errors.push({
+        field: "display_name",
+        message: "display_name cannot be empty when provided.",
+      });
     }
   } else {
     displayName = [firstName, lastName].filter(Boolean).join(" ") || null;
@@ -119,7 +125,10 @@ export type UpdateGuestValidation =
 
 export function validateUpdateGuest(body: unknown): UpdateGuestValidation {
   if (!body || typeof body !== "object") {
-    return { valid: false, errors: [{ field: "body", message: "Request body must be a JSON object." }] };
+    return {
+      valid: false,
+      errors: [{ field: "body", message: "Request body must be a JSON object." }],
+    };
   }
 
   const input = body as Record<string, unknown>;
@@ -149,7 +158,10 @@ export function validateUpdateGuest(body: unknown): UpdateGuestValidation {
     } else {
       const displayName = sanitizeName(input.display_name);
       if (!displayName) {
-        errors.push({ field: "display_name", message: "display_name cannot be empty when provided." });
+        errors.push({
+          field: "display_name",
+          message: "display_name cannot be empty when provided.",
+        });
       } else {
         data.display_name = displayName;
         hasFields = true;

@@ -20,8 +20,7 @@ export async function withCircuitBreaker<T>(
     const data = await Promise.race([fn(), timeout]);
     return { ok: true, data };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : "Unknown error";
 
     if (message === "timeout") {
       return { ok: false, reason: "timeout", message: "WordPress nu răspunde" };

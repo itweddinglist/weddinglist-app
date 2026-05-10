@@ -20,7 +20,7 @@ test.describe("DEV bypass auth foundation", () => {
     // Apare DOAR în session authenticated (loading state arată "Se încarcă...").
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       DEV_MOCK_IDENTITY.wedding.title,
-      { timeout: 10000 },
+      { timeout: 10000 }
     );
 
     // ASSERT: module cards visible (Dashboard mount complet, nu doar h1)
@@ -29,11 +29,7 @@ test.describe("DEV bypass auth foundation", () => {
     // (ambele render aceleași MODULES). data-testid e unique per location.
     // Diagnostic: dacă heading apare dar cards nu, render parțial =
     // probably error în /api/dashboard/stats (separate concern).
-    await expect(
-      page.getByTestId("module-card-seating-chart"),
-    ).toBeVisible();
-    await expect(
-      page.getByTestId("module-card-guest-list"),
-    ).toBeVisible();
+    await expect(page.getByTestId("module-card-seating-chart")).toBeVisible();
+    await expect(page.getByTestId("module-card-guest-list")).toBeVisible();
   });
 });

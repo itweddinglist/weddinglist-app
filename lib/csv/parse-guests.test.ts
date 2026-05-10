@@ -11,7 +11,10 @@ import { parseCsvText, mapHeaders, parseGuestsCsv } from "./parse-guests";
 describe("parseCsvText", () => {
   it("parsează CSV simplu", () => {
     const r = parseCsvText("a,b,c\n1,2,3");
-    expect(r).toEqual([["a", "b", "c"], ["1", "2", "3"]]);
+    expect(r).toEqual([
+      ["a", "b", "c"],
+      ["1", "2", "3"],
+    ]);
   });
 
   it("gestionează quoted fields cu virgulă", () => {
@@ -27,7 +30,10 @@ describe("parseCsvText", () => {
 
   it("gestionează CRLF", () => {
     const r = parseCsvText("a,b\r\n1,2");
-    expect(r).toEqual([["a", "b"], ["1", "2"]]);
+    expect(r).toEqual([
+      ["a", "b"],
+      ["1", "2"],
+    ]);
   });
 
   it("stripează BOM", () => {

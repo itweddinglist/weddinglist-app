@@ -27,30 +27,23 @@ function filterWpCookies(cookieHeader: string): string {
  * forwarded manually via the Cookie request header.
  * Must NOT use credentials: "include" — that only works from a browser.
  */
-async function fetchBootstrapServerSide(
-  filteredCookies: string
-): Promise<BootstrapResponse> {
+async function fetchBootstrapServerSide(filteredCookies: string): Promise<BootstrapResponse> {
   const wpBaseUrl = process.env.NEXT_PUBLIC_WP_BASE_URL;
   if (!wpBaseUrl) {
     throw new Error("Missing NEXT_PUBLIC_WP_BASE_URL");
   }
 
-  const response = await fetch(
-    `${wpBaseUrl}/wp-json/weddinglist/v1/bootstrap`,
-    {
-      method: "GET",
-      headers: {
-        Cookie: filteredCookies,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    }
-  );
+  const response = await fetch(`${wpBaseUrl}/wp-json/weddinglist/v1/bootstrap`, {
+    method: "GET",
+    headers: {
+      Cookie: filteredCookies,
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
 
   if (!response.ok) {
-    throw new Error(
-      `Bootstrap request failed with status ${response.status}`
-    );
+    throw new Error(`Bootstrap request failed with status ${response.status}`);
   }
 
   return response.json() as Promise<BootstrapResponse>;
@@ -60,9 +53,7 @@ async function fetchBootstrapServerSide(
  * A coherent authenticated response has authenticated=true, a non-null
  * app_user_id, and a non-null provisioning_status.
  */
-function isCoherentAuthenticated(
-  data: BootstrapResponse
-): data is BootstrapResponse & {
+function isCoherentAuthenticated(data: BootstrapResponse): data is BootstrapResponse & {
   app_user_id: string;
   provisioning_status: NonNullable<BootstrapResponse["provisioning_status"]>;
   user: NonNullable<BootstrapResponse["user"]>;
@@ -87,11 +78,8 @@ function isCoherentAuthenticated(
  *  5. Normalise into ServerAppContext
  *  6. Cache if authenticated
  */
-export async function getServerAppContext(
-  request: NextRequest
-): Promise<ServerAppContext> {
-  const request_id =
-    request.headers.get("x-request-id") ?? crypto.randomUUID();
+export async function getServerAppContext(request: NextRequest): Promise<ServerAppContext> {
+  const request_id = request.headers.get("x-request-id") ?? crypto.randomUUID();
 
   // Production safety: warn if debug flag is set but will be ignored
   if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_DEBUG_AUTH === "true") {
@@ -130,9 +118,7 @@ export async function getServerAppContext(
     return { ...cached, request_id };
   }
 
-  const result = await withCircuitBreaker(() =>
-    fetchBootstrapServerSide(filteredCookies)
-  );
+  const result = await withCircuitBreaker(() => fetchBootstrapServerSide(filteredCookies));
 
   if (!result.ok) {
     // WP down — fallback la shadow session dacă există și e valid

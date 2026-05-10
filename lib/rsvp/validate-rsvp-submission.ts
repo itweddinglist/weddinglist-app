@@ -21,10 +21,7 @@ const VALID_STATUSES: readonly RsvpAttendanceStatus[] = [
   "maybe",
 ];
 
-const VALID_MEAL_CHOICES: readonly RsvpMealChoice[] = [
-  "standard",
-  "vegetarian",
-];
+const VALID_MEAL_CHOICES: readonly RsvpMealChoice[] = ["standard", "vegetarian"];
 
 export type SubmitRsvpValidation =
   | { valid: true; data: SubmitRsvpInput }
@@ -103,9 +100,7 @@ export function validateRsvpSubmission(body: unknown): SubmitRsvpValidation {
     validatedResponses.push({
       guest_event_id: r.guest_event_id as string,
       status,
-      meal_choice: r.meal_choice
-        ? (r.meal_choice as RsvpMealChoice)
-        : null,
+      meal_choice: r.meal_choice ? (r.meal_choice as RsvpMealChoice) : null,
       dietary_notes: dietaryNotes,
       note,
     });

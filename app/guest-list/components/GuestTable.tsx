@@ -14,12 +14,18 @@ interface Props {
   highlightedGuestId?: string | null;
 }
 
-export default function GuestTable({ guests, isLoading, onEdit, onDelete, highlightedGuestId }: Props) {
+export default function GuestTable({
+  guests,
+  isLoading,
+  onEdit,
+  onDelete,
+  highlightedGuestId,
+}: Props) {
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div
-        className="rounded-xl overflow-hidden"
+        className="overflow-hidden rounded-xl"
         style={{
           background: "white",
           boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
@@ -28,27 +34,18 @@ export default function GuestTable({ guests, isLoading, onEdit, onDelete, highli
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 px-4 py-3 animate-pulse"
+            className="flex animate-pulse items-center gap-4 px-4 py-3"
             style={{ borderBottom: "1px solid var(--cream-line)" }}
           >
             <div
-              className="w-8 h-8 rounded-full flex-shrink-0"
+              className="h-8 w-8 flex-shrink-0 rounded-full"
               style={{ background: "var(--cream)" }}
             />
             <div className="flex-1 space-y-2">
-              <div
-                className="h-3 rounded"
-                style={{ background: "var(--cream)", width: "40%" }}
-              />
-              <div
-                className="h-2 rounded"
-                style={{ background: "var(--cream)", width: "25%" }}
-              />
+              <div className="h-3 rounded" style={{ background: "var(--cream)", width: "40%" }} />
+              <div className="h-2 rounded" style={{ background: "var(--cream)", width: "25%" }} />
             </div>
-            <div
-              className="h-6 w-20 rounded-full"
-              style={{ background: "var(--cream)" }}
-            />
+            <div className="h-6 w-20 rounded-full" style={{ background: "var(--cream)" }} />
           </div>
         ))}
       </div>
@@ -65,9 +62,9 @@ export default function GuestTable({ guests, isLoading, onEdit, onDelete, highli
           boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
         }}
       >
-        <div className="text-4xl mb-4">👥</div>
+        <div className="mb-4 text-4xl">👥</div>
         <h3
-          className="text-lg font-light mb-2"
+          className="mb-2 text-lg font-light"
           style={{
             fontFamily: "var(--font-display)",
             color: "var(--navy)",
@@ -85,7 +82,7 @@ export default function GuestTable({ guests, isLoading, onEdit, onDelete, highli
   // ── Tabel ──────────────────────────────────────────────────────────────────
   return (
     <div
-      className="rounded-xl overflow-hidden"
+      className="overflow-hidden rounded-xl"
       style={{
         background: "white",
         boxShadow: "0 2px 12px rgba(26,31,58,0.07)",
@@ -104,7 +101,7 @@ export default function GuestTable({ guests, isLoading, onEdit, onDelete, highli
             ].map((col) => (
               <th
                 key={col.label}
-                className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider"
+                className="px-4 py-3 text-left text-xs font-medium tracking-wider uppercase"
                 style={{
                   color: "var(--muted)",
                   width: col.width,

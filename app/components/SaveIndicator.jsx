@@ -62,8 +62,7 @@ function Spinner() {
 
 function SaveIndicator({ status, isOffline }) {
   // Offline suprascriere vizuală — dar doar dacă nu suntem în saving activ
-  const effectiveStatus =
-    isOffline && status !== "saving" ? "offline" : status;
+  const effectiveStatus = isOffline && status !== "saving" ? "offline" : status;
 
   if (effectiveStatus === "idle") return null;
 

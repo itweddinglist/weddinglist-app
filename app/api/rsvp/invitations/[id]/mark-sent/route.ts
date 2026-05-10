@@ -13,20 +13,13 @@ import {
 } from "@/lib/server-context";
 import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
-import {
-  successResponse,
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, internalErrorResponse } from "@/lib/api-response";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const VALID_CHANNELS = ["whatsapp", "email", "sms", "facebook", "qr", "link", "manual"] as const;
 
-export async function PATCH(
-  request: NextRequest,
-  context: RouteContext
-): Promise<Response> {
+export async function PATCH(request: NextRequest, context: RouteContext): Promise<Response> {
   const originCheck = checkOrigin(request);
   if (originCheck) return originCheck;
 
@@ -61,7 +54,8 @@ export async function PATCH(
       .eq("id", id)
       .maybeSingle();
 
-    if (fetchError) return internalErrorResponse(fetchError, "PATCH /api/rsvp/invitations/[id]/mark-sent fetch");
+    if (fetchError)
+      return internalErrorResponse(fetchError, "PATCH /api/rsvp/invitations/[id]/mark-sent fetch");
 
     // 404 generic — nu revelăm dacă invitația există sau aparține altcuiva
     if (!existing || existing.wedding_id !== access.wedding_id) {
@@ -84,7 +78,11 @@ export async function PATCH(
       .eq("wedding_id", access.wedding_id)
       .select("id");
 
-    if (updateError) return internalErrorResponse(updateError, "PATCH /api/rsvp/invitations/[id]/mark-sent update");
+    if (updateError)
+      return internalErrorResponse(
+        updateError,
+        "PATCH /api/rsvp/invitations/[id]/mark-sent update"
+      );
 
     // Race condition: rândul a fost șters între SELECT și UPDATE
     if (!updated || updated.length === 0) {
@@ -92,7 +90,6 @@ export async function PATCH(
     }
 
     return successResponse({ success: true, invitation_id: id });
-
   } catch (err) {
     return internalErrorResponse(err, "PATCH /api/rsvp/invitations/[id]/mark-sent");
   }

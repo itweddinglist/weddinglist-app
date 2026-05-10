@@ -24,9 +24,7 @@ import type { GuestEventRow, AttendanceStatus } from "@/types/guests";
  *   const event = makeGuestEventRow({ attendance_status: "attending" });
  *   const declined = makeGuestEventRow({ attendance_status: "declined", meal_choice: "vegetarian" });
  */
-export function makeGuestEventRow(
-  overrides: Partial<GuestEventRow> = {}
-): GuestEventRow {
+export function makeGuestEventRow(overrides: Partial<GuestEventRow> = {}): GuestEventRow {
   return {
     id: "00000000-0000-0000-0000-000000000000",
     wedding_id: "00000000-0000-0000-0000-000000000000",
@@ -48,8 +46,6 @@ export function makeGuestEventRow(
  * Exemplu:
  *   const events = [makeEventWithStatus("declined")];
  */
-export function makeEventWithStatus(
-  attendance_status: AttendanceStatus | null
-): GuestEventRow {
+export function makeEventWithStatus(attendance_status: AttendanceStatus | null): GuestEventRow {
   return makeGuestEventRow({ attendance_status });
 }

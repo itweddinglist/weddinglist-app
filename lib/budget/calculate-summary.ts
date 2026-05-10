@@ -39,9 +39,9 @@ export function calculateBudgetSummary(
   const total_remaining = Math.max(0, Math.round((total_estimated - total_paid) * 100) / 100);
 
   const items_by_status = {
-    planned:   items.filter(isBudgetItemPlanned).length,
+    planned: items.filter(isBudgetItemPlanned).length,
     confirmed: items.filter(isBudgetItemConfirmed).length,
-    paid:      items.filter(isBudgetItemPaid).length,
+    paid: items.filter(isBudgetItemPaid).length,
     cancelled: items.filter(isBudgetItemCancelled).length,
   };
 

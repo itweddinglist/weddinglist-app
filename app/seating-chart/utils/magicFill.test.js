@@ -9,7 +9,16 @@ function makeTable(id, seats, type = "round") {
 }
 
 function makeGuest(id, grup, status = "confirmat") {
-  return { id, prenume: `P${id}`, nume: `N${id}`, grup, status, meniu: "Standard", tableId: null, guest_events: [] };
+  return {
+    id,
+    prenume: `P${id}`,
+    nume: `N${id}`,
+    grup,
+    status,
+    meniu: "Standard",
+    tableId: null,
+    guest_events: [],
+  };
 }
 
 // ── Test 1: Grup încape într-o singură masă ───────────────────────────────────
@@ -462,9 +471,9 @@ describe("S4 — grup mai mare decât orice masă (F.mireasă 35, 9×10)", () =>
     const tables = Array.from({ length: 9 }, (_, i) => makeTable(i + 1, 10));
     let id = 1;
     const fMireasa = Array.from({ length: 35 }, () => makeGuest(id++, "F.mireasă"));
-    const fMire    = Array.from({ length: 18 }, () => makeGuest(id++, "F.mire"));
+    const fMire = Array.from({ length: 18 }, () => makeGuest(id++, "F.mire"));
     const prieteni = Array.from({ length: 22 }, () => makeGuest(id++, "Prieteni"));
-    const cMire    = Array.from({ length: 14 }, () => makeGuest(id++, "C.mire"));
+    const cMire = Array.from({ length: 14 }, () => makeGuest(id++, "C.mire"));
     const guests = [...fMireasa, ...fMire, ...prieteni, ...cMire];
 
     const res = calculateMagicFill(guests, tables);
@@ -498,7 +507,7 @@ describe("S5 — ocupare parțială cu grupuri pure (invitați pre-asignați)", 
     ];
     // restul neasignați
     const cMireasa = Array.from({ length: 20 }, () => makeGuest(id++, "C.mireasă"));
-    const cMire    = Array.from({ length: 16 }, () => makeGuest(id++, "C.mire"));
+    const cMire = Array.from({ length: 16 }, () => makeGuest(id++, "C.mire"));
     const prieteni = Array.from({ length: 14 }, () => makeGuest(id++, "Prieteni"));
 
     const guests = [...fMireasa, ...fMire, ...cMireasa, ...cMire, ...prieteni];
@@ -539,7 +548,9 @@ describe("S6 — mese locked și continuabilă, capacitate parțială", () => {
     ];
 
     // M3 CONTINUABILĂ: 5 F.mireasă (pură, 5 locuri libere)
-    fMireasa.push(...Array.from({ length: 5 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 3 })));
+    fMireasa.push(
+      ...Array.from({ length: 5 }, () => ({ ...makeGuest(id++, "F.mireasă"), tableId: 3 }))
+    );
 
     // Neasignați: total 63
     fMireasa.push(...Array.from({ length: 17 }, () => makeGuest(id++, "F.mireasă")));
@@ -565,9 +576,9 @@ describe("S6 — mese locked și continuabilă, capacitate parțială", () => {
 describe("S7 — grupuri mici, combinații R5 (40×G2 + 10×H3 + 5×I1)", () => {
   it("toți 115 asezați, ≥2 mese cu ≥3 grupuri distincte", () => {
     const tables = [
-      ...Array.from({ length: 8 }, (_, i) => makeTable(i + 1, 10)),  // M1-M8
-      ...Array.from({ length: 4 }, (_, i) => makeTable(i + 9, 8)),   // M9-M12
-      makeTable(13, 4),                                                 // M13
+      ...Array.from({ length: 8 }, (_, i) => makeTable(i + 1, 10)), // M1-M8
+      ...Array.from({ length: 4 }, (_, i) => makeTable(i + 9, 8)), // M9-M12
+      makeTable(13, 4), // M13
     ];
     let id = 1;
     const guests = [];
@@ -612,7 +623,7 @@ describe("S7 — grupuri mici, combinații R5 (40×G2 + 10×H3 + 5×I1)", () => 
 describe("S8 — stress 500 invitați + 30 singletons (testează R6 FAZA 2)", () => {
   it("toți 500 asezați, ≥2 mese cu ≥3 singletons grupați", () => {
     const tables = [
-      ...Array.from({ length: 30 }, (_, i) => makeTable(i + 1, 12)),  // M1-M30
+      ...Array.from({ length: 30 }, (_, i) => makeTable(i + 1, 12)), // M1-M30
       ...Array.from({ length: 15 }, (_, i) => makeTable(i + 31, 10)), // M31-M45
     ];
     let id = 1;
@@ -693,7 +704,7 @@ describe("S10 — masă prezidiu exclusă, invitați Prezidiu pre-asignați", ()
       tableId: 99,
     }));
     const fMireasa = Array.from({ length: 36 }, () => makeGuest(id++, "F.mireasă"));
-    const fMire    = Array.from({ length: 30 }, () => makeGuest(id++, "F.mire"));
+    const fMire = Array.from({ length: 30 }, () => makeGuest(id++, "F.mire"));
     const prieteni = Array.from({ length: 42 }, () => makeGuest(id++, "Prieteni"));
     const guests = [...prezidiuGuests, ...fMireasa, ...fMire, ...prieteni];
 

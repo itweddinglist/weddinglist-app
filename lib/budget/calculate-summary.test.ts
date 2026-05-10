@@ -45,7 +45,7 @@ describe("calculateBudgetSummary", () => {
       item(1000, "planned"),
       item(2000, "confirmed"),
       item(3000, "paid"),
-      item(500, "cancelled"),   // exclus
+      item(500, "cancelled"), // exclus
     ];
     const result = calculateBudgetSummary(items, []);
     expect(result.total_estimated).toBe(6000); // 1000 + 2000 + 3000
@@ -54,7 +54,7 @@ describe("calculateBudgetSummary", () => {
   it("calculează total_actual din items cu actual_amount setat", () => {
     const items = [
       item(1000, "planned", "RON", 900),
-      item(2000, "confirmed", "RON", null),  // null — exclus
+      item(2000, "confirmed", "RON", null), // null — exclus
       item(3000, "paid", "RON", 3000),
     ];
     const result = calculateBudgetSummary(items, []);
@@ -83,11 +83,7 @@ describe("calculateBudgetSummary", () => {
   });
 
   it("calculează items_count inclusiv cancelled", () => {
-    const items = [
-      item(1000, "planned"),
-      item(2000, "cancelled"),
-      item(3000, "paid"),
-    ];
+    const items = [item(1000, "planned"), item(2000, "cancelled"), item(3000, "paid")];
     const result = calculateBudgetSummary(items, []);
     expect(result.items_count).toBe(3);
   });
@@ -116,29 +112,20 @@ describe("calculateBudgetSummary", () => {
   });
 
   it("has_mixed_currencies = false când toate items au același currency", () => {
-    const items = [
-      item(1000, "planned", "RON"),
-      item(2000, "confirmed", "RON"),
-    ];
+    const items = [item(1000, "planned", "RON"), item(2000, "confirmed", "RON")];
     const result = calculateBudgetSummary(items, []);
     expect(result.has_mixed_currencies).toBe(false);
   });
 
   it("has_mixed_currencies = true când există items cu currency diferit", () => {
-    const items = [
-      item(1000, "planned", "RON"),
-      item(2000, "confirmed", "EUR"),
-    ];
+    const items = [item(1000, "planned", "RON"), item(2000, "confirmed", "EUR")];
     const result = calculateBudgetSummary(items, []);
     expect(result.has_mixed_currencies).toBe(true);
     expect(result.currency).toBe("RON"); // primul item
   });
 
   it("rotunjește la 2 zecimale — evită floating point artifacts", () => {
-    const items = [
-      item(1500.1, "planned"),
-      item(200.2, "planned"),
-    ];
+    const items = [item(1500.1, "planned"), item(200.2, "planned")];
     const result = calculateBudgetSummary(items, []);
     expect(result.total_estimated).toBe(1700.3); // nu 1700.3000000000002
   });
@@ -157,10 +144,7 @@ describe("calculateBudgetSummary", () => {
   });
 
   it("funcționează cu toate items cancelled", () => {
-    const items = [
-      item(1000, "cancelled"),
-      item(2000, "cancelled"),
-    ];
+    const items = [item(1000, "cancelled"), item(2000, "cancelled")];
     const result = calculateBudgetSummary(items, []);
     expect(result.total_estimated).toBe(0); // toate cancelled
     expect(result.items_count).toBe(2);

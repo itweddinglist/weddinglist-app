@@ -5,18 +5,11 @@
 // =============================================================================
 
 import { type NextRequest } from "next/server";
-import {
-  getServerAppContext,
-  requireAuthenticatedContext,
-} from "@/lib/server-context";
+import { getServerAppContext, requireAuthenticatedContext } from "@/lib/server-context";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { sendAccountDeletionEmail } from "@/lib/gdpr/send-deletion-email";
 import { wl_audit } from "@/lib/audit/wl-audit";
-import {
-  successResponse,
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, internalErrorResponse } from "@/lib/api-response";
 
 export async function DELETE(request: NextRequest): Promise<Response> {
   const ctx = await getServerAppContext(request);
@@ -44,7 +37,11 @@ export async function DELETE(request: NextRequest): Promise<Response> {
 
   // @ts-expect-error: C11 cascade - SelectQueryError from status SELECT (app_users) - fix in PR 4
   if (appUser.status === "deletion_failed") {
-    return errorResponse(409, "DELETION_FAILED", "O ștergere anterioară a eșuat. Contactează suportul.");
+    return errorResponse(
+      409,
+      "DELETION_FAILED",
+      "O ștergere anterioară a eșuat. Contactează suportul."
+    );
   }
 
   // ── Step 2: Ownership check ────────────────────────────────────────────────
@@ -159,10 +156,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
     }
 
     // ── Step 9: Hard delete app_users ────────────────────────────────────────
-    const { error: auErr } = await supabaseServer
-      .from("app_users")
-      .delete()
-      .eq("id", userId);
+    const { error: auErr } = await supabaseServer.from("app_users").delete().eq("id", userId);
 
     if (auErr) {
       await markDeletionFailed(userId, requestId);
@@ -180,7 +174,6 @@ export async function DELETE(request: NextRequest): Promise<Response> {
       success: true,
       message: "Contul tău a fost șters. Accesul tău a fost eliminat.",
     });
-
   } catch (err: unknown) {
     await markDeletionFailed(userId, requestId);
     return internalErrorResponse(err, "DELETE /api/account");
@@ -189,10 +182,7 @@ export async function DELETE(request: NextRequest): Promise<Response> {
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-async function markDeletionFailed(
-  userId: string,
-  requestId: string
-): Promise<void> {
+async function markDeletionFailed(userId: string, requestId: string): Promise<void> {
   try {
     await supabaseServer
       .from("app_users")

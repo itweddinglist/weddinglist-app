@@ -77,8 +77,7 @@ export function validateCreatePayment(body: unknown): CreatePaymentValidation {
   }
 
   // currency — optional, default "RON", exact 3 caractere
-  const currency =
-    input.currency === undefined || input.currency === null ? "RON" : input.currency;
+  const currency = input.currency === undefined || input.currency === null ? "RON" : input.currency;
   if (!isValidCurrency(currency)) {
     errors.push({
       field: "currency",
@@ -104,9 +103,7 @@ export function validateCreatePayment(body: unknown): CreatePaymentValidation {
 
   // note — optional, max 500 chars
   const note =
-    input.note !== undefined && input.note !== null
-      ? sanitizeText(input.note, 500)
-      : null;
+    input.note !== undefined && input.note !== null ? sanitizeText(input.note, 500) : null;
 
   if (errors.length > 0) return { valid: false, errors };
 
@@ -118,9 +115,7 @@ export function validateCreatePayment(body: unknown): CreatePaymentValidation {
       amount: input.amount as number,
       currency: (currency as string).trim().toUpperCase(),
       paid_at:
-        input.paid_at !== undefined && input.paid_at !== null
-          ? (input.paid_at as string)
-          : null,
+        input.paid_at !== undefined && input.paid_at !== null ? (input.paid_at as string) : null,
       payment_method: paymentMethod,
       note,
     },

@@ -15,9 +15,7 @@ import {
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { exportWeddingJson, buildExportFilename } from "@/lib/export/json-export";
 import { wl_audit } from "@/lib/audit/wl-audit";
-import {
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { internalErrorResponse } from "@/lib/api-response";
 
 export async function GET(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────

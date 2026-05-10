@@ -74,18 +74,14 @@ export default function DevPanel(): React.ReactElement {
   const showStaleWarning = SHOW_STALE_WARNING;
 
   const addError = useCallback((msg: string) => {
-    setErrors((prev) =>
-      [`[${new Date().toISOString()}] ${msg}`, ...prev].slice(0, 20)
-    );
+    setErrors((prev) => [`[${new Date().toISOString()}] ${msg}`, ...prev].slice(0, 20));
   }, []);
 
   // All setState calls here happen AFTER the first await — avoids set-state-in-effect
   const load = useCallback(() => {
     Promise.allSettled([
       fetchJson<DevSession>("/api/dev/session")
-        .then((data) =>
-          setSession({ status: "ok", data, fetchedAt: Date.now() })
-        )
+        .then((data) => setSession({ status: "ok", data, fetchedAt: Date.now() }))
         .catch((e: unknown) => {
           const msg = e instanceof Error ? e.message : String(e);
           setSession({ status: "error", message: msg });
@@ -93,9 +89,7 @@ export default function DevPanel(): React.ReactElement {
         }),
 
       fetchJson<DevFlags>("/api/dev/flags")
-        .then((data) =>
-          setFlags({ status: "ok", data, fetchedAt: Date.now() })
-        )
+        .then((data) => setFlags({ status: "ok", data, fetchedAt: Date.now() }))
         .catch((e: unknown) => {
           const msg = e instanceof Error ? e.message : String(e);
           setFlags({ status: "error", message: msg });
@@ -103,9 +97,7 @@ export default function DevPanel(): React.ReactElement {
         }),
 
       fetchJson<DevHealth>("/api/dev/health")
-        .then((data) =>
-          setHealth({ status: "ok", data, fetchedAt: Date.now() })
-        )
+        .then((data) => setHealth({ status: "ok", data, fetchedAt: Date.now() }))
         .catch((e: unknown) => {
           const msg = e instanceof Error ? e.message : String(e);
           setHealth({ status: "error", message: msg });
@@ -167,10 +159,7 @@ export default function DevPanel(): React.ReactElement {
           <button onClick={load} style={btnStyle("#C9907A", "#fff")}>
             Reload
           </button>
-          <button
-            onClick={handleClearCache}
-            style={btnStyle("transparent", "#C9907A", "#C9907A")}
-          >
+          <button onClick={handleClearCache} style={btnStyle("transparent", "#C9907A", "#C9907A")}>
             Clear Cache
           </button>
           <button onClick={handleForceResync} style={btnStyle("#E53E3E", "#fff")}>
@@ -181,9 +170,7 @@ export default function DevPanel(): React.ReactElement {
 
       {/* Stale session warning */}
       {showStaleWarning && (
-        <div style={warningBanner}>
-          ⚠️ Sesiunea nu a fost reîmprospătată de peste 5 minute.
-        </div>
+        <div style={warningBanner}>⚠️ Sesiunea nu a fost reîmprospătată de peste 5 minute.</div>
       )}
 
       <div
@@ -196,9 +183,7 @@ export default function DevPanel(): React.ReactElement {
         {/* Session */}
         <Card title="Session">
           {session.status === "loading" && <Muted>Se încarcă...</Muted>}
-          {session.status === "error" && (
-            <ErrorText>{session.message}</ErrorText>
-          )}
+          {session.status === "error" && <ErrorText>{session.message}</ErrorText>}
           {session.status === "ok" && (
             <table style={tableStyle}>
               <tbody>
@@ -206,44 +191,20 @@ export default function DevPanel(): React.ReactElement {
                 <Row
                   label="source"
                   value={
-                    <Badge
-                      value={session.data.source}
-                      ok={session.data.source === "wordpress"}
-                    />
+                    <Badge value={session.data.source} ok={session.data.source === "wordpress"} />
                   }
                 />
-                <Row
-                  label="app_user_id"
-                  value={session.data.app_user_id ?? "—"}
-                  mono
-                />
-                <Row
-                  label="wedding_id"
-                  value={session.data.wedding_id ?? "—"}
-                  mono
-                />
-                <Row
-                  label="event_id"
-                  value={session.data.event_id ?? "—"}
-                  mono
-                />
-                <Row
-                  label="provisioning"
-                  value={session.data.provisioning_status ?? "—"}
-                />
+                <Row label="app_user_id" value={session.data.app_user_id ?? "—"} mono />
+                <Row label="wedding_id" value={session.data.wedding_id ?? "—"} mono />
+                <Row label="event_id" value={session.data.event_id ?? "—"} mono />
+                <Row label="provisioning" value={session.data.provisioning_status ?? "—"} />
                 <Row
                   label="wp_user_id"
-                  value={
-                    session.data.wp_user_id !== null
-                      ? String(session.data.wp_user_id)
-                      : "—"
-                  }
+                  value={session.data.wp_user_id !== null ? String(session.data.wp_user_id) : "—"}
                 />
                 <Row
                   label="fetched at"
-                  value={new Date(session.fetchedAt).toLocaleTimeString(
-                    "ro-RO"
-                  )}
+                  value={new Date(session.fetchedAt).toLocaleTimeString("ro-RO")}
                 />
               </tbody>
             </table>
@@ -253,28 +214,18 @@ export default function DevPanel(): React.ReactElement {
         {/* Health */}
         <Card title="Health">
           {health.status === "loading" && <Muted>Se verifică...</Muted>}
-          {health.status === "error" && (
-            <ErrorText>{health.message}</ErrorText>
-          )}
+          {health.status === "error" && <ErrorText>{health.message}</ErrorText>}
           {health.status === "ok" && (
             <table style={tableStyle}>
               <tbody>
                 <Row
                   label="supabase"
-                  value={
-                    <Badge
-                      value={health.data.supabase}
-                      ok={health.data.supabase === "ok"}
-                    />
-                  }
+                  value={<Badge value={health.data.supabase} ok={health.data.supabase === "ok"} />}
                 />
                 <Row
                   label="wordpress"
                   value={
-                    <Badge
-                      value={health.data.wordpress}
-                      ok={health.data.wordpress === "ok"}
-                    />
+                    <Badge value={health.data.wordpress} ok={health.data.wordpress === "ok"} />
                   }
                 />
                 <Row
@@ -291,9 +242,7 @@ export default function DevPanel(): React.ReactElement {
                 )}
                 <Row
                   label="timestamp"
-                  value={new Date(health.data.timestamp).toLocaleTimeString(
-                    "ro-RO"
-                  )}
+                  value={new Date(health.data.timestamp).toLocaleTimeString("ro-RO")}
                 />
               </tbody>
             </table>
@@ -398,13 +347,7 @@ function Card({
   );
 }
 
-function Badge({
-  value,
-  ok,
-}: {
-  value: string;
-  ok: boolean;
-}): React.ReactElement {
+function Badge({ value, ok }: { value: string; ok: boolean }): React.ReactElement {
   return (
     <span
       style={{
@@ -459,24 +402,12 @@ function Row({
   );
 }
 
-function Muted({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <p style={{ color: "#9DA3BC", fontSize: 13, margin: 0 }}>{children}</p>
-  );
+function Muted({ children }: { children: React.ReactNode }): React.ReactElement {
+  return <p style={{ color: "#9DA3BC", fontSize: 13, margin: 0 }}>{children}</p>;
 }
 
-function ErrorText({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <p style={{ color: "#E53E3E", fontSize: 13, margin: 0 }}>{children}</p>
-  );
+function ErrorText({ children }: { children: React.ReactNode }): React.ReactElement {
+  return <p style={{ color: "#E53E3E", fontSize: 13, margin: 0 }}>{children}</p>;
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -496,11 +427,7 @@ const warningBanner: React.CSSProperties = {
   color: "#744210",
 };
 
-function btnStyle(
-  bg: string,
-  color: string,
-  borderColor?: string
-): React.CSSProperties {
+function btnStyle(bg: string, color: string, borderColor?: string): React.CSSProperties {
   return {
     background: bg,
     color,

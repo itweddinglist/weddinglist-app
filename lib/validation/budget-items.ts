@@ -14,12 +14,7 @@
 import { sanitizeName, sanitizeNotes, isValidUuid, isValidEnum } from "../sanitize";
 import type { BudgetItemStatus, ValidationError } from "../../types/budget";
 
-const VALID_STATUSES: readonly BudgetItemStatus[] = [
-  "planned",
-  "confirmed",
-  "paid",
-  "cancelled",
-];
+const VALID_STATUSES: readonly BudgetItemStatus[] = ["planned", "confirmed", "paid", "cancelled"];
 
 // Regex ISO date: YYYY-MM-DD
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -99,10 +94,7 @@ export function validateCreateBudgetItem(body: unknown): CreateBudgetItemValidat
   }
 
   // currency — optional, default "RON", exact 3 caractere
-  const currency =
-    input.currency === undefined || input.currency === null
-      ? "RON"
-      : input.currency;
+  const currency = input.currency === undefined || input.currency === null ? "RON" : input.currency;
   if (!isValidCurrency(currency)) {
     errors.push({
       field: "currency",
@@ -111,8 +103,7 @@ export function validateCreateBudgetItem(body: unknown): CreateBudgetItemValidat
   }
 
   // status — optional, default "planned"
-  const status =
-    input.status === undefined || input.status === null ? "planned" : input.status;
+  const status = input.status === undefined || input.status === null ? "planned" : input.status;
   if (!isValidEnum(status, VALID_STATUSES)) {
     errors.push({
       field: "status",
@@ -160,9 +151,7 @@ export function validateCreateBudgetItem(body: unknown): CreateBudgetItemValidat
           ? (input.vendor_id as string)
           : null,
       due_date:
-        input.due_date !== undefined && input.due_date !== null
-          ? (input.due_date as string)
-          : null,
+        input.due_date !== undefined && input.due_date !== null ? (input.due_date as string) : null,
       notes,
     },
   };
@@ -345,14 +334,11 @@ export function validateUpdateBudgetItem(
 const VALID_TRANSITIONS: Record<BudgetItemStatus, readonly BudgetItemStatus[]> = {
   planned: ["confirmed", "cancelled"],
   confirmed: ["paid", "cancelled"],
-  paid: [],        // nicio tranziție permisă prin UI
-  cancelled: [],   // terminal
+  paid: [], // nicio tranziție permisă prin UI
+  cancelled: [], // terminal
 };
 
-function validateStatusTransition(
-  from: BudgetItemStatus,
-  to: BudgetItemStatus
-): string | null {
+function validateStatusTransition(from: BudgetItemStatus, to: BudgetItemStatus): string | null {
   if (from === to) return null; // no-op, ok
   const allowed = VALID_TRANSITIONS[from];
   if (!allowed.includes(to)) {

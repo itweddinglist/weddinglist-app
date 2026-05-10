@@ -12,11 +12,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import type {
-  GuestWithRelations,
-  CreateGuestInput,
-  UpdateGuestInput,
-} from "@/types/guests";
+import type { GuestWithRelations, CreateGuestInput, UpdateGuestInput } from "@/types/guests";
 
 // ─── Module-level counter for tmpId uniqueness ────────────────────────────────
 let counter = 0;
@@ -117,13 +113,8 @@ export function useOptimisticGuests(
 
   // ── Stable setter (reads from ref — correct under React batching) ──────────
   const setGuests = useCallback(
-    (
-      updater:
-        | GuestWithRelations[]
-        | ((prev: GuestWithRelations[]) => GuestWithRelations[])
-    ) => {
-      const next =
-        typeof updater === "function" ? updater(guestsRef.current) : updater;
+    (updater: GuestWithRelations[] | ((prev: GuestWithRelations[]) => GuestWithRelations[])) => {
+      const next = typeof updater === "function" ? updater(guestsRef.current) : updater;
       guestsRef.current = next;
       setGuestsRaw(next);
     },
@@ -157,8 +148,7 @@ export function useOptimisticGuests(
         first_name: input.first_name,
         last_name: input.last_name ?? null,
         display_name:
-          input.display_name ??
-          [input.first_name, input.last_name].filter(Boolean).join(" "),
+          input.display_name ?? [input.first_name, input.last_name].filter(Boolean).join(" "),
         side: input.side ?? null,
         notes: input.notes ?? null,
         is_vip: input.is_vip ?? false,
@@ -189,8 +179,7 @@ export function useOptimisticGuests(
         if (!isSeqCurrent(tmpId, capturedSeq)) return;
 
         if (!res.ok) {
-          const errObj = (json as Record<string, Record<string, string>> | null)
-            ?.error;
+          const errObj = (json as Record<string, Record<string, string>> | null)?.error;
           throw new Error(errObj?.message ?? "Eroare la adăugarea invitatului.");
         }
 
@@ -200,9 +189,7 @@ export function useOptimisticGuests(
         } catch (parseErr) {
           if (!isSeqCurrent(tmpId, capturedSeq)) return;
           setGuests((prev) => prev.filter((g) => g.id !== tmpId));
-          onError?.(
-            (parseErr as Error).message ?? "Răspuns invalid. Invitatul a fost eliminat."
-          );
+          onError?.((parseErr as Error).message ?? "Răspuns invalid. Invitatul a fost eliminat.");
           return;
         }
 
@@ -245,9 +232,7 @@ export function useOptimisticGuests(
       const mergedInput = display_name != null ? { ...restInput, display_name } : restInput;
       setGuests((prev) =>
         prev.map((g) =>
-          g.id === id
-            ? { ...g, ...mergedInput, updated_at: new Date().toISOString() }
-            : g
+          g.id === id ? { ...g, ...mergedInput, updated_at: new Date().toISOString() } : g
         )
       );
 
@@ -268,11 +253,8 @@ export function useOptimisticGuests(
         if (!isSeqCurrent(id, capturedSeq)) return;
 
         if (!res.ok) {
-          const errObj = (json as Record<string, Record<string, string>> | null)
-            ?.error;
-          throw new Error(
-            errObj?.message ?? "Eroare la actualizarea invitatului."
-          );
+          const errObj = (json as Record<string, Record<string, string>> | null)?.error;
+          throw new Error(errObj?.message ?? "Eroare la actualizarea invitatului.");
         }
 
         let realGuest: GuestWithRelations;
@@ -284,10 +266,7 @@ export function useOptimisticGuests(
           if (saved) {
             setGuests((prev) => prev.map((g) => (g.id === id ? saved : g)));
           }
-          onError?.(
-            (parseErr as Error).message ??
-              "Răspuns invalid. Modificarea a fost anulată."
-          );
+          onError?.((parseErr as Error).message ?? "Răspuns invalid. Modificarea a fost anulată.");
           return;
         }
 
@@ -301,9 +280,7 @@ export function useOptimisticGuests(
         if (saved) {
           setGuests((prev) => prev.map((g) => (g.id === id ? saved : g)));
         }
-        onError?.(
-          (err as Error).message ?? "Eroare la actualizarea invitatului."
-        );
+        onError?.((err as Error).message ?? "Eroare la actualizarea invitatului.");
       } finally {
         if (isSeqCurrent(id, capturedSeq)) {
           editRollbackRef.current.delete(id);
@@ -340,8 +317,7 @@ export function useOptimisticGuests(
 
         if (!res.ok) {
           const json: unknown = await res.json().catch(() => null);
-          const errObj = (json as Record<string, Record<string, string>> | null)
-            ?.error;
+          const errObj = (json as Record<string, Record<string, string>> | null)?.error;
           throw new Error(errObj?.message ?? "Eroare la ștergerea invitatului.");
         }
       } catch (err: unknown) {

@@ -55,13 +55,7 @@ interface ImportReport {
 
 // ─── Toast component ───────────────────────────────────────────────────────────
 
-function ToastStack({
-  toasts,
-  onDismiss,
-}: {
-  toasts: Toast[];
-  onDismiss: (id: string) => void;
-}) {
+function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
   if (toasts.length === 0) return null;
 
   return (
@@ -86,10 +80,7 @@ function ToastStack({
             gap: "0.75rem",
             padding: "0.75rem 1rem",
             borderRadius: "10px",
-            background:
-              t.type === "success"
-                ? "rgba(72,187,120,0.12)"
-                : "rgba(236,201,75,0.15)",
+            background: t.type === "success" ? "rgba(72,187,120,0.12)" : "rgba(236,201,75,0.15)",
             border: `1px solid ${t.type === "success" ? "var(--green)" : "var(--yellow)"}`,
             boxShadow: "0 4px 16px rgba(19,23,46,0.1)",
             animation: "fadeUp 0.2s ease-out",
@@ -175,14 +166,19 @@ export default function GuestListPage() {
 
   const removeToast = useCallback((id: string) => {
     const timer = toastTimers.current.get(id);
-    if (timer) { clearTimeout(timer); toastTimers.current.delete(id); }
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.current.delete(id);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   // Cleanup timers on unmount
   useEffect(() => {
     const timers = toastTimers.current;
-    return () => { timers.forEach(clearTimeout); };
+    return () => {
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   // ── Guest highlight ────────────────────────────────────────────────────────
@@ -199,7 +195,9 @@ export default function GuestListPage() {
   }, []);
 
   useEffect(() => {
-    return () => { if (highlightTimer.current) clearTimeout(highlightTimer.current); };
+    return () => {
+      if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    };
   }, []);
 
   // ── Import report panel ────────────────────────────────────────────────────
@@ -269,7 +267,10 @@ export default function GuestListPage() {
     }
 
     if (search) {
-      const q = search.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const q = search
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
       const name = `${g.first_name} ${g.last_name ?? ""} ${g.display_name}`
         .toLowerCase()
         .normalize("NFD")
@@ -296,22 +297,19 @@ export default function GuestListPage() {
       g.guest_events?.some((e) => e.attendance_status === "attending")
     ).length,
     pending: guests.filter((g) =>
-      g.guest_events?.some((e) =>
-        e.attendance_status === "pending" || e.attendance_status === "invited"
+      g.guest_events?.some(
+        (e) => e.attendance_status === "pending" || e.attendance_status === "invited"
       )
     ).length,
-    declined: guests.filter((g) =>
-      g.guest_events?.some((e) => e.attendance_status === "declined")
-    ).length,
+    declined: guests.filter((g) => g.guest_events?.some((e) => e.attendance_status === "declined"))
+      .length,
   };
 
   // ── Grupuri unice ──────────────────────────────────────────────────────────
 
   const groups = Array.from(
     new Map(
-      guests
-        .filter((g) => g.guest_group)
-        .map((g) => [g.guest_group!.id, g.guest_group!])
+      guests.filter((g) => g.guest_group).map((g) => [g.guest_group!.id, g.guest_group!])
     ).values()
   );
 
@@ -368,26 +366,29 @@ export default function GuestListPage() {
     setIsAddModalOpen(true);
   }, []);
 
-  const handleDelete = useCallback(async (guestId: string) => {
-    if (!confirm("Ești sigur că vrei să ștergi acest invitat?")) return;
+  const handleDelete = useCallback(
+    async (guestId: string) => {
+      if (!confirm("Ești sigur că vrei să ștergi acest invitat?")) return;
 
-    try {
-      const res = await fetch(`/api/guests/${guestId}`, { method: "DELETE" });
+      try {
+        const res = await fetch(`/api/guests/${guestId}`, { method: "DELETE" });
 
-      if (!res.ok) throw new Error("Eroare la ștergerea invitatului.");
-      fetchGuests();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  }, [fetchGuests]);
+        if (!res.ok) throw new Error("Eroare la ștergerea invitatului.");
+        fetchGuests();
+      } catch (err: any) {
+        alert(err.message);
+      }
+    },
+    [fetchGuests]
+  );
 
   // ── Session states ─────────────────────────────────────────────────────────
 
   if (sessionStatus === "loading") {
     return (
-      <div className="flex items-center justify-center min-h-64">
+      <div className="flex min-h-64 items-center justify-center">
         <div
-          className="w-8 h-8 rounded-full border-2 animate-spin"
+          className="h-8 w-8 animate-spin rounded-full border-2"
           style={{ borderColor: "var(--rose)", borderTopColor: "transparent" }}
         />
       </div>
@@ -397,12 +398,12 @@ export default function GuestListPage() {
   if (sessionStatus === "guest" || sessionStatus === "wp_down" || !weddingId) {
     return (
       <div
-        className="rounded-xl p-12 text-center max-w-md mx-auto mt-16"
+        className="mx-auto mt-16 max-w-md rounded-xl p-12 text-center"
         style={{ background: "white", boxShadow: "0 2px 12px rgba(26,31,58,0.07)" }}
       >
-        <div className="text-4xl mb-4">🔐</div>
+        <div className="mb-4 text-4xl">🔐</div>
         <h3
-          className="text-lg font-light mb-2"
+          className="mb-2 text-lg font-light"
           style={{ fontFamily: "var(--font-display)", color: "var(--navy)" }}
         >
           Sesiune inactivă
@@ -418,8 +419,7 @@ export default function GuestListPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--ivory)" }}>
-      <div className="max-w-7xl mx-auto px-6 py-8">
-
+      <div className="mx-auto max-w-7xl px-6 py-8">
         <GuestListHeader
           stats={stats}
           onAddGuest={() => {
@@ -452,25 +452,29 @@ export default function GuestListPage() {
           >
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={15} strokeWidth={1.8} style={{ color: "var(--yellow)", flexShrink: 0 }} />
+                <AlertTriangle
+                  size={15}
+                  strokeWidth={1.8}
+                  style={{ color: "var(--yellow)", flexShrink: 0 }}
+                />
                 <span className="text-sm font-medium" style={{ color: "var(--navy)" }}>
                   Import finalizat — {importReport.imported} invitați importați
                 </span>
               </div>
               <button
-                onClick={() => { setImportReport(null); setFilterDuplicates(false); }}
-                className="p-1 rounded"
+                onClick={() => {
+                  setImportReport(null);
+                  setFilterDuplicates(false);
+                }}
+                className="rounded p-1"
                 style={{ color: "var(--muted)" }}
               >
                 <X size={14} strokeWidth={1.8} />
               </button>
             </div>
 
-            <div
-              className="px-4 pb-3"
-              style={{ borderTop: "1px solid rgba(236,201,75,0.3)" }}
-            >
-              <p className="text-sm mt-2" style={{ color: "#92700a" }}>
+            <div className="px-4 pb-3" style={{ borderTop: "1px solid rgba(236,201,75,0.3)" }}>
+              <p className="mt-2 text-sm" style={{ color: "#92700a" }}>
                 ⚠ {importReport.relevantWarnings.length} duplicate detectate
               </p>
 
@@ -487,24 +491,33 @@ export default function GuestListPage() {
                   <button
                     onClick={() => setImportReportExpanded(true)}
                     className="text-xs"
-                    style={{ color: "var(--rose)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    style={{
+                      color: "var(--rose)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
                   >
                     + {importReport.relevantWarnings.length - 10} mai multe
                   </button>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 mt-3">
+              <div className="mt-3 flex items-center gap-2">
                 <button
-                  onClick={() => { setImportReport(null); setFilterDuplicates(false); }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium"
+                  onClick={() => {
+                    setImportReport(null);
+                    setFilterDuplicates(false);
+                  }}
+                  className="rounded-full px-3 py-1.5 text-xs font-medium"
                   style={{ border: "1px solid var(--cream-line)", color: "var(--muted)" }}
                 >
                   Închide
                 </button>
                 <button
                   onClick={() => setFilterDuplicates((v) => !v)}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium"
+                  className="rounded-full px-3 py-1.5 text-xs font-medium"
                   style={{
                     background: filterDuplicates ? "var(--yellow)" : "transparent",
                     border: "1px solid var(--yellow)",
@@ -523,10 +536,12 @@ export default function GuestListPage() {
             className="mt-6 rounded-xl p-6 text-center"
             style={{ background: "white", border: "1px solid var(--cream-line)" }}
           >
-            <p className="text-sm" style={{ color: "var(--red)" }}>{error}</p>
+            <p className="text-sm" style={{ color: "var(--red)" }}>
+              {error}
+            </p>
             <button
               onClick={fetchGuests}
-              className="mt-3 px-4 py-2 rounded-full text-sm font-medium"
+              className="mt-3 rounded-full px-4 py-2 text-sm font-medium"
               style={{ background: "var(--rose)", color: "white" }}
             >
               Încearcă din nou
@@ -557,10 +572,7 @@ export default function GuestListPage() {
       )}
 
       {isImportModalOpen && (
-        <GuestImportModal
-          onImport={handleImportDone}
-          onClose={() => setIsImportModalOpen(false)}
-        />
+        <GuestImportModal onImport={handleImportDone} onClose={() => setIsImportModalOpen(false)} />
       )}
 
       <ToastStack toasts={toasts} onDismiss={removeToast} />

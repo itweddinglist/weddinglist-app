@@ -15,11 +15,7 @@ import {
 import { checkOrigin } from "@/lib/csrf";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
-import {
-  successResponse,
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, internalErrorResponse } from "@/lib/api-response";
 import { computeRequestHash, withIdempotency } from "@/lib/supabase/idempotency";
 import type { SeatingFullSyncRequest, SeatingFullSyncResponse } from "@/types/seating";
 
@@ -63,17 +59,21 @@ export async function POST(request: NextRequest, context: RouteContext): Promise
     return errorResponse(400, "EVENT_ID_REQUIRED", "A valid event_id is required.");
   }
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   const rpcParams = {
-    p_wedding_id:  access.wedding_id,
-    p_event_id:    body.event_id,
-    p_caller_uid:  authResult.ctx.app_user_id,
-    p_tables:      body.tables,
+    p_wedding_id: access.wedding_id,
+    p_event_id: body.event_id,
+    p_caller_uid: authResult.ctx.app_user_id,
+    p_tables: body.tables,
     p_assignments: body.assignments,
-    p_version:     body.version          ?? -1,
-    p_force:       body.force_overwrite  ?? false,
+    p_version: body.version ?? -1,
+    p_force: body.force_overwrite ?? false,
   };
 
   try {

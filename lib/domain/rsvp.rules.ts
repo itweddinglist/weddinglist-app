@@ -11,25 +11,25 @@
 import type { RsvpAttendanceStatus } from "@/types/rsvp";
 
 export function isRsvpAccepted(
-  status: RsvpAttendanceStatus | null,
+  status: RsvpAttendanceStatus | null
 ): status is Extract<RsvpAttendanceStatus, "accepted"> {
   return status === "accepted";
 }
 
 export function isRsvpDeclined(
-  status: RsvpAttendanceStatus | null,
+  status: RsvpAttendanceStatus | null
 ): status is Extract<RsvpAttendanceStatus, "declined"> {
   return status === "declined";
 }
 
 export function isRsvpMaybe(
-  status: RsvpAttendanceStatus | null,
+  status: RsvpAttendanceStatus | null
 ): status is Extract<RsvpAttendanceStatus, "maybe"> {
   return status === "maybe";
 }
 
 export function isRsvpPending(
-  status: RsvpAttendanceStatus | null,
+  status: RsvpAttendanceStatus | null
 ): status is Extract<RsvpAttendanceStatus, "pending"> {
   return status === "pending";
 }

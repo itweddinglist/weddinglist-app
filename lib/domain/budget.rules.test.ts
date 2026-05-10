@@ -9,7 +9,13 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { isBudgetItemPaid, isBudgetItemPlanned, isBudgetItemConfirmed, isBudgetItemCancelled, isBudgetItemActive } from "./budget.rules";
+import {
+  isBudgetItemPaid,
+  isBudgetItemPlanned,
+  isBudgetItemConfirmed,
+  isBudgetItemCancelled,
+  isBudgetItemActive,
+} from "./budget.rules";
 import type { BudgetItemRow } from "@/types/budget";
 
 describe("isBudgetItemPaid", () => {

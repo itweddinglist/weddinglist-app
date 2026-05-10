@@ -124,7 +124,7 @@ function detectMassiveConflict(
   draftSnapshot: SeatingSnapshot
 ): boolean {
   const serverAssigned = serverState.guests.filter((g) => g.tableId !== null).length;
-  const draftAssigned  = Object.values(draftSnapshot.assignments).filter((v) => v !== null).length;
+  const draftAssigned = Object.values(draftSnapshot.assignments).filter((v) => v !== null).length;
 
   if (serverAssigned === 0 && draftAssigned > 5) return false;
 
@@ -143,7 +143,7 @@ function detectMassiveConflict(
   let diffCount = 0;
   for (const guestId of allGuestIds) {
     const serverTableId = serverMap[guestId] ?? null;
-    const draftTableId  = draftSnapshot.assignments[guestId] ?? null;
+    const draftTableId = draftSnapshot.assignments[guestId] ?? null;
     if (serverTableId !== draftTableId) diffCount++;
   }
 
@@ -156,17 +156,14 @@ function buildNumericIdMap(
   tableIdMap: SeatingIdMapEntry[]
 ): NumericIdMap {
   return {
-    guests:        new Map(guestIdMap.map((r) => [r.uuid, r.numericId])),
-    tables:        new Map(tableIdMap.map((r) => [r.uuid, r.numericId])),
+    guests: new Map(guestIdMap.map((r) => [r.uuid, r.numericId])),
+    tables: new Map(tableIdMap.map((r) => [r.uuid, r.numericId])),
     guestsReverse: new Map(guestIdMap.map((r) => [r.numericId, r.uuid])),
     tablesReverse: new Map(tableIdMap.map((r) => [r.numericId, r.uuid])),
   };
 }
 
-export function useSeatingSync({
-  weddingId,
-  eventId,
-}: UseSeatingSyncOptions): SeatingSyncState {
+export function useSeatingSync({ weddingId, eventId }: UseSeatingSyncOptions): SeatingSyncState {
   const [initialGuests, setInitialGuests] = useState<SeatingGuest[] | null>(null);
   const [initialTables, setInitialTables] = useState<SeatingTableLoad[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,16 +252,14 @@ export function useSeatingSync({
       setError(null);
 
       try {
-        const response = await fetch(
-          `/api/weddings/${weddingId}/seating/load?event_id=${eventId}`
-        );
+        const response = await fetch(`/api/weddings/${weddingId}/seating/load?event_id=${eventId}`);
 
         if (!response.ok) {
           const err = await response.json().catch(() => ({}));
           throw new Error(err?.error?.message ?? `Load failed: ${response.status}`);
         }
 
-        const json = await response.json() as { data: SeatingLoadResponse };
+        const json = (await response.json()) as { data: SeatingLoadResponse };
         if (cancelled) return;
 
         const { guests, tables, guestIdMap, tableIdMap, version } = json.data;
@@ -299,165 +294,172 @@ export function useSeatingSync({
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [weddingId, eventId]);
 
   // ── SYNC ────────────────────────────────────────────────────────────────────
 
-  const doSync = useCallback(async (
-    snapshot: SeatingSnapshot,
-    retryCount = 0,
-    useForce = false
-  ): Promise<void> => {
-    const maps = idMapsRef.current;
-    if (!maps) return;
+  const doSync = useCallback(
+    async (snapshot: SeatingSnapshot, retryCount = 0, useForce = false): Promise<void> => {
+      const maps = idMapsRef.current;
+      if (!maps) return;
 
-    // Faza 3: intenție nouă → ID nou; retry pe același snapshot → reutilizăm ID-ul
-    if (retryCount === 0) {
-      operationIdRef.current = crypto.randomUUID();
-    }
+      // Faza 3: intenție nouă → ID nou; retry pe același snapshot → reutilizăm ID-ul
+      if (retryCount === 0) {
+        operationIdRef.current = crypto.randomUUID();
+      }
 
-    setSaveStatus("saving");
+      setSaveStatus("saving");
 
-    const tables: SeatingFullSyncRequest["tables"] = snapshot.tables.map((t) => ({
-      local_id:   t.id,
-      uuid:       maps.tablesReverse.get(t.id) ?? null,
-      name:       t.name,
-      table_type: t.type,
-      seat_count: t.seats,
-      x:          t.x,
-      y:          t.y,
-      rotation:   t.rotation,
-      is_ring:    t.isRing,
-    }));
+      const tables: SeatingFullSyncRequest["tables"] = snapshot.tables.map((t) => ({
+        local_id: t.id,
+        uuid: maps.tablesReverse.get(t.id) ?? null,
+        name: t.name,
+        table_type: t.type,
+        seat_count: t.seats,
+        x: t.x,
+        y: t.y,
+        rotation: t.rotation,
+        is_ring: t.isRing,
+      }));
 
-    if (!snapshot.assignments) return;
+      if (!snapshot.assignments) return;
 
-    const assignments: SeatingFullSyncRequest["assignments"] = Object.entries(
-      snapshot.assignments
-    ).map(([guestId, tableId]) => ({
-      guest_local_id: Number(guestId),
-      table_local_id: tableId,
-    }));
+      const assignments: SeatingFullSyncRequest["assignments"] = Object.entries(
+        snapshot.assignments
+      ).map(([guestId, tableId]) => ({
+        guest_local_id: Number(guestId),
+        table_local_id: tableId,
+      }));
 
-    const snapshotKey = stableSnapshotHash(tables, assignments);
-    if (!useForce && snapshotKey === lastSyncedSnapshotRef.current) {
-      isRetryInProgressRef.current = false;
-      setSaveStatus("saved");
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_IDLE_MS);
-      return;
-    }
+      const snapshotKey = stableSnapshotHash(tables, assignments);
+      if (!useForce && snapshotKey === lastSyncedSnapshotRef.current) {
+        isRetryInProgressRef.current = false;
+        setSaveStatus("saved");
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+        savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_IDLE_MS);
+        return;
+      }
 
-    try {
-      const response = await fetch(
-        `/api/weddings/${weddingId}/seating/sync`,
-        {
+      try {
+        const response = await fetch(`/api/weddings/${weddingId}/seating/sync`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            event_id:             eventId,
+            event_id: eventId,
             tables,
             assignments,
-            version:              useForce ? -1 : currentVersionRef.current,
-            force_overwrite:      useForce,
-            client_operation_id:  operationIdRef.current ?? undefined,
+            version: useForce ? -1 : currentVersionRef.current,
+            force_overwrite: useForce,
+            client_operation_id: operationIdRef.current ?? undefined,
           }),
-        }
-      );
+        });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        const errCode: string = err?.error?.code ?? "";
-        const errMsg: string  = err?.error?.message ?? "Eroare necunoscută";
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          const errCode: string = err?.error?.code ?? "";
+          const errMsg: string = err?.error?.message ?? "Eroare necunoscută";
 
-        console.error("[SeatingSync] sync failed:", errCode, errMsg);
+          console.error("[SeatingSync] sync failed:", errCode, errMsg);
 
-        // ── Erori care nu se retryează ────────────────────────────────────────
-        if (errCode === "VERSION_MISMATCH") {
-          isRetryInProgressRef.current = false;
-          lastSyncedSnapshotRef.current = null;
-          setSaveError({ code: "VERSION_MISMATCH", message: "Planul a fost modificat de pe alt dispozitiv." });
-          setSaveStatus("unconfirmed");
+          // ── Erori care nu se retryează ────────────────────────────────────────
+          if (errCode === "VERSION_MISMATCH") {
+            isRetryInProgressRef.current = false;
+            lastSyncedSnapshotRef.current = null;
+            setSaveError({
+              code: "VERSION_MISMATCH",
+              message: "Planul a fost modificat de pe alt dispozitiv.",
+            });
+            setSaveStatus("unconfirmed");
+            return;
+          }
+
+          if (errCode === "GUEST_NOT_FOUND") {
+            isRetryInProgressRef.current = false;
+            lastSyncedSnapshotRef.current = null;
+            setSaveError({ code: "GUEST_NOT_FOUND", message: errMsg });
+            setSaveStatus("unconfirmed");
+            return;
+          }
+
+          if (errCode === "CAPACITY_EXCEEDED") {
+            isRetryInProgressRef.current = false;
+            lastSyncedSnapshotRef.current = null;
+            setSaveError({ code: "CAPACITY_EXCEEDED", message: errMsg });
+            setSaveStatus("unconfirmed");
+            return;
+          }
+
+          if (errCode === "FORBIDDEN") {
+            isRetryInProgressRef.current = false;
+            lastSyncedSnapshotRef.current = null;
+            setSaveError({ code: "FORBIDDEN", message: "Acces interzis. Reîncarcă pagina." });
+            setSaveStatus("unconfirmed");
+            return;
+          }
+
+          // ── Erori retryabile (TABLE_MAPPING_NOT_FOUND, network, etc.) ─────────
+          if (retryCount < SYNC_MAX_RETRIES) {
+            const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
+            retryTimerRef.current = setTimeout(
+              () => doSync(snapshot, retryCount + 1, useForce),
+              delay
+            );
+          } else {
+            lastSyncedSnapshotRef.current = null;
+            isRetryInProgressRef.current = false;
+            setSaveStatus("unconfirmed");
+          }
           return;
         }
 
-        if (errCode === "GUEST_NOT_FOUND") {
-          isRetryInProgressRef.current = false;
-          lastSyncedSnapshotRef.current = null;
-          setSaveError({ code: "GUEST_NOT_FOUND", message: errMsg });
-          setSaveStatus("unconfirmed");
-          return;
+        const result = await response.json();
+
+        // Actualizează versiunea locală cu ce a returnat serverul
+        if (typeof result.data?.version === "number") {
+          currentVersionRef.current = result.data.version;
         }
 
-        if (errCode === "CAPACITY_EXCEEDED") {
-          isRetryInProgressRef.current = false;
+        if (result.data?.bridge_updates?.tables?.length > 0) {
+          for (const update of result.data.bridge_updates.tables) {
+            maps.tables.set(update.uuid, update.local_id);
+            maps.tablesReverse.set(update.local_id, update.uuid);
+          }
           lastSyncedSnapshotRef.current = null;
-          setSaveError({ code: "CAPACITY_EXCEEDED", message: errMsg });
-          setSaveStatus("unconfirmed");
-          return;
+        } else {
+          lastSyncedSnapshotRef.current = snapshotKey;
         }
 
-        if (errCode === "FORBIDDEN") {
-          isRetryInProgressRef.current = false;
-          lastSyncedSnapshotRef.current = null;
-          setSaveError({ code: "FORBIDDEN", message: "Acces interzis. Reîncarcă pagina." });
-          setSaveStatus("unconfirmed");
-          return;
-        }
-
-        // ── Erori retryabile (TABLE_MAPPING_NOT_FOUND, network, etc.) ─────────
+        confirmedSnapshotRef.current = {
+          tables: structuredClone(snapshot.tables),
+          guests: structuredClone(buildGuestsSnapshot(baseGuestsRef.current, snapshot.assignments)),
+          serverConfirmedAt: Date.now(),
+        };
+        isRetryInProgressRef.current = false;
+        operationIdRef.current = null; // Faza 3: intenție finalizată — următorul Save va primi ID nou
+        setSaveError(null);
+        setSaveStatus("saved");
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+        savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_IDLE_MS);
+      } catch (err) {
+        console.error("[SeatingSync] sync network error:", err);
         if (retryCount < SYNC_MAX_RETRIES) {
           const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
-          retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1, useForce), delay);
+          retryTimerRef.current = setTimeout(
+            () => doSync(snapshot, retryCount + 1, useForce),
+            delay
+          );
         } else {
           lastSyncedSnapshotRef.current = null;
           isRetryInProgressRef.current = false;
           setSaveStatus("unconfirmed");
         }
-        return;
       }
-
-      const result = await response.json();
-
-      // Actualizează versiunea locală cu ce a returnat serverul
-      if (typeof result.data?.version === "number") {
-        currentVersionRef.current = result.data.version;
-      }
-
-      if (result.data?.bridge_updates?.tables?.length > 0) {
-        for (const update of result.data.bridge_updates.tables) {
-          maps.tables.set(update.uuid, update.local_id);
-          maps.tablesReverse.set(update.local_id, update.uuid);
-        }
-        lastSyncedSnapshotRef.current = null;
-      } else {
-        lastSyncedSnapshotRef.current = snapshotKey;
-      }
-
-      confirmedSnapshotRef.current = {
-        tables: structuredClone(snapshot.tables),
-        guests: structuredClone(buildGuestsSnapshot(baseGuestsRef.current, snapshot.assignments)),
-        serverConfirmedAt: Date.now(),
-      };
-      isRetryInProgressRef.current = false;
-      operationIdRef.current = null; // Faza 3: intenție finalizată — următorul Save va primi ID nou
-      setSaveError(null);
-      setSaveStatus("saved");
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_IDLE_MS);
-    } catch (err) {
-      console.error("[SeatingSync] sync network error:", err);
-      if (retryCount < SYNC_MAX_RETRIES) {
-        const delay = SYNC_RETRY_BASE_MS * Math.pow(2, retryCount);
-        retryTimerRef.current = setTimeout(() => doSync(snapshot, retryCount + 1, useForce), delay);
-      } else {
-        lastSyncedSnapshotRef.current = null;
-        isRetryInProgressRef.current = false;
-        setSaveStatus("unconfirmed");
-      }
-    }
-  }, [weddingId, eventId]);
+    },
+    [weddingId, eventId]
+  );
 
   // ── Faza 8: SILENT REFETCH ────────────────────────────────────────────────
   // Apelează load fără să modifice state-ul UI.
@@ -465,11 +467,9 @@ export function useSeatingSync({
 
   const silentRefetch = useCallback(async (): Promise<SeatingLoadResponse | null> => {
     try {
-      const response = await fetch(
-        `/api/weddings/${weddingId}/seating/load?event_id=${eventId}`
-      );
+      const response = await fetch(`/api/weddings/${weddingId}/seating/load?event_id=${eventId}`);
       if (!response.ok) return null;
-      const json = await response.json() as { data: SeatingLoadResponse };
+      const json = (await response.json()) as { data: SeatingLoadResponse };
       return json.data ?? null;
     } catch {
       return null;
@@ -482,37 +482,41 @@ export function useSeatingSync({
   // Fără conflict → actualizare silențioasă confirmedSnapshotRef + version → doSync.
   // silentRefetch null (eroare rețea) → continuăm cu doSync, nu blocăm userul.
 
-  const saveWithSmartRefetch = useCallback(async (snapshot: SeatingSnapshot): Promise<void> => {
-    const lastConfirmedAt   = confirmedSnapshotRef.current?.serverConfirmedAt ?? 0;
-    const timeSinceLastSync = Date.now() - lastConfirmedAt;
+  const saveWithSmartRefetch = useCallback(
+    async (snapshot: SeatingSnapshot): Promise<void> => {
+      const lastConfirmedAt = confirmedSnapshotRef.current?.serverConfirmedAt ?? 0;
+      const timeSinceLastSync = Date.now() - lastConfirmedAt;
 
-    if (timeSinceLastSync > 10 * 60 * 1000) {
-      const serverState = await silentRefetch();
+      if (timeSinceLastSync > 10 * 60 * 1000) {
+        const serverState = await silentRefetch();
 
-      if (serverState !== null) {
-        if (detectMassiveConflict(serverState, snapshot)) {
-          massiveConflictServerStateRef.current = serverState;
-          setSaveError({
-            code: "MASSIVE_CONFLICT",
-            message: "Am actualizat planul cu modificările partenerului tău. Verifică înainte de a salva.",
-            serverState,
-          });
-          setSaveStatus("unconfirmed");
-          return;
+        if (serverState !== null) {
+          if (detectMassiveConflict(serverState, snapshot)) {
+            massiveConflictServerStateRef.current = serverState;
+            setSaveError({
+              code: "MASSIVE_CONFLICT",
+              message:
+                "Am actualizat planul cu modificările partenerului tău. Verifică înainte de a salva.",
+              serverState,
+            });
+            setSaveStatus("unconfirmed");
+            return;
+          }
+
+          // Fără conflict masiv — actualizare silențioasă
+          confirmedSnapshotRef.current = {
+            tables: serverState.tables.map(({ uuid: _uuid, ...rest }) => rest),
+            guests: structuredClone(serverState.guests),
+            serverConfirmedAt: Date.now(),
+          };
+          currentVersionRef.current = serverState.version;
         }
-
-        // Fără conflict masiv — actualizare silențioasă
-        confirmedSnapshotRef.current = {
-          tables: serverState.tables.map(({ uuid: _uuid, ...rest }) => rest),
-          guests: structuredClone(serverState.guests),
-          serverConfirmedAt: Date.now(),
-        };
-        currentVersionRef.current = serverState.version;
       }
-    }
 
-    await doSync(snapshot);
-  }, [silentRefetch, doSync]);
+      await doSync(snapshot);
+    },
+    [silentRefetch, doSync]
+  );
 
   // ── RETRY ─────────────────────────────────────────────────────────────────
 

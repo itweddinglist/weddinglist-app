@@ -8,20 +8,20 @@
 // Identică cu schema internă existentă din app/seating-chart/.
 
 export interface SeatingGuest {
-  id: number;              // numeric_id din seating_id_maps — stabil, persistent
-  prenume: string;         // ← guests.first_name
-  nume: string;            // ← guests.last_name ?? ''
-  grup: string;            // ← guest_groups.name ?? 'Fără grup'
-  meniu: string;           // ← guest_events.meal_choice ?? 'Standard'
-  status: string;          // mapped: attending→confirmat, declined→declinat, *→in_asteptare
-  tableId: number | null;  // ← din seat_assignments, mapped prin id-bridge
+  id: number; // numeric_id din seating_id_maps — stabil, persistent
+  prenume: string; // ← guests.first_name
+  nume: string; // ← guests.last_name ?? ''
+  grup: string; // ← guest_groups.name ?? 'Fără grup'
+  meniu: string; // ← guest_events.meal_choice ?? 'Standard'
+  status: string; // mapped: attending→confirmat, declined→declinat, *→in_asteptare
+  tableId: number | null; // ← din seat_assignments, mapped prin id-bridge
 }
 
 // ─── SeatingTable ─────────────────────────────────────────────────────────────
 // Snapshot al unei mese pentru sync și diff.
 
 export interface SeatingTableSnapshot {
-  id: number;        // numeric_id local
+  id: number; // numeric_id local
   name: string;
   type: string;
   seats: number;
@@ -38,7 +38,7 @@ export type ChangeReason = "assignments" | "layout" | "both";
 
 export interface SeatingSnapshot {
   reason: ChangeReason;
-  assignments: AssignmentState;   // guest numeric_id → table numeric_id | null
+  assignments: AssignmentState; // guest numeric_id → table numeric_id | null
   tables: SeatingTableSnapshot[];
 }
 
@@ -50,25 +50,25 @@ export type AssignmentState = Record<number, number | null>;
 // ─── AssignmentDiff ───────────────────────────────────────────────────────────
 
 export interface AssignmentDiff {
-  toAssign:   { guestNumericId: number; tableNumericId: number }[];
+  toAssign: { guestNumericId: number; tableNumericId: number }[];
   toUnassign: { guestNumericId: number }[];
-  toMove:     { guestNumericId: number; fromTableNumericId: number; toTableNumericId: number }[];
+  toMove: { guestNumericId: number; fromTableNumericId: number; toTableNumericId: number }[];
 }
 
 // ─── ID Bridge ────────────────────────────────────────────────────────────────
 
 export interface NumericIdMap {
-  guests: Map<string, number>;  // uuid → numeric_id
-  tables: Map<string, number>;  // uuid → numeric_id
-  guestsReverse: Map<number, string>;  // numeric_id → uuid
-  tablesReverse: Map<number, string>;  // numeric_id → uuid
+  guests: Map<string, number>; // uuid → numeric_id
+  tables: Map<string, number>; // uuid → numeric_id
+  guestsReverse: Map<number, string>; // numeric_id → uuid
+  tablesReverse: Map<number, string>; // numeric_id → uuid
 }
 
 // ─── API Request / Response ───────────────────────────────────────────────────
 
 export interface SeatingTableSyncItem {
   local_id: number;
-  uuid: string | null;  // null = table nouă, de creat
+  uuid: string | null; // null = table nouă, de creat
   name: string;
   table_type: string;
   seat_count: number;
@@ -80,21 +80,21 @@ export interface SeatingTableSyncItem {
 
 export interface SeatingAssignmentSyncItem {
   guest_local_id: number;
-  table_local_id: number | null;  // null = unassigned
+  table_local_id: number | null; // null = unassigned
 }
 
 export interface SeatingFullSyncRequest {
   event_id: string;
   tables: SeatingTableSyncItem[];
   assignments: SeatingAssignmentSyncItem[];
-  version?: number;              // OCC — revizuirea curentă din DB; -1 sau absent = skip check
-  force_overwrite?: boolean;     // true = ignoră VERSION_MISMATCH (logate în audit)
-  client_operation_id?: string;  // Faza 3: idempotency — generat O SINGURĂ DATĂ per intenție de Save
+  version?: number; // OCC — revizuirea curentă din DB; -1 sau absent = skip check
+  force_overwrite?: boolean; // true = ignoră VERSION_MISMATCH (logate în audit)
+  client_operation_id?: string; // Faza 3: idempotency — generat O SINGURĂ DATĂ per intenție de Save
 }
 
 export interface SeatingFullSyncResponse {
   success: true;
-  version: number;         // revizuirea nouă după sync
+  version: number; // revizuirea nouă după sync
   synced: {
     tables_created: number;
     tables_updated: number;
@@ -123,8 +123,8 @@ export interface SeatingIdMapEntry {
 }
 
 export interface SeatingTableLoad {
-  id: number;        // numeric_id
-  uuid: string;      // UUID din DB
+  id: number; // numeric_id
+  uuid: string; // UUID din DB
   name: string;
   type: string;
   seats: number;
@@ -139,5 +139,5 @@ export interface SeatingLoadResponse {
   tables: SeatingTableLoad[];
   guestIdMap: SeatingIdMapEntry[];
   tableIdMap: SeatingIdMapEntry[];
-  version: number;  // revision curentă din seating_editor_states
+  version: number; // revision curentă din seating_editor_states
 }

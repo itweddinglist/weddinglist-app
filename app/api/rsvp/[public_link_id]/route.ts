@@ -40,10 +40,7 @@ function logInternal(event: string, extra: Record<string, unknown>) {
 
 // ─── GET /api/rsvp/[public_link_id] ──────────────────────────────────────────
 
-export async function GET(
-  _request: NextRequest,
-  context: RouteContext
-): Promise<Response> {
+export async function GET(_request: NextRequest, context: RouteContext): Promise<Response> {
   const { public_link_id: publicLinkId } = await context.params;
   const route = `/api/rsvp/${publicLinkId}`;
 
@@ -57,10 +54,12 @@ export async function GET(
   try {
     const { data: invitation, error: invError } = await supabase
       .from("rsvp_invitations")
-      .select(`
+      .select(
+        `
         id, wedding_id, guest_id, is_active,
         expires_at, responded_at, opened_at
-      `)
+      `
+      )
       .eq("public_link_id", publicLinkId)
       .maybeSingle();
 
@@ -109,13 +108,15 @@ export async function GET(
 
     const { data: guestEvents, error: eventsError } = await supabase
       .from("guest_events")
-      .select(`
+      .select(
+        `
         id,
         event_id,
         events!inner (
           id, name, event_type, starts_at
         )
-      `)
+      `
+      )
       // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       .eq("guest_id", invitation.guest_id)
       // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
@@ -130,9 +131,7 @@ export async function GET(
       .eq("invitation_id", invitation.id);
 
     const events = (guestEvents ?? []).map((ge: any) => {
-      const existing = (existingResponses ?? []).find(
-        (r: any) => r.guest_event_id === ge.id
-      );
+      const existing = (existingResponses ?? []).find((r: any) => r.guest_event_id === ge.id);
       return {
         guest_event_id: ge.id,
         event_id: ge.event_id,
@@ -164,7 +163,6 @@ export async function GET(
     };
 
     return successResponse(pageData);
-
   } catch (err) {
     return internalErrorResponse(err, `GET ${route}`);
   }
@@ -172,10 +170,7 @@ export async function GET(
 
 // ─── POST /api/rsvp/[public_link_id] ─────────────────────────────────────────
 
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-): Promise<Response> {
+export async function POST(request: NextRequest, context: RouteContext): Promise<Response> {
   const { public_link_id: publicLinkId } = await context.params;
   const route = `/api/rsvp/${publicLinkId}`;
 
@@ -307,7 +302,6 @@ export async function POST(
       // @ts-expect-error: C12 cascade - SelectQueryError from expires_at SELECT (rsvp_invitations) - fix in PR 3
       invitation_id: invitation.id,
     });
-
   } catch (err) {
     return internalErrorResponse(err, `POST ${route}`);
   }

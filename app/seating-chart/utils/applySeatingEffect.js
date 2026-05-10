@@ -37,10 +37,7 @@ export function applySeatingEffect(effect, ui) {
       break;
 
     case "SHOW_TOAST":
-      ui.showToast(
-        effect.payload?.message ?? "",
-        effect.payload?.toastType ?? "rose"
-      );
+      ui.showToast(effect.payload?.message ?? "", effect.payload?.toastType ?? "rose");
       break;
 
     default:

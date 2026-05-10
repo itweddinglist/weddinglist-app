@@ -22,22 +22,22 @@ import type { CSSProperties } from "react";
 import type { SeatingTable } from "@/types/seating";
 
 interface CanvasToolbarProps {
-  vzoom: number
-  zoomBy: (delta: number) => void
-  fitToScreen: (tables: SeatingTable[]) => void
-  tables: SeatingTable[]
-  lockMode: boolean
-  setLockMode: (updater: boolean | ((prev: boolean) => boolean)) => void
-  showToast: (message: string, type?: string) => void
-  magicFill: () => void
-  undo: () => void
-  setShowCatering: (value: boolean) => void
-  setConfirmDialog: (dialog: { title: string; sub?: string; onOk: () => void } | null) => void
-  resetPlan: () => void
-  setModal: (config: Record<string, unknown> | null) => void
-  getNextTableName: () => string
-  onExport?: () => void
-  isReadOnly?: boolean
+  vzoom: number;
+  zoomBy: (delta: number) => void;
+  fitToScreen: (tables: SeatingTable[]) => void;
+  tables: SeatingTable[];
+  lockMode: boolean;
+  setLockMode: (updater: boolean | ((prev: boolean) => boolean)) => void;
+  showToast: (message: string, type?: string) => void;
+  magicFill: () => void;
+  undo: () => void;
+  setShowCatering: (value: boolean) => void;
+  setConfirmDialog: (dialog: { title: string; sub?: string; onOk: () => void } | null) => void;
+  resetPlan: () => void;
+  setModal: (config: Record<string, unknown> | null) => void;
+  getNextTableName: () => string;
+  onExport?: () => void;
+  isReadOnly?: boolean;
 }
 
 export default function CanvasToolbar({
@@ -165,7 +165,12 @@ export default function CanvasToolbar({
             style={{ ...btn, color: "#C9907A", borderColor: "rgba(201,144,122,0.35)" }}
             onClick={() => setModal({ type: "prezidiu", seats: 8, name: "Prezidiu" })}
           >
-            <GalleryThumbnails size={13} strokeWidth={1.6} style={{ transform: "rotate(180deg)" }} /> Prezidiu
+            <GalleryThumbnails
+              size={13}
+              strokeWidth={1.6}
+              style={{ transform: "rotate(180deg)" }}
+            />{" "}
+            Prezidiu
           </button>
           <button
             style={{ ...btn, color: "#48BB78", borderColor: "rgba(72,187,120,0.35)" }}

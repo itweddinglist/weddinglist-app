@@ -20,11 +20,7 @@ import {
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
 import { calculateBudgetSummary } from "@/lib/budget/calculate-summary";
-import {
-  successResponse,
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, internalErrorResponse } from "@/lib/api-response";
 import type { BudgetSummary } from "@/types/budget";
 
 type RouteContext = { params: Promise<{ weddingId: string }> };
@@ -40,7 +36,11 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) return authResult.response;
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "viewer" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "viewer",
+  });
   if (!access.ok) return access.response;
 
   // Fetch budget_items
@@ -60,7 +60,10 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     .eq("wedding_id", weddingId);
 
   if (paymentsError) {
-    return internalErrorResponse(paymentsError, `GET budget summary payments for wedding ${weddingId}`);
+    return internalErrorResponse(
+      paymentsError,
+      `GET budget summary payments for wedding ${weddingId}`
+    );
   }
 
   // @ts-expect-error: Cat3-enum - BudgetItemForSummary status narrow - fix in PR 1.5 (Enum Type Narrowing Layer)

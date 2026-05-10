@@ -8,10 +8,10 @@
 
 function stripHtml(input: string): string {
   return input
-    .replace(/<!--[\s\S]*?-->/g, "")   // HTML comments
-    .replace(/<[^>]*>/g, " ")          // HTML tags → spațiu pentru separare
-    .replace(/&[a-zA-Z]+;/g, " ")      // Named HTML entities
-    .replace(/&#\d+;/g, " ")           // Numeric HTML entities
+    .replace(/<!--[\s\S]*?-->/g, "") // HTML comments
+    .replace(/<[^>]*>/g, " ") // HTML tags → spațiu pentru separare
+    .replace(/&[a-zA-Z]+;/g, " ") // Named HTML entities
+    .replace(/&#\d+;/g, " ") // Numeric HTML entities
     .replace(/&#x[0-9a-fA-F]+;/g, " "); // Hex HTML entities
 }
 
@@ -23,10 +23,7 @@ export function sanitizeText(input: unknown, maxLength: number): string | null {
   if (input === null || input === undefined) return null;
   if (typeof input !== "string") return null;
 
-  const cleaned = stripHtml(input)
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, maxLength);
+  const cleaned = stripHtml(input).replace(/\s+/g, " ").trim().slice(0, maxLength);
 
   return cleaned.length > 0 ? cleaned : null;
 }
@@ -48,10 +45,7 @@ export function isValidUuid(input: unknown): input is string {
 }
 
 /** Validates that a value is one of the allowed enum values. */
-export function isValidEnum<T extends string>(
-  input: unknown,
-  allowed: readonly T[]
-): input is T {
+export function isValidEnum<T extends string>(input: unknown, allowed: readonly T[]): input is T {
   if (typeof input !== "string") return false;
   return (allowed as readonly string[]).includes(input);
 }

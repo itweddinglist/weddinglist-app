@@ -19,11 +19,7 @@ import {
 } from "@/lib/server-context";
 import { supabaseServer } from "@/app/lib/supabase/server";
 import { isValidUuid } from "@/lib/sanitize";
-import {
-  successResponse,
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { successResponse, errorResponse, internalErrorResponse } from "@/lib/api-response";
 import { mapGuestsToSeating } from "@/lib/seating/map-guests";
 import { applyAssignments, type SeatAssignmentRow } from "@/lib/seating/map-assignments";
 import type { NumericIdMap, SeatingLoadResponse, SeatingTableLoad } from "@/lib/seating/types";
@@ -60,11 +56,13 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     // ── 1. Guests ──────────────────────────────────────────────────────────────
     const { data: rawGuests, error: guestsError } = await supabaseServer
       .from("guests")
-      .select(`
+      .select(
+        `
         id, first_name, last_name,
         guest_group:guest_groups(name),
         guest_events(attendance_status, meal_choice, event_id)
-      `)
+      `
+      )
       .eq("wedding_id", access.wedding_id);
 
     if (guestsError) return internalErrorResponse(guestsError, "GET seating/load — guests");
@@ -87,10 +85,12 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     // ── 3. Seat assignments ───────────────────────────────────────────────────
     const { data: rawAssignments, error: assignmentsError } = await supabaseServer
       .from("seat_assignments")
-      .select(`
+      .select(
+        `
         guest_events!inner(guest_id, event_id, wedding_id),
         seats!inner(table_id)
-      `)
+      `
+      )
       .eq("guest_events.event_id", eventId)
       .eq("guest_events.wedding_id", access.wedding_id);
 
@@ -106,81 +106,73 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     // ── 4. Allocate numeric IDs ────────────────────────────────────────────────
     const guestUuids = guestsForEvent.map((g) => g.id);
     // Include TOATE mesele din DB + cele din assignments (pot fi disjuncte temporar)
-    const tableUuids = [...new Set([
-      ...(rawTables ?? []).map((t: any) => t.id as string),
-      ...assignmentRows.map((a) => a.table_id),
-    ])];
+    const tableUuids = [
+      ...new Set([
+        ...(rawTables ?? []).map((t: any) => t.id as string),
+        ...assignmentRows.map((a) => a.table_id),
+      ]),
+    ];
 
     let guestRows: AllocRow[] = [];
     let tableRows: AllocRow[] = [];
 
     if (guestUuids.length > 0) {
-      const { data, error } = await supabaseServer.rpc(
-        "allocate_seating_numeric_ids_batch",
-        {
-          p_wedding_id:   access.wedding_id,
-          p_event_id:     eventId,
-          p_entity_type:  "guest",
-          p_entity_uuids: guestUuids,
-          p_caller_uid:   authResult.ctx.app_user_id,
-        }
-      );
+      const { data, error } = await supabaseServer.rpc("allocate_seating_numeric_ids_batch", {
+        p_wedding_id: access.wedding_id,
+        p_event_id: eventId,
+        p_entity_type: "guest",
+        p_entity_uuids: guestUuids,
+        p_caller_uid: authResult.ctx.app_user_id,
+      });
       if (error) return internalErrorResponse(error, "GET seating/load — allocate guests");
       guestRows = data ?? [];
     }
 
     if (tableUuids.length > 0) {
-      const { data, error } = await supabaseServer.rpc(
-        "allocate_seating_numeric_ids_batch",
-        {
-          p_wedding_id:   access.wedding_id,
-          p_event_id:     eventId,
-          p_entity_type:  "table",
-          p_entity_uuids: tableUuids,
-          p_caller_uid:   authResult.ctx.app_user_id,
-        }
-      );
+      const { data, error } = await supabaseServer.rpc("allocate_seating_numeric_ids_batch", {
+        p_wedding_id: access.wedding_id,
+        p_event_id: eventId,
+        p_entity_type: "table",
+        p_entity_uuids: tableUuids,
+        p_caller_uid: authResult.ctx.app_user_id,
+      });
       if (error) return internalErrorResponse(error, "GET seating/load — allocate tables");
       tableRows = data ?? [];
     }
 
     // ── 5. Upsert seating_id_maps (service_role) ──────────────────────────────
     if (guestRows.length > 0) {
-      const { error } = await supabaseServer
-        .from("seating_id_maps")
-        .upsert(
-          guestRows.map((row) => ({
-            wedding_id:  access.wedding_id,
-            event_id:    eventId,
-            entity_type: "guest",
-            entity_uuid: row.entity_uuid,
-            numeric_id:  row.numeric_id,
-          })),
-          { onConflict: "wedding_id,event_id,entity_type,entity_uuid" }
-        );
+      const { error } = await supabaseServer.from("seating_id_maps").upsert(
+        guestRows.map((row) => ({
+          wedding_id: access.wedding_id,
+          event_id: eventId,
+          entity_type: "guest",
+          entity_uuid: row.entity_uuid,
+          numeric_id: row.numeric_id,
+        })),
+        { onConflict: "wedding_id,event_id,entity_type,entity_uuid" }
+      );
       if (error) return internalErrorResponse(error, "GET seating/load — upsert guest maps");
     }
 
     if (tableRows.length > 0) {
-      const { error } = await supabaseServer
-        .from("seating_id_maps")
-        .upsert(
-          tableRows.map((row) => ({
-            wedding_id:  access.wedding_id,
-            event_id:    eventId,
-            entity_type: "table",
-            entity_uuid: row.entity_uuid,
-            numeric_id:  row.numeric_id,
-          })),
-          { onConflict: "wedding_id,event_id,entity_type,entity_uuid" }
-        );
+      const { error } = await supabaseServer.from("seating_id_maps").upsert(
+        tableRows.map((row) => ({
+          wedding_id: access.wedding_id,
+          event_id: eventId,
+          entity_type: "table",
+          entity_uuid: row.entity_uuid,
+          numeric_id: row.numeric_id,
+        })),
+        { onConflict: "wedding_id,event_id,entity_type,entity_uuid" }
+      );
       if (error) return internalErrorResponse(error, "GET seating/load — upsert table maps");
     }
 
     // ── 6. Build NumericIdMap + map guests + map tables ───────────────────────
     const idMaps: NumericIdMap = {
-      guests:        new Map(guestRows.map((r) => [r.entity_uuid, r.numeric_id])),
-      tables:        new Map(tableRows.map((r) => [r.entity_uuid, r.numeric_id])),
+      guests: new Map(guestRows.map((r) => [r.entity_uuid, r.numeric_id])),
+      tables: new Map(tableRows.map((r) => [r.entity_uuid, r.numeric_id])),
       guestsReverse: new Map(guestRows.map((r) => [r.numeric_id, r.entity_uuid])),
       tablesReverse: new Map(tableRows.map((r) => [r.numeric_id, r.entity_uuid])),
     };
@@ -189,15 +181,15 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
     const withAssignments = applyAssignments(seatingGuests, assignmentRows, idMaps);
 
     const seatingTables: SeatingTableLoad[] = (rawTables ?? []).map((t: any) => ({
-      id:       idMaps.tables.get(t.id) ?? 0,
-      uuid:     t.id as string,
-      name:     t.name as string,
-      type:     t.table_type as string,
-      seats:    t.seat_count as number,
-      x:        Number(t.x),
-      y:        Number(t.y),
+      id: idMaps.tables.get(t.id) ?? 0,
+      uuid: t.id as string,
+      name: t.name as string,
+      type: t.table_type as string,
+      seats: t.seat_count as number,
+      x: Number(t.x),
+      y: Number(t.y),
       rotation: Number(t.rotation),
-      isRing:   (t.shape_config as any)?.is_ring === true,
+      isRing: (t.shape_config as any)?.is_ring === true,
     }));
 
     // ── 7. Version (OCC) ─────────────────────────────────────────────────────
@@ -209,11 +201,11 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       .maybeSingle();
 
     const responseBody: SeatingLoadResponse = {
-      guests:     withAssignments,
-      tables:     seatingTables,
+      guests: withAssignments,
+      tables: seatingTables,
       guestIdMap: guestRows.map((r) => ({ uuid: r.entity_uuid, numericId: r.numeric_id })),
       tableIdMap: tableRows.map((r) => ({ uuid: r.entity_uuid, numericId: r.numeric_id })),
-      version:    (editorState as any)?.revision ?? 0,
+      version: (editorState as any)?.revision ?? 0,
     };
 
     return successResponse<SeatingLoadResponse>(responseBody);

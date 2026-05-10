@@ -33,7 +33,8 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
 
   const { id: guestEventId } = await context.params;
 
-  if (!isValidUuid(guestEventId)) return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
+  if (!isValidUuid(guestEventId))
+    return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
@@ -57,15 +58,21 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
     .eq("id", guestEventId)
     .maybeSingle();
 
-  if (geLookupError) return internalErrorResponse(geLookupError, "PUT /api/guest-events/[id] — lookup");
+  if (geLookupError)
+    return internalErrorResponse(geLookupError, "PUT /api/guest-events/[id] — lookup");
   if (!ge?.wedding_id) return notFoundResponse("Guest-event");
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: ge.wedding_id,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   try {
     const updatePayload: Record<string, unknown> = {};
-    if (input.attendance_status !== undefined) updatePayload.attendance_status = input.attendance_status;
+    if (input.attendance_status !== undefined)
+      updatePayload.attendance_status = input.attendance_status;
     if (input.meal_choice !== undefined) updatePayload.meal_choice = input.meal_choice;
     if (input.plus_one_label !== undefined) updatePayload.plus_one_label = input.plus_one_label;
 
@@ -77,7 +84,12 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
       .single();
 
     if (error) {
-      if (error.code === "23514") return errorResponse(400, "CONSTRAINT_VIOLATION", "Data violates a database constraint. Check attendance_status value.");
+      if (error.code === "23514")
+        return errorResponse(
+          400,
+          "CONSTRAINT_VIOLATION",
+          "Data violates a database constraint. Check attendance_status value."
+        );
       if (error.code === "PGRST116") return notFoundResponse("Guest-event");
       return internalErrorResponse(error, "PUT /api/guest-events/[id]");
     }
@@ -96,7 +108,8 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
   const { id: guestEventId } = await context.params;
 
-  if (!isValidUuid(guestEventId)) return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
+  if (!isValidUuid(guestEventId))
+    return errorResponse(400, "INVALID_ID", "Guest-event ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
@@ -109,17 +122,19 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
     .eq("id", guestEventId)
     .maybeSingle();
 
-  if (geLookupError) return internalErrorResponse(geLookupError, "DELETE /api/guest-events/[id] — lookup");
+  if (geLookupError)
+    return internalErrorResponse(geLookupError, "DELETE /api/guest-events/[id] — lookup");
   if (!ge?.wedding_id) return notFoundResponse("Guest-event");
 
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: ge.wedding_id, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: ge.wedding_id,
+    minRole: "editor",
+  });
   if (!access.ok) return access.response;
 
   try {
-    const { error } = await supabaseServer
-      .from("guest_events")
-      .delete()
-      .eq("id", guestEventId);
+    const { error } = await supabaseServer.from("guest_events").delete().eq("id", guestEventId);
 
     if (error) return internalErrorResponse(error, "DELETE /api/guest-events/[id]");
 

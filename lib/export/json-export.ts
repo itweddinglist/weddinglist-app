@@ -186,7 +186,9 @@ export async function exportWeddingJson(
     // ── RSVP Invitations (fără token_hash) ────────────────────────────────────
     const { data: rsvpInvitations, error: riErr } = await supabase
       .from("rsvp_invitations")
-      .select("id, wedding_id, event_id, guest_id, delivery_channel, delivery_status, opened_at, sent_at, last_sent_at, responded_at, is_active, created_at, updated_at")
+      .select(
+        "id, wedding_id, event_id, guest_id, delivery_channel, delivery_status, opened_at, sent_at, last_sent_at, responded_at, is_active, created_at, updated_at"
+      )
       .eq("wedding_id", weddingId)
       .order("created_at", { ascending: true })
       .order("id", { ascending: true });
@@ -246,7 +248,6 @@ export async function exportWeddingJson(
         data,
       },
     };
-
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return { success: false, error: message };

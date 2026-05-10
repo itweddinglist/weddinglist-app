@@ -102,7 +102,9 @@ function main(): void {
     console.error(`  Committed: ${committedLines[firstDiffLine - 1]}`);
     console.error(`  Fresh:     ${freshLines[firstDiffLine - 1]}`);
   } else if (committedLines.length !== freshLines.length) {
-    console.error(`Line count differs: committed=${committedLines.length}, fresh=${freshLines.length}`);
+    console.error(
+      `Line count differs: committed=${committedLines.length}, fresh=${freshLines.length}`
+    );
   }
   process.exit(1);
 }

@@ -3,43 +3,38 @@
 // Tipuri centrale UI (Faza 0) + API request/response (Faza 6)
 // =============================================================================
 
-import type { SeatingEventProjection } from "@/types/guests"
+import type { SeatingEventProjection } from "@/types/guests";
 
 // ── FAZA 0: tipuri centrale seating chart ─────────────────────────────────────
 
 // Tipuri reale din geometry.js: round, square, rect, prezidiu, bar
 // (spec inițial avea 'rectangle' și 'oval' — nu există în cod)
-export type TableType =
-  | 'round'
-  | 'square'
-  | 'rect'
-  | 'prezidiu'
-  | 'bar'
+export type TableType = "round" | "square" | "rect" | "prezidiu" | "bar";
 
 export interface Point {
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 export interface SeatingDimensions {
-  width: number
-  height: number
+  width: number;
+  height: number;
 }
 
 export interface SeatingGuestMeta {
-  isDeclined?: boolean
+  isDeclined?: boolean;
 }
 
 export interface SeatingGuest {
-  id: number
-  prenume: string
-  nume: string
-  grup: string
-  status: string
-  meniu: string
-  tableId: number | null
-  guest_events?: SeatingEventProjection[]
-  meta?: SeatingGuestMeta
+  id: number;
+  prenume: string;
+  nume: string;
+  grup: string;
+  status: string;
+  meniu: string;
+  tableId: number | null;
+  guest_events?: SeatingEventProjection[];
+  meta?: SeatingGuestMeta;
 }
 
 // ── SeatingGuestWithEvents ────────────────────────────────────────────────────
@@ -50,8 +45,8 @@ export interface SeatingGuest {
 // Nota arhitecturala: folosim Omit pentru a izola axa "events" de axa "UI meta".
 // Cele doua sunt independente conceptual — un guest poate avea events fara meta,
 // si invers. Omit previne scurgeri intre axe prin mostenire implicita.
-export interface SeatingGuestWithEvents extends Omit<SeatingGuest, 'guest_events' | 'meta'> {
-  guest_events: SeatingEventProjection[]
+export interface SeatingGuestWithEvents extends Omit<SeatingGuest, "guest_events" | "meta"> {
+  guest_events: SeatingEventProjection[];
 }
 
 // ── SeatingGuestUI ────────────────────────────────────────────────────────────
@@ -62,37 +57,37 @@ export interface SeatingGuestWithEvents extends Omit<SeatingGuest, 'guest_events
 // Nota arhitecturala: Omit analog cu SeatingGuestWithEvents — axa UI (meta) e
 // izolata de axa events. Cele doua variante pot fi combinate explicit daca e
 // nevoie: type X = SeatingGuestWithEvents & { meta?: SeatingGuestMeta }.
-export interface SeatingGuestUI extends Omit<SeatingGuest, 'guest_events' | 'meta'> {
-  meta?: SeatingGuestMeta
+export interface SeatingGuestUI extends Omit<SeatingGuest, "guest_events" | "meta"> {
+  meta?: SeatingGuestMeta;
 }
 
 export interface SeatingTable {
-  id: number
-  name: string
-  type: TableType
-  seats: number
-  x: number
-  y: number
-  rotation: number
-  isRing?: boolean
-  deleted_at?: string | null
+  id: number;
+  name: string;
+  type: TableType;
+  seats: number;
+  x: number;
+  y: number;
+  rotation: number;
+  isRing?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface CameraState {
-  vx: number
-  vy: number
-  z: number
+  vx: number;
+  vy: number;
+  z: number;
 }
 
 export interface SeatingSnapshot {
-  tables: SeatingTable[]
-  guests: SeatingGuestWithEvents[]
+  tables: SeatingTable[];
+  guests: SeatingGuestWithEvents[];
 }
 
 export type SeatingAction =
-  | { type: 'MOVE_TABLE'; payload: { id: number; pos: Point } }
-  | { type: 'SELECT_TABLE'; payload: { id: number | null } }
-  | { type: 'DELETE_TABLE'; payload: number }
+  | { type: "MOVE_TABLE"; payload: { id: number; pos: Point } }
+  | { type: "SELECT_TABLE"; payload: { id: number | null } }
+  | { type: "DELETE_TABLE"; payload: number };
 
 // ── FAZA 6: API request/response types ───────────────────────────────────────
 
@@ -123,7 +118,7 @@ export interface SeatingFullSyncRequest {
   assignments: SeatingAssignmentSyncItem[];
   version?: number;
   force_overwrite?: boolean;
-  client_operation_id?: string;  // Faza 3: idempotency — generat O SINGURĂ DATĂ per intenție de Save
+  client_operation_id?: string; // Faza 3: idempotency — generat O SINGURĂ DATĂ per intenție de Save
 }
 
 export interface SeatingFullSyncResponse {

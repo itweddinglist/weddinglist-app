@@ -15,8 +15,8 @@ export function getPublicRsvpUrl(token: string): string {
   const base = env
     ? env.replace(/\/$/, "")
     : typeof window !== "undefined"
-    ? window.location.origin
-    : null;
+      ? window.location.origin
+      : null;
 
   if (!base) throw new Error("NEXT_PUBLIC_APP_URL nedefinit.");
 

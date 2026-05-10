@@ -75,7 +75,9 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(19,23,46,0.5)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="w-full max-w-md rounded-2xl"
@@ -96,10 +98,14 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors"
+            className="rounded-lg p-1.5 transition-colors"
             style={{ color: "var(--muted)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--cream)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--cream)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
           >
             <X size={18} strokeWidth={1.8} />
           </button>
@@ -112,20 +118,25 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
                 className="rounded-lg p-3 text-xs"
                 style={{ background: "var(--cream)", color: "var(--muted)" }}
               >
-                <p className="font-medium mb-1" style={{ color: "var(--navy)" }}>
+                <p className="mb-1 font-medium" style={{ color: "var(--navy)" }}>
                   Format CSV acceptat:
                 </p>
                 <p>first_name, last_name, group, side, notes, is_vip</p>
-                <p className="mt-1">Doar <strong>first_name</strong> este obligatoriu.</p>
+                <p className="mt-1">
+                  Doar <strong>first_name</strong> este obligatoriu.
+                </p>
               </div>
 
               <div
-                className="rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-all"
+                className="cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all"
                 style={{
                   borderColor: isDragging ? "var(--rose)" : "var(--cream-line)",
                   background: isDragging ? "rgba(201,144,122,0.04)" : "var(--ivory)",
                 }}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
@@ -164,7 +175,9 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
               </div>
 
               {error && (
-                <p className="text-sm" style={{ color: "var(--red)" }}>{error}</p>
+                <p className="text-sm" style={{ color: "var(--red)" }}>
+                  {error}
+                </p>
               )}
             </div>
           )}
@@ -172,7 +185,7 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
           {step === "importing" && (
             <div className="py-8 text-center">
               <div
-                className="w-12 h-12 rounded-full border-2 mx-auto mb-4 animate-spin"
+                className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2"
                 style={{ borderColor: "var(--rose)", borderTopColor: "transparent" }}
               />
               <p className="text-sm" style={{ color: "var(--muted)" }}>
@@ -194,7 +207,9 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
                   >
                     {result.created}
                   </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Adăugați</p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                    Adăugați
+                  </p>
                 </div>
                 <div
                   className="rounded-xl p-3 text-center"
@@ -206,14 +221,15 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
                   >
                     {result.skipped}
                   </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Săriți</p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                    Săriți
+                  </p>
                 </div>
                 <div
                   className="rounded-xl p-3 text-center"
                   style={{
-                    background: result.errors.length > 0
-                      ? "rgba(229,62,62,0.08)"
-                      : "rgba(72,187,120,0.08)",
+                    background:
+                      result.errors.length > 0 ? "rgba(229,62,62,0.08)" : "rgba(72,187,120,0.08)",
                   }}
                 >
                   <p
@@ -225,20 +241,22 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
                   >
                     {result.errors.length}
                   </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Erori</p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                    Erori
+                  </p>
                 </div>
               </div>
 
               {result.errors.length > 0 && (
                 <div
-                  className="rounded-lg p-3 space-y-1 max-h-32 overflow-y-auto"
+                  className="max-h-32 space-y-1 overflow-y-auto rounded-lg p-3"
                   style={{ background: "rgba(229,62,62,0.06)" }}
                 >
                   {result.errors.slice(0, 5).map((e, i) => (
                     <div key={i} className="flex items-start gap-2">
                       <AlertCircle
                         size={12}
-                        className="flex-shrink-0 mt-0.5"
+                        className="mt-0.5 flex-shrink-0"
                         style={{ color: "var(--red)" }}
                       />
                       <p className="text-xs" style={{ color: "var(--red)" }}>
@@ -272,7 +290,7 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
         >
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-full text-sm font-medium"
+            className="rounded-full px-4 py-2 text-sm font-medium"
             style={{
               border: "1px solid var(--cream-line)",
               color: "var(--muted)",
@@ -285,7 +303,7 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
             <button
               onClick={handleImport}
               disabled={!file}
-              className="px-5 py-2 rounded-full text-sm font-medium transition-all"
+              className="rounded-full px-5 py-2 text-sm font-medium transition-all"
               style={{
                 background: file ? "var(--rose)" : "var(--cream-line)",
                 color: file ? "white" : "var(--muted)",
@@ -299,7 +317,7 @@ export default function GuestImportModal({ onImport, onClose }: Props) {
           {step === "done" && result && result.created > 0 && (
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-full text-sm font-medium"
+              className="rounded-full px-5 py-2 text-sm font-medium"
               style={{ background: "var(--rose)", color: "white" }}
             >
               Finalizat →

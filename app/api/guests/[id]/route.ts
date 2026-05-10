@@ -31,7 +31,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PUT(request: NextRequest, context: RouteContext): Promise<Response> {
   const { id: guestId } = await context.params;
 
-  if (!isValidUuid(guestId)) return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");
+  if (!isValidUuid(guestId))
+    return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
@@ -54,7 +55,11 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
   if (!weddingId) return notFoundResponse("Guest");
 
   // Verify the authenticated user is a member of this specific wedding
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return notFoundResponse("Guest");
 
   try {
@@ -68,7 +73,11 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
         .maybeSingle();
 
       if (groupError || !group) {
-        return errorResponse(400, "INVALID_GUEST_GROUP", "guest_group_id does not exist or belongs to a different wedding.");
+        return errorResponse(
+          400,
+          "INVALID_GUEST_GROUP",
+          "guest_group_id does not exist or belongs to a different wedding."
+        );
       }
     }
 
@@ -113,7 +122,8 @@ export async function PUT(request: NextRequest, context: RouteContext): Promise<
       .single();
 
     if (error) {
-      if (error.code === "23514") return errorResponse(400, "CONSTRAINT_VIOLATION", "Data violates a database constraint.");
+      if (error.code === "23514")
+        return errorResponse(400, "CONSTRAINT_VIOLATION", "Data violates a database constraint.");
       if (error.code === "PGRST116") return notFoundResponse("Guest");
       return internalErrorResponse(error, "PUT /api/guests/[id]");
     }
@@ -132,7 +142,8 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
   const { id: guestId } = await context.params;
 
-  if (!isValidUuid(guestId)) return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");
+  if (!isValidUuid(guestId))
+    return errorResponse(400, "INVALID_ID", "Guest ID must be a valid UUID.");
 
   const ctx = await getServerAppContext(request);
   const authResult = requireAuthenticatedContext(ctx);
@@ -143,7 +154,11 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
   if (!weddingId) return notFoundResponse("Guest");
 
   // Verify the authenticated user is a member of this specific wedding
-  const access = await requireWeddingAccess({ ctx: authResult.ctx, requestedWeddingId: weddingId, minRole: "editor" });
+  const access = await requireWeddingAccess({
+    ctx: authResult.ctx,
+    requestedWeddingId: weddingId,
+    minRole: "editor",
+  });
   if (!access.ok) return notFoundResponse("Guest");
 
   try {
@@ -152,7 +167,11 @@ export async function DELETE(request: NextRequest, context: RouteContext): Promi
 
     if (error) {
       if (error.code === "23503") {
-        return errorResponse(409, "HAS_DEPENDENCIES", "Cannot delete guest: dependent records exist without CASCADE.");
+        return errorResponse(
+          409,
+          "HAS_DEPENDENCIES",
+          "Cannot delete guest: dependent records exist without CASCADE."
+        );
       }
       return internalErrorResponse(error, "DELETE /api/guests/[id]");
     }

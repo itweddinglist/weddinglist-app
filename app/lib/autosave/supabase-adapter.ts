@@ -19,18 +19,16 @@ export function createSupabaseAdapter(
     async save(snapshot: SeatingSnapshot): Promise<void> {
       const supabase = getSupabaseClient();
 
-      const { error } = await supabase
-        .from("seating_editor_states")
-        .upsert(
-          {
-            wedding_id: weddingId,
-            event_id: eventId,
-            state: snapshot,
-            revision: snapshot.version,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "wedding_id,event_id" }
-        );
+      const { error } = await supabase.from("seating_editor_states").upsert(
+        {
+          wedding_id: weddingId,
+          event_id: eventId,
+          state: snapshot,
+          revision: snapshot.version,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "wedding_id,event_id" }
+      );
 
       if (error) throw new Error(error.message);
     },

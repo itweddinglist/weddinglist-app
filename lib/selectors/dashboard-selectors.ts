@@ -4,10 +4,10 @@
 // Folosit de dashboard pentru a alimenta Task Engine.
 // =============================================================================
 
-import type { SupabaseClient } from "@supabase/supabase-js"
-import type { Database } from "@/types/database"
-import type { TaskEngineContext } from "@/lib/task-engine"
-import { isRsvpAccepted, isRsvpDeclined, isRsvpMaybe } from "@/lib/domain/rsvp.rules"
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+import type { TaskEngineContext } from "@/lib/task-engine";
+import { isRsvpAccepted, isRsvpDeclined, isRsvpMaybe } from "@/lib/domain/rsvp.rules";
 
 /**
  * Agregă toate datele necesare pentru Task Engine într-un singur batch.
@@ -29,99 +29,75 @@ export async function buildTaskEngineContext(
       vendorsResult,
     ] = await Promise.all([
       // Guests total
-      supabase
-        .from("guests")
-        .select("id")
-        .eq("wedding_id", weddingId),
+      supabase.from("guests").select("id").eq("wedding_id", weddingId),
 
       // RSVP — responses + invitations
-      supabase
-        .from("rsvp_responses")
-        .select("status")
-        .eq("wedding_id", weddingId),
+      supabase.from("rsvp_responses").select("status").eq("wedding_id", weddingId),
 
       // Tables
-      supabase
-        .from("tables")
-        .select("id")
-        .eq("wedding_id", weddingId)
-        .is("deleted_at", null),
+      supabase.from("tables").select("id").eq("wedding_id", weddingId).is("deleted_at", null),
 
       // Seat assignments — distinct guests
-      supabase
-        .from("seat_assignments")
-        .select("guest_id")
-        .eq("wedding_id", weddingId),
+      supabase.from("seat_assignments").select("guest_id").eq("wedding_id", weddingId),
 
       // Budget items
-      supabase
-        .from("budget_items")
-        .select("estimated_amount")
-        .eq("wedding_id", weddingId),
+      supabase.from("budget_items").select("estimated_amount").eq("wedding_id", weddingId),
 
       // Payments
-      supabase
-        .from("payments")
-        .select("amount, due_date")
-        .eq("wedding_id", weddingId),
+      supabase.from("payments").select("amount, due_date").eq("wedding_id", weddingId),
 
       // Vendors
-      supabase
-        .from("vendors")
-        .select("category, status")
-        .eq("wedding_id", weddingId),
-    ])
+      supabase.from("vendors").select("category, status").eq("wedding_id", weddingId),
+    ]);
 
     // ── Guests ────────────────────────────────────────────────────────────────
-    const guestsTotal = guestsResult.data?.length ?? 0
+    const guestsTotal = guestsResult.data?.length ?? 0;
 
     // ── RSVP ──────────────────────────────────────────────────────────────────
-    const rsvpRows = rsvpResult.data ?? []
-    const rsvpAccepted = rsvpRows.filter((r) => isRsvpAccepted(r.status)).length
-    const rsvpDeclined = rsvpRows.filter((r) => isRsvpDeclined(r.status)).length
-    const rsvpMaybe    = rsvpRows.filter((r) => isRsvpMaybe(r.status)).length
-    const rsvpSentCount = rsvpAccepted + rsvpDeclined + rsvpMaybe
-    const rsvpPending   = guestsTotal - rsvpSentCount
+    const rsvpRows = rsvpResult.data ?? [];
+    const rsvpAccepted = rsvpRows.filter((r) => isRsvpAccepted(r.status)).length;
+    const rsvpDeclined = rsvpRows.filter((r) => isRsvpDeclined(r.status)).length;
+    const rsvpMaybe = rsvpRows.filter((r) => isRsvpMaybe(r.status)).length;
+    const rsvpSentCount = rsvpAccepted + rsvpDeclined + rsvpMaybe;
+    const rsvpPending = guestsTotal - rsvpSentCount;
 
     // ── Tables + Seating ──────────────────────────────────────────────────────
-    const tablesTotal = tablesResult.data?.length ?? 0
+    const tablesTotal = tablesResult.data?.length ?? 0;
     // @ts-expect-error: C4 - seat_assignments.guest_id column missing (real: guest_event_id) - fix in PR 3
-    const seatedGuests = new Set((assignmentsResult.data ?? []).map((a) => a.guest_id))
-    const seatedGuestsTotal = seatedGuests.size
-    const guestsUnassigned  = Math.max(0, guestsTotal - seatedGuestsTotal)
+    const seatedGuests = new Set((assignmentsResult.data ?? []).map((a) => a.guest_id));
+    const seatedGuestsTotal = seatedGuests.size;
+    const guestsUnassigned = Math.max(0, guestsTotal - seatedGuestsTotal);
 
     // ── Budget ────────────────────────────────────────────────────────────────
     const budgetTotal = (budgetResult.data ?? []).reduce(
-      (sum, item) => sum + (item.estimated_amount ?? 0), 0
-    )
+      (sum, item) => sum + (item.estimated_amount ?? 0),
+      0
+    );
     const budgetPaid = (paymentsResult.data ?? []).reduce(
       // @ts-expect-error: NEW-10 cascade - SelectQueryError from due_date SELECT (payments) - fix in PR 11
-      (sum, p) => sum + (p.amount ?? 0), 0
-    )
+      (sum, p) => sum + (p.amount ?? 0),
+      0
+    );
 
     // ── Plăți scadente în < 3 zile ────────────────────────────────────────────
-    const now = new Date()
-    const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+    const now = new Date();
+    const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const paymentDueSoonCount = (paymentsResult.data ?? []).filter((p) => {
       // @ts-expect-error: NEW-10 cascade - SelectQueryError from due_date SELECT (payments) - fix in PR 11
-      if (!p.due_date) return false
+      if (!p.due_date) return false;
       // @ts-expect-error: NEW-10 cascade - SelectQueryError from due_date SELECT (payments) - fix in PR 11
-      const due = new Date(p.due_date)
-      return due >= now && due <= in3Days
-    }).length
+      const due = new Date(p.due_date);
+      return due >= now && due <= in3Days;
+    }).length;
 
     // ── Vendors ───────────────────────────────────────────────────────────────
-    const vendors = vendorsResult.data ?? []
+    const vendors = vendorsResult.data ?? [];
 
-    const hasLocation = vendors.some(
-      (v) => v.category === "location" && v.status === "booked"
-    )
-    const hasCatering = vendors.some(
-      (v) => v.category === "catering" && v.status === "booked"
-    )
+    const hasLocation = vendors.some((v) => v.category === "location" && v.status === "booked");
+    const hasCatering = vendors.some((v) => v.category === "catering" && v.status === "booked");
     const vendorsInProgressCount = vendors.filter(
       (v) => v.status === "contacted" || v.status === "meeting"
-    ).length
+    ).length;
 
     return {
       daysUntilWedding,
@@ -137,9 +113,9 @@ export async function buildTaskEngineContext(
       paymentDueSoonCount,
       tablesTotal,
       seatedGuestsTotal,
-    }
+    };
   } catch (err) {
-    console.error("[DashboardSelectors] buildTaskEngineContext failed:", err)
-    return null
+    console.error("[DashboardSelectors] buildTaskEngineContext failed:", err);
+    return null;
   }
 }

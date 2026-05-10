@@ -20,10 +20,7 @@ describe("AuditAction", () => {
   });
 
   it("toate acțiunile export sunt definite", () => {
-    const actions: AuditAction[] = [
-      "export.json_completed",
-      "export.pdf_completed",
-    ];
+    const actions: AuditAction[] = ["export.json_completed", "export.pdf_completed"];
     expect(actions).toHaveLength(2);
   });
 

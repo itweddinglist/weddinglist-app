@@ -24,9 +24,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   // source: "dev_mock" dacă debugAuthEnabled bypass-ează WP, altfel "wordpress"
-  const source: "wordpress" | "dev_mock" = isEnabled("debugAuthEnabled")
-    ? "dev_mock"
-    : "wordpress";
+  const source: "wordpress" | "dev_mock" = isEnabled("debugAuthEnabled") ? "dev_mock" : "wordpress";
 
   const ctx = await getServerAppContext(request);
 

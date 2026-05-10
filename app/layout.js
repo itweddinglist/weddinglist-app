@@ -26,10 +26,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ro">
-      <body
-        className={`${cormorant.variable} ${dmSans.variable}`}
-        suppressHydrationWarning
-      >
+      <body className={`${cormorant.variable} ${dmSans.variable}`} suppressHydrationWarning>
         <PostHogProvider>
           <Suspense fallback={null}>
             <PostHogPageView />

@@ -4,24 +4,24 @@ import { useState, useCallback, useRef, useEffect } from "react";
 // ── TIPURI INTERNE ────────────────────────────────────────────────────────────
 
 interface Toast {
-  id: string
-  msg: string
-  type: string
+  id: string;
+  msg: string;
+  type: string;
 }
 
 interface ClickedSeat {
-  tableId: number
-  seatIndex: number
+  tableId: number;
+  seatIndex: number;
 }
 
 interface EditPanel {
-  tableId: number
+  tableId: number;
 }
 
 interface ConfirmDialog {
-  title: string
-  sub?: string
-  onConfirm: () => void
+  title: string;
+  sub?: string;
+  onConfirm: () => void;
 }
 
 /**

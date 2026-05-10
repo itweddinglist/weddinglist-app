@@ -13,15 +13,8 @@ import {
   requireWeddingAccess,
 } from "@/lib/server-context";
 import { supabaseServer } from "@/app/lib/supabase/server";
-import {
-  successResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
-import type {
-  RsvpResponseRow,
-  RsvpInvitationRow,
-  RsvpDashboardGuest,
-} from "@/types/rsvp";
+import { successResponse, internalErrorResponse } from "@/lib/api-response";
+import type { RsvpResponseRow, RsvpInvitationRow, RsvpDashboardGuest } from "@/types/rsvp";
 
 // Projection locală — reflectă exact câmpurile selectate în query-ul rsvp_invitations.
 type InvitationProjection = Pick<
@@ -68,7 +61,8 @@ export async function GET(request: NextRequest): Promise<Response> {
     // ── Fetch guests + guest_events ────────────────────────────────────────
     const { data: guestEventsRaw, error: geError } = await supabaseServer
       .from("guest_events")
-      .select(`
+      .select(
+        `
         id,
         guest_id,
         event_id,
@@ -82,7 +76,8 @@ export async function GET(request: NextRequest): Promise<Response> {
           id,
           name
         )
-      `)
+      `
+      )
       .eq("wedding_id", weddingId);
 
     if (geError) return internalErrorResponse(geError, "GET /api/rsvp/dashboard — guest_events");
@@ -115,7 +110,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     // ── Fetch rsvp_invitations ────────────────────────────────────────────
     const { data: invitations, error: invError } = await supabaseServer
       .from("rsvp_invitations")
-      .select("id, guest_id, delivery_channel, delivery_status, opened_at, last_sent_at, is_active, public_link_id")
+      .select(
+        "id, guest_id, delivery_channel, delivery_status, opened_at, last_sent_at, is_active, public_link_id"
+      )
       .eq("wedding_id", weddingId)
       .eq("is_active", true);
 
@@ -132,33 +129,35 @@ export async function GET(request: NextRequest): Promise<Response> {
     );
 
     // ── Build guest rows ──────────────────────────────────────────────────
-    const guests: RsvpDashboardGuest[] = (guestEvents ?? []).map((ge: GuestEventJoinRow): RsvpDashboardGuest => {
-      const response = responseByGuestEventId.get(ge.id);
-      const invitation = invitationByGuestId.get(ge.guest_id);
+    const guests: RsvpDashboardGuest[] = (guestEvents ?? []).map(
+      (ge: GuestEventJoinRow): RsvpDashboardGuest => {
+        const response = responseByGuestEventId.get(ge.id);
+        const invitation = invitationByGuestId.get(ge.guest_id);
 
-      return {
-        guest_id: ge.guest_id,
-        display_name: ge.guests.display_name,
-        first_name: ge.guests.first_name,
-        guest_event_id: ge.id,
-        event_id: ge.event_id,
-        event_name: ge.events.name,
-        // Din rsvp_responses
-        rsvp_status: response?.status ?? "pending",
-        meal_choice: response?.meal_choice ?? null,
-        dietary_notes: response?.dietary_notes ?? null,
-        responded_at: response?.responded_at ?? null,
-        rsvp_source: response?.rsvp_source ?? null,
-        // Din rsvp_invitations
-        invitation_id: invitation?.id ?? null,
-        public_link_id: invitation?.public_link_id ?? null,
-        delivery_channel: invitation?.delivery_channel ?? null,
-        delivery_status: invitation?.delivery_status ?? null,
-        opened_at: invitation?.opened_at ?? null,
-        last_sent_at: invitation?.last_sent_at ?? null,
-        is_active: invitation?.is_active ?? null,
-      };
-    });
+        return {
+          guest_id: ge.guest_id,
+          display_name: ge.guests.display_name,
+          first_name: ge.guests.first_name,
+          guest_event_id: ge.id,
+          event_id: ge.event_id,
+          event_name: ge.events.name,
+          // Din rsvp_responses
+          rsvp_status: response?.status ?? "pending",
+          meal_choice: response?.meal_choice ?? null,
+          dietary_notes: response?.dietary_notes ?? null,
+          responded_at: response?.responded_at ?? null,
+          rsvp_source: response?.rsvp_source ?? null,
+          // Din rsvp_invitations
+          invitation_id: invitation?.id ?? null,
+          public_link_id: invitation?.public_link_id ?? null,
+          delivery_channel: invitation?.delivery_channel ?? null,
+          delivery_status: invitation?.delivery_status ?? null,
+          opened_at: invitation?.opened_at ?? null,
+          last_sent_at: invitation?.last_sent_at ?? null,
+          is_active: invitation?.is_active ?? null,
+        };
+      }
+    );
 
     // ── Compute stats ─────────────────────────────────────────────────────
     const total = guests.length;
@@ -171,9 +170,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const opened_not_answered = guests.filter(
       (g) => g.opened_at && g.rsvp_status === "pending"
     ).length;
-    const special_meals = guests.filter(
-      (g) => g.meal_choice === "vegetarian"
-    ).length;
+    const special_meals = guests.filter((g) => g.meal_choice === "vegetarian").length;
     const has_allergies = guests.filter(
       (g) => g.dietary_notes && g.dietary_notes.trim().length > 0
     ).length;
@@ -191,7 +188,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     };
 
     return successResponse({ guests, stats });
-
   } catch (err) {
     return internalErrorResponse(err, "GET /api/rsvp/dashboard");
   }

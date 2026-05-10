@@ -70,7 +70,6 @@ export async function importWeddingJson(
   exportData: WeddingExport,
   appUserId: string
 ): Promise<ImportOutcome> {
-
   const { data: d } = exportData;
   const idMap: ImportIdMap = {
     wedding: newId(),
@@ -86,15 +85,10 @@ export async function importWeddingJson(
   };
 
   // ── Fetch titluri existente pentru naming ─────────────────────────────────
-  const { data: existingWeddings } = await supabase
-    .from("weddings")
-    .select("title");
+  const { data: existingWeddings } = await supabase.from("weddings").select("title");
   const existingTitles = (existingWeddings ?? []).map((w: any) => w.title);
 
-  const importTitle = buildImportTitle(
-    (d.wedding as any)?.title ?? "Nuntă",
-    existingTitles
-  );
+  const importTitle = buildImportTitle((d.wedding as any)?.title ?? "Nuntă", existingTitles);
 
   let currentStep = "wedding";
 
@@ -362,7 +356,6 @@ export async function importWeddingJson(
     };
 
     return { success: true, new_wedding_id: idMap.wedding, counts };
-
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     await markFailed(supabase, idMap.wedding, message, currentStep);

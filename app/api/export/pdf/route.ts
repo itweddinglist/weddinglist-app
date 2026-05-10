@@ -18,10 +18,7 @@ import { WeddingPdfDocument } from "@/lib/export/pdf-export";
 import type { PdfData, PdfGuest, PdfTable } from "@/lib/export/pdf-export";
 import { slugifyTitle } from "@/lib/export/json-export";
 import { wl_audit } from "@/lib/audit/wl-audit";
-import {
-  errorResponse,
-  internalErrorResponse,
-} from "@/lib/api-response";
+import { errorResponse, internalErrorResponse } from "@/lib/api-response";
 
 export async function GET(request: NextRequest): Promise<Response> {
   // ── Auth ───────────────────────────────────────────────────────────────────
@@ -55,14 +52,16 @@ export async function GET(request: NextRequest): Promise<Response> {
     // ── Fetch guests cu rsvp_responses ────────────────────────────────────
     const { data: guestEvents, error: geErr } = await supabaseServer
       .from("guest_events")
-      .select(`
+      .select(
+        `
         id,
         guest_id,
         guests!inner (
           id,
           display_name
         )
-      `)
+      `
+      )
       .eq("wedding_id", weddingId);
 
     if (geErr) return internalErrorResponse(geErr, "GET /api/export/pdf — guest_events");
@@ -75,14 +74,13 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     if (rErr) return internalErrorResponse(rErr, "GET /api/export/pdf — responses");
 
-    const responseMap = new Map(
-      (responses ?? []).map((r: any) => [r.guest_event_id, r])
-    );
+    const responseMap = new Map((responses ?? []).map((r: any) => [r.guest_event_id, r]));
 
     // ── Fetch seat assignments ────────────────────────────────────────────
     const { data: assignments, error: aErr } = await supabaseServer
       .from("seat_assignments")
-      .select(`
+      .select(
+        `
         guest_event_id,
         seats!inner (
           table_id,
@@ -90,16 +88,14 @@ export async function GET(request: NextRequest): Promise<Response> {
             name
           )
         )
-      `)
+      `
+      )
       .eq("wedding_id", weddingId);
 
     if (aErr) return internalErrorResponse(aErr, "GET /api/export/pdf — assignments");
 
     const assignmentMap = new Map(
-      (assignments ?? []).map((a: any) => [
-        a.guest_event_id,
-        a.seats?.tables?.name ?? null,
-      ])
+      (assignments ?? []).map((a: any) => [a.guest_event_id, a.seats?.tables?.name ?? null])
     );
 
     // ── Fetch tables ──────────────────────────────────────────────────────
@@ -148,7 +144,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     const pending = guests.filter((g) => g.rsvp_status === "pending").length;
     const maybe = guests.filter((g) => g.rsvp_status === "maybe").length;
     const special_meals = guests.filter((g) => g.meal_choice === "vegetarian").length;
-    const has_allergies = guests.filter((g) => g.dietary_notes && g.dietary_notes.trim().length > 0).length;
+    const has_allergies = guests.filter(
+      (g) => g.dietary_notes && g.dietary_notes.trim().length > 0
+    ).length;
 
     const pdfData: PdfData = {
       couple_names: wedding.title,
@@ -183,7 +181,6 @@ export async function GET(request: NextRequest): Promise<Response> {
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
-
   } catch (err) {
     return internalErrorResponse(err, "GET /api/export/pdf");
   }

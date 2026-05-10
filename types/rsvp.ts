@@ -5,22 +5,22 @@
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export type RsvpAttendanceStatus = 'pending' | 'accepted' | 'declined' | 'maybe';
+export type RsvpAttendanceStatus = "pending" | "accepted" | "declined" | "maybe";
 
-export type RsvpMealChoice = 'standard' | 'vegetarian';
+export type RsvpMealChoice = "standard" | "vegetarian";
 
 export type RsvpDeliveryChannel =
-  | 'whatsapp'
-  | 'email'
-  | 'sms'
-  | 'facebook'
-  | 'qr'
-  | 'link'
-  | 'manual';
+  | "whatsapp"
+  | "email"
+  | "sms"
+  | "facebook"
+  | "qr"
+  | "link"
+  | "manual";
 
-export type RsvpDeliveryStatus = 'draft' | 'ready' | 'sent' | 'failed';
+export type RsvpDeliveryStatus = "draft" | "ready" | "sent" | "failed";
 
-export type RsvpResponseSource = 'guest_link' | 'couple_manual' | 'import';
+export type RsvpResponseSource = "guest_link" | "couple_manual" | "import";
 
 // ─── DB Row Types ─────────────────────────────────────────────────────────────
 
@@ -152,6 +152,6 @@ export interface RsvpDashboardGuest {
 // ─── Token ────────────────────────────────────────────────────────────────────
 
 export interface GeneratedToken {
-  raw: string;    // trimis invitatului — nu se stochează
-  hash: string;   // SHA-256 hex — stocat în DB
+  raw: string; // trimis invitatului — nu se stochează
+  hash: string; // SHA-256 hex — stocat în DB
 }

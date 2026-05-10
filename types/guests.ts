@@ -53,7 +53,7 @@ export interface GuestEventRow {
 // aici SI in query-ul din load route. Contractul trebuie sa ramana aliniat.
 export type SeatingEventProjection = Pick<
   GuestEventRow,
-  'attendance_status' | 'meal_choice' | 'event_id'
+  "attendance_status" | "meal_choice" | "event_id"
 >;
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
@@ -62,12 +62,7 @@ export type GuestSide = "bride" | "groom" | "both" | "other";
 
 // Matches DB CHECK constraint exactly:
 // CHECK (attendance_status IN ('pending', 'invited', 'attending', 'declined', 'maybe'))
-export type AttendanceStatus =
-  | "pending"
-  | "invited"
-  | "attending"
-  | "declined"
-  | "maybe";
+export type AttendanceStatus = "pending" | "invited" | "attending" | "declined" | "maybe";
 
 // ─── API Request Types ──────────────────────────────────────────────────────
 

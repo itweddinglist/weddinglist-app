@@ -1,46 +1,49 @@
 // utils/magicFill.ts — Magic Fill V2.0 (implementare iterativă în 6 etape)
-import { isSeatingEligible } from './seating-eligibility.ts';
-import type { SeatingGuest, SeatingGuestWithEvents, SeatingTable } from '@/types/seating';
+import { isSeatingEligible } from "./seating-eligibility.ts";
+import type { SeatingGuest, SeatingGuestWithEvents, SeatingTable } from "@/types/seating";
 
 // ── TIPURI PUBLICE ─────────────────────────────────────────────────────────────
 
 export interface MagicFillOpts {
-  maxIterations?: number
-  maxTimeMs?: number
+  maxIterations?: number;
+  maxTimeMs?: number;
 }
 
 export interface SkippedGroup {
-  groupName: string
-  reason: string
+  groupName: string;
+  reason: string;
 }
 
 export interface MagicFillResult {
-  assignments: Record<number, number>
-  assignmentsCount: number
-  locuriGoale: number
-  skippedGuests: SeatingGuest[]
-  prezidiuSkipped: number
-  skippedGroups: SkippedGroup[]
-  limitReached: boolean
+  assignments: Record<number, number>;
+  assignmentsCount: number;
+  locuriGoale: number;
+  skippedGuests: SeatingGuest[];
+  prezidiuSkipped: number;
+  skippedGroups: SkippedGroup[];
+  limitReached: boolean;
 }
 
 // ── TIPURI INTERNE ────────────────────────────────────────────────────────────
 
 interface Group {
-  name: string
-  members: SeatingGuest[]
+  name: string;
+  members: SeatingGuest[];
 }
 
 // TableRef: referință la o masă cu locuri libere (snapshot la momentul citirii)
 interface TableRef {
-  id: number
-  seats: number   // capacitate totală originală
-  free: number    // locuri libere curente
+  id: number;
+  seats: number; // capacitate totală originală
+  free: number; // locuri libere curente
 }
 
 // ── FUNCȚII PUBLICE ───────────────────────────────────────────────────────────
 
-export function calculateMagicFill(guests: SeatingGuestWithEvents[], tables: SeatingTable[]): MagicFillResult {
+export function calculateMagicFill(
+  guests: SeatingGuestWithEvents[],
+  tables: SeatingTable[]
+): MagicFillResult {
   return calculateMagicFillWithLimits(guests, tables, {});
 }
 
@@ -136,8 +139,8 @@ export function calculateMagicFillWithLimits(
     const free = freeByTableId.get(t.id) ?? 0;
     const occupied = t.seats - free;
 
-    if (occupied === 0) continue;         // (goală) → rămâne în freeTables
-    if (occupied === t.seats) continue;   // (plină, free==0) → exclusă automat
+    if (occupied === 0) continue; // (goală) → rămâne în freeTables
+    if (occupied === t.seats) continue; // (plină, free==0) → exclusă automat
 
     const seatedHere = allGuests.filter((g) => g.tableId === t.id);
     const uniqueGroups = new Set(seatedHere.map((g) => g.grup?.trim() ?? ""));
@@ -202,9 +205,9 @@ export function calculateMagicFillWithLimits(
     const freeTables = getFreeTables();
 
     // Dimensiuni distincte de mese pure goale (free == seats), DESCRESCĂTOR (R4)
-    const availableDims = [...new Set(
-      freeTables.filter((t) => t.free === t.seats).map((t) => t.seats)
-    )].sort((a, b) => b - a);
+    const availableDims = [
+      ...new Set(freeTables.filter((t) => t.free === t.seats).map((t) => t.seats)),
+    ].sort((a, b) => b - a);
 
     let consumed = false;
     for (const D of availableDims) {
@@ -232,7 +235,6 @@ export function calculateMagicFillWithLimits(
 
   const remainingAfterE4: Group[] = [];
   for (const group of pool) {
-
     // PAS A — Continuabile pentru G (ordine id crescător)
     const contTables = (continuableTables.get(group.name) ?? [])
       .slice()
@@ -252,9 +254,13 @@ export function calculateMagicFillWithLimits(
 
     // PAS B — Slice cascadă pe mese pure goale (R1)
     // Calculăm dimensiunile disponibile o singură dată (la start PAS B)
-    const initialDims = [...new Set(
-      getFreeTables().filter((t) => t.free === t.seats).map((t) => t.seats)
-    )].sort((a, b) => b - a);
+    const initialDims = [
+      ...new Set(
+        getFreeTables()
+          .filter((t) => t.free === t.seats)
+          .map((t) => t.seats)
+      ),
+    ].sort((a, b) => b - a);
 
     for (const D of initialDims) {
       while (group.members.length >= D) {
@@ -342,10 +348,7 @@ export function calculateMagicFillWithLimits(
         ctx.bestSoFar = [...current];
       }
       // OPT1: perfect score = fără singletons + exact 2 resturi → nu poate fi mai bine
-      if (
-        current.length === 2 &&
-        current.every((i) => sortedPool[i].members.length > 1)
-      ) {
+      if (current.length === 2 && current.every((i) => sortedPool[i].members.length > 1)) {
         ctx.foundPerfect = true;
       }
       return;
@@ -372,9 +375,8 @@ export function calculateMagicFillWithLimits(
     // OPT2: maxItems adaptiv — limitează explozia combinatorică pe pool mare
     const maxPoolSize = restPool.length > 0 ? restPool[0].members.length : 1;
     const minItemsNeeded = Math.ceil(curFree / maxPoolSize);
-    const effectiveMaxItems = restPool.length > 25
-      ? Math.min(5, Math.max(3, minItemsNeeded + 1))
-      : 5;
+    const effectiveMaxItems =
+      restPool.length > 25 ? Math.min(5, Math.max(3, minItemsNeeded + 1)) : 5;
     const ctx: { foundPerfect: boolean; deadline: number; bestSoFar: number[] | null } = {
       foundPerfect: false,
       deadline: performance.now() + E3_PER_TABLE_TIMEOUT_MS,

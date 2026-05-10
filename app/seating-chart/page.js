@@ -90,12 +90,12 @@ function SeatingChartInner({
   );
 
   useEffect(() => {
-    const onOnline  = () => setIsOffline(false);
+    const onOnline = () => setIsOffline(false);
     const onOffline = () => setIsOffline(true);
-    window.addEventListener("online",  onOnline);
+    window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
     return () => {
-      window.removeEventListener("online",  onOnline);
+      window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
     };
   }, []);
@@ -122,15 +122,21 @@ function SeatingChartInner({
   const ui = useSeatingUI();
 
   // ── Effect handler ──
-  const handleResult = useCallback((result) => {
-    result?.effects?.forEach((effect) => applySeatingEffect(effect, ui));
-  }, [ui]);
+  const handleResult = useCallback(
+    (result) => {
+      result?.effects?.forEach((effect) => applySeatingEffect(effect, ui));
+    },
+    [ui]
+  );
 
   // ── Faza 7: reacționează la saveError ─────────────────────────────────────
   useEffect(() => {
     if (!saveError) return;
     if (saveError.code === "GUEST_NOT_FOUND") {
-      ui.showToast("Un invitat din plan nu mai există în lista ta. Verifică planul și reîncearcă.", "red");
+      ui.showToast(
+        "Un invitat din plan nu mai există în lista ta. Verifică planul și reîncearcă.",
+        "red"
+      );
     }
     if (saveError.code === "CAPACITY_EXCEEDED") {
       ui.showToast("O masă din plan are prea mulți invitați față de locurile disponibile.", "red");
@@ -144,14 +150,11 @@ function SeatingChartInner({
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightGroupId, setHighlightGroupId] = useState(null);
   const [activeGroupId, setActiveGroupId] = useState(null);
-  const filteredUnassigned = useMemo(
-    () => {
-      let result = data.filteredUnassigned(searchQuery);
-      if (activeGroupId) result = result.filter((g) => g.grup === activeGroupId);
-      return result;
-    },
-    [data.filteredUnassigned, searchQuery, activeGroupId]
-  );
+  const filteredUnassigned = useMemo(() => {
+    let result = data.filteredUnassigned(searchQuery);
+    if (activeGroupId) result = result.filter((g) => g.grup === activeGroupId);
+    return result;
+  }, [data.filteredUnassigned, searchQuery, activeGroupId]);
   const [exportDialog, setExportDialog] = useState(false);
   const [exportMode, setExportMode] = useState("fit");
   const [exporting, setExporting] = useState(false);
@@ -191,18 +194,25 @@ function SeatingChartInner({
   }, [svgRef, data.tables, exportMode, ui]);
 
   // ── Guest locator ──
-  const { highlightGuestId, locateGuest: locateGuestRaw, clearHighlight } = useGuestLocator({
+  const {
+    highlightGuestId,
+    locateGuest: locateGuestRaw,
+    clearHighlight,
+  } = useGuestLocator({
     tables: data.tables,
     getGuestTableId: data.getGuestTableId,
     focusPoint,
   });
 
   // ── Locate guest — resetează selectedTableId când navigăm la un invitat ──
-  const locateGuest = useCallback((guestId) => {
-    ui.setSelectedTableId(null);
-    ui.setClickedSeat(null);
-    locateGuestRaw(guestId);
-  }, [locateGuestRaw, ui]);
+  const locateGuest = useCallback(
+    (guestId) => {
+      ui.setSelectedTableId(null);
+      ui.setClickedSeat(null);
+      locateGuestRaw(guestId);
+    },
+    [locateGuestRaw, ui]
+  );
 
   // ── Clear clicked seat on nav ──
   useEffect(() => {
@@ -215,37 +225,44 @@ function SeatingChartInner({
   }, [ui.selectedTableId, clearHighlight]);
 
   // ── Layer 3: Interactions ──
-  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown, dragPreviewRef } = useTableInteractions({
-    tables: data.tables,
-    setTables: data.setTables,
-    selectedTableId: ui.selectedTableId,
-    lockMode: ui.lockMode,
-    undo: () => handleResult(data.undo()),
-    saveAction: data.saveAction,
-    setModal: ui.setModal,
-    setEditPanel: ui.setEditPanel,
-    setConfirmDialog: ui.setConfirmDialog,
-    setClickedSeat: ui.setClickedSeat,
-    setShowCatering: ui.setShowCatering,
-    setSelectedTableId: ui.setSelectedTableId,
-    setHoveredGuest: ui.setHoveredGuest,
-    setIsDraggingGuest: ui.setIsDraggingGuest,
-    camRef,
-    canvasWRef,
-    canvasHRef,
-    screenToSVG,
-    dispatchCam,
-    notifyDrag: () => setDragTick((n) => n + 1),
-  });
+  const { draggingTableRef, panningRef, spaceDownRef, handleSvgMouseDown, dragPreviewRef } =
+    useTableInteractions({
+      tables: data.tables,
+      setTables: data.setTables,
+      selectedTableId: ui.selectedTableId,
+      lockMode: ui.lockMode,
+      undo: () => handleResult(data.undo()),
+      saveAction: data.saveAction,
+      setModal: ui.setModal,
+      setEditPanel: ui.setEditPanel,
+      setConfirmDialog: ui.setConfirmDialog,
+      setClickedSeat: ui.setClickedSeat,
+      setShowCatering: ui.setShowCatering,
+      setSelectedTableId: ui.setSelectedTableId,
+      setHoveredGuest: ui.setHoveredGuest,
+      setIsDraggingGuest: ui.setIsDraggingGuest,
+      camRef,
+      canvasWRef,
+      canvasHRef,
+      screenToSVG,
+      dispatchCam,
+      notifyDrag: () => setDragTick((n) => n + 1),
+    });
 
   // ── Wrapped actions ──
-  const handleAssignGuest = useCallback((gId, tableId) => {
-    handleResult(data.assignGuest(gId, tableId));
-  }, [data, handleResult]);
+  const handleAssignGuest = useCallback(
+    (gId, tableId) => {
+      handleResult(data.assignGuest(gId, tableId));
+    },
+    [data, handleResult]
+  );
 
-  const handleUnassignGuest = useCallback((guestId) => {
-    handleResult(data.unassignGuest(guestId));
-  }, [data, handleResult]);
+  const handleUnassignGuest = useCallback(
+    (guestId) => {
+      handleResult(data.unassignGuest(guestId));
+    },
+    [data, handleResult]
+  );
 
   const handleMagicFill = useCallback(() => {
     if (isReadOnly) return;
@@ -264,19 +281,22 @@ function SeatingChartInner({
     handleResult(result);
   }, [data, ui.editPanel, ui.editName, ui.editSeats, handleResult, isReadOnly]);
 
-  const handleDeleteTable = useCallback((tableId) => {
-    const result = data.deleteTable(tableId);
-    if (result.confirmRequired) {
-      ui.setConfirmDialog({
-        title: result.confirmRequired.title,
-        sub: result.confirmRequired.sub,
-        onOk: () => {
-          const confirmResult = result.confirmRequired.onConfirm();
-          handleResult(confirmResult);
-        },
-      });
-    }
-  }, [data, ui, handleResult]);
+  const handleDeleteTable = useCallback(
+    (tableId) => {
+      const result = data.deleteTable(tableId);
+      if (result.confirmRequired) {
+        ui.setConfirmDialog({
+          title: result.confirmRequired.title,
+          sub: result.confirmRequired.sub,
+          onOk: () => {
+            const confirmResult = result.confirmRequired.onConfirm();
+            handleResult(confirmResult);
+          },
+        });
+      }
+    },
+    [data, ui, handleResult]
+  );
 
   const handleUndo = useCallback(() => {
     handleResult(data.undo());
@@ -319,8 +339,8 @@ function SeatingChartInner({
               "✨ Toți invitații au un loc!"
             ) : (
               <>
-                Mai ai <strong style={{ color: "#F0C9B0" }}>{data.unassigned.length}</strong> invitați de
-                așezat
+                Mai ai <strong style={{ color: "#F0C9B0" }}>{data.unassigned.length}</strong>{" "}
+                invitați de așezat
               </>
             )}
           </span>
@@ -408,20 +428,38 @@ function SeatingChartInner({
                     />
                   </pattern>
                   <filter id="shadow-sm" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="10" floodColor="rgba(196,168,130,0.5)" />
+                    <feDropShadow
+                      dx="0"
+                      dy="4"
+                      stdDeviation="10"
+                      floodColor="rgba(196,168,130,0.5)"
+                    />
                   </filter>
                   <filter id="shadow-prez" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="8" floodColor="rgba(201,144,122,0.2)" />
+                    <feDropShadow
+                      dx="0"
+                      dy="3"
+                      stdDeviation="8"
+                      floodColor="rgba(201,144,122,0.2)"
+                    />
                   </filter>
                   <filter id="glow-sel" x="-40%" y="-40%" width="180%" height="180%">
-                    <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="#9F7AEA" floodOpacity="0.55" />
+                    <feDropShadow
+                      dx="0"
+                      dy="0"
+                      stdDeviation="8"
+                      floodColor="#9F7AEA"
+                      floodOpacity="0.55"
+                    />
                   </filter>
                 </defs>
 
                 <rect
                   data-bg="1"
-                  x="0" y="0"
-                  width={PLAN_W} height={PLAN_H}
+                  x="0"
+                  y="0"
+                  width={PLAN_W}
+                  height={PLAN_H}
                   fill="url(#grid-pat)"
                   onClick={() => {
                     ui.setClickedSeat(null);
@@ -433,8 +471,10 @@ function SeatingChartInner({
                 />
                 <rect
                   data-border="1"
-                  x="0" y="0"
-                  width={PLAN_W} height={PLAN_H}
+                  x="0"
+                  y="0"
+                  width={PLAN_W}
+                  height={PLAN_H}
                   fill="none"
                   stroke="#C4A882"
                   strokeWidth="3"
@@ -444,37 +484,38 @@ function SeatingChartInner({
 
                 <g>
                   {data.tables.map((t) => {
-                    const preview = dragPreviewRef.current?.tableId === t.id ? dragPreviewRef.current : null;
+                    const preview =
+                      dragPreviewRef.current?.tableId === t.id ? dragPreviewRef.current : null;
                     const tVisual = preview ? { ...t, x: preview.x, y: preview.y } : t;
                     if (!isTableVisible(tVisual, cam, canvasW, canvasH)) return null;
                     return (
-                    <TableNode
-                      key={t.id}
-                      t={tVisual}
-                      assignedGuests={data.guestsByTable[t.id] || EMPTY_ARRAY}
-                      dragOver={ui.dragOver}
-                      selectedTableId={ui.selectedTableId}
-                      lockMode={ui.lockMode}
-                      screenToSVG={screenToSVG}
-                      assignGuest={handleAssignGuest}
-                      setSelectedTableId={ui.setSelectedTableId}
-                      setEditName={ui.setEditName}
-                      setEditSeats={ui.setEditSeats}
-                      setEditPanel={ui.setEditPanel}
-                      setHoveredGuest={ui.setHoveredGuest}
-                      setClickedSeat={ui.setClickedSeat}
-                      setIsDraggingGuest={ui.setIsDraggingGuest}
-                      setDragOver={ui.setDragOver}
-                      draggingTableRef={draggingTableRef}
-                      isHighlighted={false}
-                      vzoom={vzoom}
-                      isFocused={!ui.selectedTableId || ui.selectedTableId === t.id}
-                      highlightGuestId={highlightGuestId}
-                      highlightGroupId={highlightGroupId}
-                      newTableIds={data.newTableIds}
-                      clearNewTableHighlight={data.clearNewTableHighlight}
-                      spaceDownRef={spaceDownRef}
-                    />
+                      <TableNode
+                        key={t.id}
+                        t={tVisual}
+                        assignedGuests={data.guestsByTable[t.id] || EMPTY_ARRAY}
+                        dragOver={ui.dragOver}
+                        selectedTableId={ui.selectedTableId}
+                        lockMode={ui.lockMode}
+                        screenToSVG={screenToSVG}
+                        assignGuest={handleAssignGuest}
+                        setSelectedTableId={ui.setSelectedTableId}
+                        setEditName={ui.setEditName}
+                        setEditSeats={ui.setEditSeats}
+                        setEditPanel={ui.setEditPanel}
+                        setHoveredGuest={ui.setHoveredGuest}
+                        setClickedSeat={ui.setClickedSeat}
+                        setIsDraggingGuest={ui.setIsDraggingGuest}
+                        setDragOver={ui.setDragOver}
+                        draggingTableRef={draggingTableRef}
+                        isHighlighted={false}
+                        vzoom={vzoom}
+                        isFocused={!ui.selectedTableId || ui.selectedTableId === t.id}
+                        highlightGuestId={highlightGuestId}
+                        highlightGroupId={highlightGroupId}
+                        newTableIds={data.newTableIds}
+                        clearNewTableHighlight={data.clearNewTableHighlight}
+                        spaceDownRef={spaceDownRef}
+                      />
                     );
                   })}
                 </g>
@@ -503,43 +544,52 @@ function SeatingChartInner({
         realTables={data.realTables}
       />
 
-      {ui.hoveredGuest && !draggingTableRef.current && !panningRef.current && (() => {
-        const hg = ui.hoveredGuestRef.current;
-        if (!hg) return null;
-        return (
-          <div
-            style={{
-              position: "fixed",
-              zIndex: 9999,
-              background: "#1A1F3A",
-              color: "#FAF7F2",
-              padding: "0.55rem 0.85rem",
-              borderRadius: "10px",
-              fontSize: "0.7rem",
-              pointerEvents: "none",
-              boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
-              border: "1px solid rgba(201,144,122,0.25)",
-              minWidth: "155px",
-              left: Math.min(window.innerWidth - 180, hg.x + 14),
-              top: Math.max(10, hg.y - 14),
-              animation: "fadeUp 0.12s ease",
-            }}
-          >
-            <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
-              {hg.guest.prenume} {hg.guest.nume}
+      {ui.hoveredGuest &&
+        !draggingTableRef.current &&
+        !panningRef.current &&
+        (() => {
+          const hg = ui.hoveredGuestRef.current;
+          if (!hg) return null;
+          return (
+            <div
+              style={{
+                position: "fixed",
+                zIndex: 9999,
+                background: "#1A1F3A",
+                color: "#FAF7F2",
+                padding: "0.55rem 0.85rem",
+                borderRadius: "10px",
+                fontSize: "0.7rem",
+                pointerEvents: "none",
+                boxShadow: "0 6px 28px rgba(0,0,0,0.4)",
+                border: "1px solid rgba(201,144,122,0.25)",
+                minWidth: "155px",
+                left: Math.min(window.innerWidth - 180, hg.x + 14),
+                top: Math.max(10, hg.y - 14),
+                animation: "fadeUp 0.12s ease",
+              }}
+            >
+              <div style={{ fontWeight: 600, fontSize: "0.76rem", marginBottom: "0.18rem" }}>
+                {hg.guest.prenume} {hg.guest.nume}
+              </div>
+              <div
+                style={{
+                  fontSize: "0.65rem",
+                  color: getGroupColor(hg.guest.grup),
+                  marginBottom: "0.1rem",
+                }}
+              >
+                👥 {hg.guest.grup}
+              </div>
+              <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
+                🍽️ {hg.guest.meniu}
+              </div>
+              <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
+                {hg.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
+              </div>
             </div>
-            <div style={{ fontSize: "0.65rem", color: getGroupColor(hg.guest.grup), marginBottom: "0.1rem" }}>
-              👥 {hg.guest.grup}
-            </div>
-            <div style={{ fontSize: "0.65rem", color: "#9DA3BC", marginBottom: "0.1rem" }}>
-              🍽️ {hg.guest.meniu}
-            </div>
-            <div style={{ fontSize: "0.65rem", color: "#9DA3BC" }}>
-              {hg.guest.status === "confirmat" ? "✅ Confirmat" : "⏳ În așteptare"}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {ui.clickedSeat && (
         <div
@@ -558,18 +608,40 @@ function SeatingChartInner({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.1rem" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: "0.1rem",
+            }}
+          >
             <div style={{ fontWeight: 600, fontSize: "0.78rem", color: "#13172E" }}>
               {ui.clickedSeat.guest.prenume} {ui.clickedSeat.guest.nume}
             </div>
             <button
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#9DA3BC", fontSize: "0.85rem", lineHeight: 1, padding: "0 0 0 0.5rem", flexShrink: 0 }}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#9DA3BC",
+                fontSize: "0.85rem",
+                lineHeight: 1,
+                padding: "0 0 0 0.5rem",
+                flexShrink: 0,
+              }}
               onClick={() => ui.setClickedSeat(null)}
             >
               ×
             </button>
           </div>
-          <div style={{ fontSize: "0.65rem", color: getGroupColor(ui.clickedSeat.guest.grup), marginBottom: "0.5rem" }}>
+          <div
+            style={{
+              fontSize: "0.65rem",
+              color: getGroupColor(ui.clickedSeat.guest.grup),
+              marginBottom: "0.5rem",
+            }}
+          >
             {ui.clickedSeat.guest.grup}
           </div>
           <button
@@ -610,11 +682,7 @@ function SeatingChartInner({
       <ConfirmDialog confirmDialog={ui.confirmDialog} setConfirmDialog={ui.setConfirmDialog} />
 
       {ui.modal && (
-        <ModalCreate
-          modal={ui.modal}
-          setModal={ui.setModal}
-          createTable={handleCreateTable}
-        />
+        <ModalCreate modal={ui.modal} setModal={ui.setModal} createTable={handleCreateTable} />
       )}
 
       {ui.selectedTableId && (
@@ -665,10 +733,25 @@ function SeatingChartInner({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontFamily: "Cormorant Garamond,serif", fontSize: "1.1rem", color: "#FAF7F2", marginBottom: "1rem", fontWeight: 600 }}>
+            <div
+              style={{
+                fontFamily: "Cormorant Garamond,serif",
+                fontSize: "1.1rem",
+                color: "#FAF7F2",
+                marginBottom: "1rem",
+                fontWeight: 600,
+              }}
+            >
               Export PNG
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.2rem" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
+                marginBottom: "1.2rem",
+              }}
+            >
               {["fit", "a4"].map((mode) => (
                 <label
                   key={mode}
@@ -696,7 +779,9 @@ function SeatingChartInner({
                       {mode === "fit" ? "Fit to content" : "A4 landscape"}
                     </div>
                     <div style={{ fontSize: "0.62rem", color: "#6E7490" }}>
-                      {mode === "fit" ? "Dimensiune optimă — ideal pentru share" : "Print ready — ideal pentru restaurant"}
+                      {mode === "fit"
+                        ? "Dimensiune optimă — ideal pentru share"
+                        : "Print ready — ideal pentru restaurant"}
                     </div>
                   </div>
                 </label>
@@ -704,13 +789,38 @@ function SeatingChartInner({
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
-                style={{ flex: 1, padding: "0.4rem", borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: "none", color: "#9DA3BC", fontFamily: "DM Sans,sans-serif", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer" }}
+                style={{
+                  flex: 1,
+                  padding: "0.4rem",
+                  borderRadius: 6,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "none",
+                  color: "#9DA3BC",
+                  fontFamily: "DM Sans,sans-serif",
+                  fontSize: "0.62rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                }}
                 onClick={() => setExportDialog(false)}
               >
                 Anulează
               </button>
               <button
-                style={{ flex: 1, padding: "0.4rem", borderRadius: 6, border: "none", background: "#C9907A", color: "white", fontFamily: "DM Sans,sans-serif", fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", opacity: exporting ? 0.7 : 1 }}
+                style={{
+                  flex: 1,
+                  padding: "0.4rem",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#C9907A",
+                  color: "white",
+                  fontFamily: "DM Sans,sans-serif",
+                  fontSize: "0.62rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                  opacity: exporting ? 0.7 : 1,
+                }}
                 onClick={handleExport}
                 disabled={exporting}
               >
@@ -728,7 +838,10 @@ function SeatingChartInner({
           onRetry={onRetry}
           onRevert={() => {
             const ora = confirmedAt
-              ? new Date(confirmedAt).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })
+              ? new Date(confirmedAt).toLocaleTimeString("ro-RO", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
               : "necunoscută";
             ui.setConfirmDialog({
               title: "Revenire la starea salvată",
@@ -754,13 +867,19 @@ function SeatingChartInner({
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
                 className="conf-cancel"
-                onClick={() => { clearSaveError(); window.location.reload(); }}
+                onClick={() => {
+                  clearSaveError();
+                  window.location.reload();
+                }}
               >
                 🔄 Reîncarcă
               </button>
               <button
                 className="conf-ok"
-                onClick={() => { clearSaveError(); onForceOverwrite(); }}
+                onClick={() => {
+                  clearSaveError();
+                  onForceOverwrite();
+                }}
               >
                 ⚠️ Păstrează modificările mele
               </button>
@@ -779,13 +898,18 @@ function SeatingChartInner({
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
                 className="conf-cancel"
-                onClick={() => { clearSaveError(); onRevertConfirmed(); }}
+                onClick={() => {
+                  clearSaveError();
+                  onRevertConfirmed();
+                }}
               >
                 Renunță la modificările mele
               </button>
               <button
                 className="conf-ok"
-                onClick={() => { onConfirmWithServerVersion(); }}
+                onClick={() => {
+                  onConfirmWithServerVersion();
+                }}
               >
                 Salvează cu versiunea actualizată
               </button>
@@ -795,12 +919,24 @@ function SeatingChartInner({
       )}
       {/* Faza 7: tab overlap banner */}
       {tabOverlap && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-          background: "#ECC94B", color: "#744210", padding: "0.5rem 1rem",
-          fontSize: "0.78rem", fontFamily: "DM Sans,sans-serif",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: "#ECC94B",
+            color: "#744210",
+            padding: "0.5rem 1rem",
+            fontSize: "0.78rem",
+            fontFamily: "DM Sans,sans-serif",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+          }}
+        >
           ⚠️ Planul de mese este deschis în alt tab. Modificările simultane pot crea conflicte.
         </div>
       )}
@@ -829,9 +965,23 @@ function ModalCreate({ modal, setModal, createTable }) {
           <>
             <label className="ep-label">Număr locuri</label>
             <div className="ep-counter" style={{ marginBottom: "1.3rem" }}>
-              <button className="ep-cnt-btn" onClick={() => setModal((m) => ({ ...m, seats: Math.max(LIMITS[m.type].min, m.seats - 1) }))}>−</button>
+              <button
+                className="ep-cnt-btn"
+                onClick={() =>
+                  setModal((m) => ({ ...m, seats: Math.max(LIMITS[m.type].min, m.seats - 1) }))
+                }
+              >
+                −
+              </button>
               <span className="ep-cnt-val">{modal.seats}</span>
-              <button className="ep-cnt-btn" onClick={() => setModal((m) => ({ ...m, seats: Math.min(LIMITS[m.type].max, m.seats + 1) }))}>+</button>
+              <button
+                className="ep-cnt-btn"
+                onClick={() =>
+                  setModal((m) => ({ ...m, seats: Math.min(LIMITS[m.type].max, m.seats + 1) }))
+                }
+              >
+                +
+              </button>
               <span style={{ marginLeft: "auto", fontSize: "0.62rem", color: "#7A7F99" }}>
                 {LIMITS[modal.type].min}–{LIMITS[modal.type].max}
               </span>
@@ -839,13 +989,24 @@ function ModalCreate({ modal, setModal, createTable }) {
           </>
         )}
         {isBar && (
-          <p style={{ fontSize: "0.72rem", color: "#7A7F99", marginBottom: "1.2rem", lineHeight: 1.5 }}>
+          <p
+            style={{
+              fontSize: "0.72rem",
+              color: "#7A7F99",
+              marginBottom: "1.2rem",
+              lineHeight: 1.5,
+            }}
+          >
             Obiect decorativ — nu are locuri, nu apare în statistici.
           </p>
         )}
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button className="conf-cancel" onClick={() => setModal(null)}>Anulează</button>
-          <button className="conf-ok" onClick={createTable}>Creează →</button>
+          <button className="conf-cancel" onClick={() => setModal(null)}>
+            Anulează
+          </button>
+          <button className="conf-ok" onClick={createTable}>
+            Creează →
+          </button>
         </div>
       </div>
     </div>
@@ -913,29 +1074,35 @@ function SeatingChartWrapperInner({ weddingId, eventId }) {
 
 function FullPageLoader({ message }) {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#FAF7F2",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: "1rem",
-    }}>
-      <div style={{
-        width: 32,
-        height: 32,
-        border: "3px solid #E8DDD0",
-        borderTopColor: "#C9907A",
-        borderRadius: "50%",
-        animation: "spin 0.8s linear infinite",
-      }} />
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#FAF7F2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: "1rem",
+      }}
+    >
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          border: "3px solid #E8DDD0",
+          borderTopColor: "#C9907A",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
       {message && (
-        <p style={{
-          fontFamily: "'DM Sans', sans-serif",
-          fontSize: "0.8rem",
-          color: "#6E7490",
-        }}>
+        <p
+          style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: "0.8rem",
+            color: "#6E7490",
+          }}
+        >
           {message}
         </p>
       )}
@@ -973,33 +1140,39 @@ function ForceResyncButton() {
 
 function ProvisioningErrorState({ error }) {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#FAF7F2",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: "1rem",
-      padding: "2rem",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#FAF7F2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: "1rem",
+        padding: "2rem",
+      }}
+    >
       <div style={{ fontSize: "2rem" }}>⚠️</div>
-      <p style={{
-        fontFamily: "Cormorant Garamond, serif",
-        fontSize: "1.2rem",
-        color: "#1E2340",
-        fontWeight: 600,
-        textAlign: "center",
-      }}>
+      <p
+        style={{
+          fontFamily: "Cormorant Garamond, serif",
+          fontSize: "1.2rem",
+          color: "#1E2340",
+          fontWeight: 600,
+          textAlign: "center",
+        }}
+      >
         Nu am putut încărca datele contului
       </p>
-      <p style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "0.75rem",
-        color: "#6E7490",
-        textAlign: "center",
-        maxWidth: 400,
-      }}>
+      <p
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.75rem",
+          color: "#6E7490",
+          textAlign: "center",
+          maxWidth: 400,
+        }}
+      >
         {error || "Încearcă din nou sau contactează suportul dacă problema persistă."}
       </p>
       <ForceResyncButton />
@@ -1040,7 +1213,9 @@ function UnconfirmedBanner({ confirmedAt, hasSnapshot, onRetry, onRevert }) {
     >
       <span style={{ flex: 1 }}>
         ⚠ Modificările nu au putut fi salvate pe server.
-        {ora && <span style={{ opacity: 0.85, marginLeft: 6 }}>Ultima salvare confirmată: {ora}</span>}
+        {ora && (
+          <span style={{ opacity: 0.85, marginLeft: 6 }}>Ultima salvare confirmată: {ora}</span>
+        )}
       </span>
       <button
         onClick={onRetry}
@@ -1086,33 +1261,39 @@ function UnconfirmedBanner({ confirmedAt, hasSnapshot, onRetry, onRevert }) {
 
 function SyncErrorState({ error }) {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#FAF7F2",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: "1rem",
-      padding: "2rem",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#FAF7F2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: "1rem",
+        padding: "2rem",
+      }}
+    >
       <div style={{ fontSize: "2rem" }}>⚠️</div>
-      <p style={{
-        fontFamily: "Cormorant Garamond, serif",
-        fontSize: "1.2rem",
-        color: "#1E2340",
-        fontWeight: 600,
-        textAlign: "center",
-      }}>
+      <p
+        style={{
+          fontFamily: "Cormorant Garamond, serif",
+          fontSize: "1.2rem",
+          color: "#1E2340",
+          fontWeight: 600,
+          textAlign: "center",
+        }}
+      >
         Nu am putut sincroniza planul de mese
       </p>
-      <p style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "0.75rem",
-        color: "#6E7490",
-        textAlign: "center",
-        maxWidth: 400,
-      }}>
+      <p
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.75rem",
+          color: "#6E7490",
+          textAlign: "center",
+          maxWidth: 400,
+        }}
+      >
         {error || "Verifică conexiunea la internet și încearcă din nou."}
       </p>
       <ForceResyncButton />
@@ -1122,32 +1303,38 @@ function SyncErrorState({ error }) {
 
 function EmptyEventState() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#FAF7F2",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "column",
-      gap: "1rem",
-      padding: "2rem",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#FAF7F2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: "1rem",
+        padding: "2rem",
+      }}
+    >
       <div style={{ fontSize: "2rem" }}>🪑</div>
-      <p style={{
-        fontFamily: "Cormorant Garamond, serif",
-        fontSize: "1.2rem",
-        color: "#1E2340",
-        fontWeight: 600,
-      }}>
+      <p
+        style={{
+          fontFamily: "Cormorant Garamond, serif",
+          fontSize: "1.2rem",
+          color: "#1E2340",
+          fontWeight: 600,
+        }}
+      >
         Planul de mese nu este încă disponibil
       </p>
-      <p style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "0.75rem",
-        color: "#6E7490",
-        textAlign: "center",
-        maxWidth: 400,
-      }}>
+      <p
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.75rem",
+          color: "#6E7490",
+          textAlign: "center",
+          maxWidth: 400,
+        }}
+      >
         Contul tău este în curs de configurare. Revino în câteva momente.
       </p>
       <ForceResyncButton />
@@ -1157,30 +1344,34 @@ function EmptyEventState() {
 
 function GuestModeBanner() {
   return (
-    <div style={{
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: 300,
-      background: "rgba(30, 35, 64, 0.92)",
-      backdropFilter: "blur(8px)",
-      padding: "0.6rem 1.2rem",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: "1rem",
-    }}>
-      <p style={{
-        fontFamily: "'DM Sans', sans-serif",
-        fontSize: "0.72rem",
-        color: "#FAF7F2",
-        margin: 0,
-      }}>
+    <div
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 300,
+        background: "rgba(30, 35, 64, 0.92)",
+        backdropFilter: "blur(8px)",
+        padding: "0.6rem 1.2rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "1rem",
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: "0.72rem",
+          color: "#FAF7F2",
+          margin: 0,
+        }}
+      >
         Ești în modul vizitator — modificările nu sunt salvate.
       </p>
       <a
-        href={typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_WP_BASE_URL || "/") : "/"}
+        href={typeof window !== "undefined" ? process.env.NEXT_PUBLIC_WP_BASE_URL || "/" : "/"}
         style={{
           padding: "0.3rem 1rem",
           borderRadius: "999px",
@@ -1253,9 +1444,6 @@ export default function SeatingChart() {
 
   // ── Everything ready — render seating with full sync ──
   return (
-    <SeatingChartWrapperInner
-      weddingId={session.activeWeddingId}
-      eventId={session.activeEventId}
-    />
+    <SeatingChartWrapperInner weddingId={session.activeWeddingId} eventId={session.activeEventId} />
   );
 }

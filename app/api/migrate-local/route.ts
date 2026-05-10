@@ -40,9 +40,7 @@ const MIGRATION_KEY = "localstorage_v1";
 const MAX_GUESTS = 1000;
 const MAX_TABLES = 200;
 
-export async function POST(
-  req: NextRequest
-): Promise<NextResponse<MigrateLocalResponse>> {
+export async function POST(req: NextRequest): Promise<NextResponse<MigrateLocalResponse>> {
   // Origin check — before rate limiting and auth
   const originCheck = checkOrigin(req);
   if (originCheck) return originCheck as unknown as NextResponse<MigrateLocalResponse>;
@@ -51,10 +49,7 @@ export async function POST(
   const ctx = await getServerAppContext(req);
   const authResult = requireAuthenticatedContext(ctx);
   if (!authResult.ok) {
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const access = await requireWeddingAccess({ ctx: authResult.ctx, minRole: "editor" });
@@ -71,10 +66,7 @@ export async function POST(
   const ip = getClientIp(req);
   const rl = rateLimit(`migrate:${ip}`, RATE_LIMIT);
   if (!rl.ok) {
-    return NextResponse.json(
-      { ok: false, error: "Too many requests" },
-      { status: 429 }
-    );
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
   }
 
   let body: unknown;
@@ -132,7 +124,6 @@ export async function POST(
   const typedTables = tables as SeatingTable[];
 
   try {
-
     // 1. Verifică dacă migrarea a fost deja făcută
     const { data: existingMigration } = await supabaseServer
       .from("data_migrations")
@@ -141,10 +132,7 @@ export async function POST(
       .eq("migration_key", MIGRATION_KEY)
       .maybeSingle();
 
-    if (
-      existingMigration?.status === "completed" ||
-      existingMigration?.status === "in_progress"
-    ) {
+    if (existingMigration?.status === "completed" || existingMigration?.status === "in_progress") {
       return NextResponse.json({ ok: true, status: "already_done" });
     }
 

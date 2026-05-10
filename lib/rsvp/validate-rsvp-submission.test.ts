@@ -58,10 +58,12 @@ describe("validateRsvpSubmission", () => {
 
   it("sanitizează dietary_notes", () => {
     const result = validateRsvpSubmission({
-      responses: [{
-        ...baseResponse,
-        dietary_notes: "<script>hack</script>alergic la nuci",
-      }],
+      responses: [
+        {
+          ...baseResponse,
+          dietary_notes: "<script>hack</script>alergic la nuci",
+        },
+      ],
     });
     expect(result.valid).toBe(true);
     if (!result.valid) return;
@@ -70,10 +72,12 @@ describe("validateRsvpSubmission", () => {
 
   it("sanitizează note", () => {
     const result = validateRsvpSubmission({
-      responses: [{
-        ...baseResponse,
-        note: "<b>Felicitări!</b>",
-      }],
+      responses: [
+        {
+          ...baseResponse,
+          note: "<b>Felicitări!</b>",
+        },
+      ],
     });
     expect(result.valid).toBe(true);
     if (!result.valid) return;
@@ -82,10 +86,12 @@ describe("validateRsvpSubmission", () => {
 
   it("trunchiază dietary_notes la 500 chars", () => {
     const result = validateRsvpSubmission({
-      responses: [{
-        ...baseResponse,
-        dietary_notes: "A".repeat(600),
-      }],
+      responses: [
+        {
+          ...baseResponse,
+          dietary_notes: "A".repeat(600),
+        },
+      ],
     });
     expect(result.valid).toBe(true);
     if (!result.valid) return;
@@ -94,11 +100,13 @@ describe("validateRsvpSubmission", () => {
 
   it("acceptă vegetarian meal_choice", () => {
     const result = validateRsvpSubmission({
-      responses: [{
-        guest_event_id: VALID_UUID,
-        status: "accepted",
-        meal_choice: "vegetarian",
-      }],
+      responses: [
+        {
+          guest_event_id: VALID_UUID,
+          status: "accepted",
+          meal_choice: "vegetarian",
+        },
+      ],
     });
     expect(result.valid).toBe(true);
   });
@@ -154,11 +162,13 @@ describe("validateRsvpSubmission", () => {
 
   it("rejectează meal_choice invalid când accepted", () => {
     const result = validateRsvpSubmission({
-      responses: [{
-        guest_event_id: VALID_UUID,
-        status: "accepted",
-        meal_choice: "carne",
-      }],
+      responses: [
+        {
+          guest_event_id: VALID_UUID,
+          status: "accepted",
+          meal_choice: "carne",
+        },
+      ],
     });
     expect(result.valid).toBe(false);
     if (result.valid) return;

@@ -6,8 +6,7 @@
 
 import { type NextRequest } from "next/server";
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface AuthContext {
   userId: string;
@@ -44,7 +43,11 @@ export function extractAuth(request: NextRequest): AuthResult {
   if (!authHeader.startsWith("Bearer ")) {
     return {
       authenticated: false,
-      error: { status: 401, code: "INVALID_AUTH_FORMAT", message: "Authorization header must use Bearer scheme." },
+      error: {
+        status: 401,
+        code: "INVALID_AUTH_FORMAT",
+        message: "Authorization header must use Bearer scheme.",
+      },
     };
   }
 
@@ -72,7 +75,11 @@ export function extractAuth(request: NextRequest): AuthResult {
     if (typeof sub !== "string" || !UUID_REGEX.test(sub)) {
       return {
         authenticated: false,
-        error: { status: 401, code: "INVALID_SUB_CLAIM", message: "JWT sub claim must be a valid UUID." },
+        error: {
+          status: 401,
+          code: "INVALID_SUB_CLAIM",
+          message: "JWT sub claim must be a valid UUID.",
+        },
       };
     }
 

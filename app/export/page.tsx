@@ -32,10 +32,7 @@ export default function ExportPage() {
   const [_newWeddingId, setNewWeddingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const weddingId =
-    sessionState.status === "authenticated"
-      ? sessionState.activeWeddingId
-      : null;
+  const weddingId = sessionState.status === "authenticated" ? sessionState.activeWeddingId : null;
 
   // ── Export JSON ────────────────────────────────────────────────────────────
 
@@ -202,9 +199,7 @@ export default function ExportPage() {
       <div style={styles.page}>
         <div style={styles.emptyState}>
           <div style={{ fontSize: "2rem" }}>🔒</div>
-          <p style={styles.emptyText}>
-            Sesiune inactivă. Autentifică-te pentru a accesa Export.
-          </p>
+          <p style={styles.emptyText}>Sesiune inactivă. Autentifică-te pentru a accesa Export.</p>
         </div>
       </div>
     );
@@ -214,20 +209,16 @@ export default function ExportPage() {
     <div style={styles.page}>
       <div style={styles.header}>
         <h1 style={styles.title}>Export & Import</h1>
-        <p style={styles.subtitle}>
-          Descarcă sau restaurează datele nunții tale.
-        </p>
+        <p style={styles.subtitle}>Descarcă sau restaurează datele nunții tale.</p>
       </div>
 
       <div style={styles.grid}>
-
         {/* Export JSON */}
         <div style={styles.card}>
           <div style={styles.cardIcon}>📦</div>
           <h2 style={styles.cardTitle}>Export JSON</h2>
           <p style={styles.cardDescription}>
-            Backup complet cu toți invitații, planul de mese, bugetul și
-            răspunsurile RSVP.
+            Backup complet cu toți invitații, planul de mese, bugetul și răspunsurile RSVP.
           </p>
           <div style={styles.cardMeta}>
             <span style={styles.metaTag}>Invitați</span>
@@ -257,8 +248,8 @@ export default function ExportPage() {
           <div style={styles.cardIcon}>📄</div>
           <h2 style={styles.cardTitle}>Export PDF</h2>
           <p style={styles.cardDescription}>
-            Listă completă cu invitații per masă, meniuri și status RSVP.
-            Două pagini: plan de mese + lista invitați.
+            Listă completă cu invitații per masă, meniuri și status RSVP. Două pagini: plan de mese
+            + lista invitați.
           </p>
           <div style={styles.cardMeta}>
             <span style={styles.metaTag}>Plan mese</span>
@@ -287,8 +278,8 @@ export default function ExportPage() {
           <div style={styles.cardIcon}>📥</div>
           <h2 style={styles.cardTitle}>Import JSON</h2>
           <p style={styles.cardDescription}>
-            Restaurează sau transferă datele dintr-un backup. Se va crea un
-            wedding nou — datele existente nu sunt afectate.
+            Restaurează sau transferă datele dintr-un backup. Se va crea un wedding nou — datele
+            existente nu sunt afectate.
           </p>
 
           {importState === "idle" && (
@@ -301,35 +292,40 @@ export default function ExportPage() {
                 style={{ display: "none" }}
                 id="import-file-input"
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={styles.btn}
-              >
+              <button onClick={() => fileInputRef.current?.click()} style={styles.btn}>
                 Selectează fișier JSON
               </button>
             </>
           )}
 
-          {importState === "reading" && (
-            <p style={styles.infoText}>⏳ Se citește fișierul...</p>
-          )}
+          {importState === "reading" && <p style={styles.infoText}>⏳ Se citește fișierul...</p>}
 
           {importState === "previewing" && importPreview && (
             <div style={styles.preview}>
               <p style={styles.previewTitle}>📋 Sumar backup</p>
-              <p style={styles.previewItem}><strong>Nuntă:</strong> {importPreview.wedding_title}</p>
+              <p style={styles.previewItem}>
+                <strong>Nuntă:</strong> {importPreview.wedding_title}
+              </p>
               <p style={styles.previewItem}>
                 <strong>Exportat:</strong>{" "}
                 {new Date(importPreview.exported_at).toLocaleDateString("ro-RO")}
               </p>
-              <p style={styles.previewItem}><strong>Invitați:</strong> {importPreview.counts.guests}</p>
-              <p style={styles.previewItem}><strong>Evenimente:</strong> {importPreview.counts.events}</p>
-              <p style={styles.previewItem}><strong>Mese:</strong> {importPreview.counts.tables}</p>
+              <p style={styles.previewItem}>
+                <strong>Invitați:</strong> {importPreview.counts.guests}
+              </p>
+              <p style={styles.previewItem}>
+                <strong>Evenimente:</strong> {importPreview.counts.events}
+              </p>
+              <p style={styles.previewItem}>
+                <strong>Mese:</strong> {importPreview.counts.tables}
+              </p>
 
               {importPreview.warnings.length > 0 && (
                 <div style={styles.warnings}>
                   {importPreview.warnings.map((w, i) => (
-                    <p key={i} style={styles.warningText}>⚠️ {w}</p>
+                    <p key={i} style={styles.warningText}>
+                      ⚠️ {w}
+                    </p>
                   ))}
                 </div>
               )}
@@ -345,9 +341,7 @@ export default function ExportPage() {
             </div>
           )}
 
-          {importState === "importing" && (
-            <p style={styles.infoText}>⏳ Se importă datele...</p>
-          )}
+          {importState === "importing" && <p style={styles.infoText}>⏳ Se importă datele...</p>}
 
           {importState === "success" && (
             <div>
@@ -381,7 +375,6 @@ export default function ExportPage() {
             Disponibil în Plan Mese
           </button>
         </div>
-
       </div>
     </div>
   );
@@ -392,26 +385,86 @@ export default function ExportPage() {
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: "2rem", background: "var(--color-bg)", minHeight: "100vh" },
   header: { marginBottom: "2rem" },
-  title: { fontFamily: "var(--font-display, serif)", fontSize: "2rem", fontWeight: 300, color: "var(--color-text)", margin: "0 0 0.5rem" },
+  title: {
+    fontFamily: "var(--font-display, serif)",
+    fontSize: "2rem",
+    fontWeight: 300,
+    color: "var(--color-text)",
+    margin: "0 0 0.5rem",
+  },
   subtitle: { fontSize: "0.9rem", color: "var(--color-text-muted)", margin: 0 },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem" },
-  card: { background: "white", borderRadius: "16px", padding: "1.75rem", boxShadow: "var(--shadow-sm)", display: "flex", flexDirection: "column", gap: "0.75rem" },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "1.5rem",
+  },
+  card: {
+    background: "white",
+    borderRadius: "16px",
+    padding: "1.75rem",
+    boxShadow: "var(--shadow-sm)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.75rem",
+  },
   cardDisabled: { opacity: 0.6 },
   cardIcon: { fontSize: "2rem" },
   cardTitle: { fontSize: "1.1rem", fontWeight: 600, color: "var(--color-text)", margin: 0 },
-  cardDescription: { fontSize: "0.85rem", color: "var(--color-text-muted)", margin: 0, lineHeight: 1.6, flex: 1 },
+  cardDescription: {
+    fontSize: "0.85rem",
+    color: "var(--color-text-muted)",
+    margin: 0,
+    lineHeight: 1.6,
+    flex: 1,
+  },
   cardMeta: { display: "flex", gap: "0.4rem", flexWrap: "wrap" },
-  metaTag: { padding: "0.2rem 0.6rem", borderRadius: "999px", background: "var(--color-accent-soft)", color: "var(--color-accent)", fontSize: "0.72rem", fontWeight: 500 },
-  btn: { marginTop: "0.5rem", padding: "0.65rem 1.25rem", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "999px", fontSize: "0.85rem", fontWeight: 500, cursor: "pointer" },
+  metaTag: {
+    padding: "0.2rem 0.6rem",
+    borderRadius: "999px",
+    background: "var(--color-accent-soft)",
+    color: "var(--color-accent)",
+    fontSize: "0.72rem",
+    fontWeight: 500,
+  },
+  btn: {
+    marginTop: "0.5rem",
+    padding: "0.65rem 1.25rem",
+    background: "var(--color-accent)",
+    color: "white",
+    border: "none",
+    borderRadius: "999px",
+    fontSize: "0.85rem",
+    fontWeight: 500,
+    cursor: "pointer",
+  },
   btnDisabled: { opacity: 0.5, cursor: "not-allowed" },
   btnSuccess: { background: "var(--color-success)" },
-  btnSecondary: { marginTop: "0.5rem", padding: "0.65rem 1.25rem", background: "white", color: "var(--color-accent)", border: "1px solid var(--color-accent)", borderRadius: "999px", fontSize: "0.85rem", cursor: "pointer" },
+  btnSecondary: {
+    marginTop: "0.5rem",
+    padding: "0.65rem 1.25rem",
+    background: "white",
+    color: "var(--color-accent)",
+    border: "1px solid var(--color-accent)",
+    borderRadius: "999px",
+    fontSize: "0.85rem",
+    cursor: "pointer",
+  },
   errorText: { fontSize: "0.82rem", color: "var(--color-danger)", margin: 0 },
   infoText: { fontSize: "0.85rem", color: "var(--color-text-muted)", margin: 0 },
   preview: { background: "var(--color-bg)", borderRadius: "8px", padding: "1rem" },
-  previewTitle: { fontWeight: 600, color: "var(--color-text)", margin: "0 0 0.75rem", fontSize: "0.85rem" },
+  previewTitle: {
+    fontWeight: 600,
+    color: "var(--color-text)",
+    margin: "0 0 0.75rem",
+    fontSize: "0.85rem",
+  },
   previewItem: { fontSize: "0.82rem", color: "var(--color-text-muted)", margin: "0.25rem 0" },
-  warnings: { marginTop: "0.75rem", padding: "0.5rem", background: "rgba(236,201,75,0.1)", borderRadius: "6px" },
+  warnings: {
+    marginTop: "0.75rem",
+    padding: "0.5rem",
+    background: "rgba(236,201,75,0.1)",
+    borderRadius: "6px",
+  },
   warningText: { fontSize: "0.78rem", color: "var(--color-warning)", margin: "0.2rem 0" },
   emptyState: { textAlign: "center", padding: "4rem 2rem" },
   emptyText: { color: "var(--color-text-muted)", fontSize: "0.9rem" },

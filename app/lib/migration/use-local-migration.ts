@@ -2,23 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-type MigrationStatus =
-  | "idle"
-  | "checking"
-  | "migrating"
-  | "completed"
-  | "skipped"
-  | "error";
+type MigrationStatus = "idle" | "checking" | "migrating" | "completed" | "skipped" | "error";
 
 type UseLocalMigrationProps = {
   appUserId: string | null;
   weddingId: string | null;
 };
 
-export function useLocalMigration({
-  appUserId,
-  weddingId,
-}: UseLocalMigrationProps): { status: MigrationStatus; error: string | null } {
+export function useLocalMigration({ appUserId, weddingId }: UseLocalMigrationProps): {
+  status: MigrationStatus;
+  error: string | null;
+} {
   const [status, setStatus] = useState<MigrationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
