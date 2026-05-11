@@ -86,10 +86,10 @@ functional check git apply --check). Pattern reusable pentru orice file write Wi
 ## 2. Stare proiect
 
 - **Branch default:** develop
-- **Ultimul commit pe develop:** b9aecd7 — Merge PR #177 (H4.1 E2E Playwright Setup) — PR #178 pending merge
+- **Ultimul commit pe develop:** 52c7457 — Merge PR #195 (Pachet H mini: #194 hash + L91 PowerShell catch)
 - **Baseline teste:** 879 passed + 4 skipped (Vitest, 40 test files) + 4 E2E Playwright (smoke 2 + auth 2)
 - **Last build:** SUCCESS (Next.js 16.2.2 Turbopack)
-- **Branch-uri deschise:** feat/h4-e2e-auth-setup (curent, pentru PR #178).
+- **Branch-uri deschise:** docs/pachet-i-1-section-2-fix-plus-5-tds-catalog (curent, pentru PR-I.1).
 
 ### Stack tehnic
 
@@ -284,8 +284,13 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-32 | Recovery patches user-local pending cleanup — `$env:USERPROFILE\pr1b0-edits-utf8.patch` (UTF-8 valid recovery) + `pr1b0-edits.patch` (UTF-16 LE corrupt original) | 🟢 Low | Manual cleanup user-local oricând | 2-5 min (`Remove-Item` 2 files) | Created PR 1B.0 #187 recovery cycle May 10 2026. Hygiene only, user-local files NU in repo. Cross-ref: lessons L67 + L68 + L69 (UTF-16 LE redirect + recovery point validation + git apply LF strict). |
 | TD-33 | Format patterns reference catalog absent — lessons format `### L<n>`, reguli format `N. **<title>**`, TDs `| TD-N |`, FTs `| FT-N |`. Documenta in CLAUDE.md sau HANDOFF reference section pentru future planner pre-flight. | 🟢 Low | Convention | 20-30 min | Trigger PR mic dedicat sau Pachet F |
 | TD-34 | Consolidate section headers lessons HANDOFF.md inconsistency — L27-L32 + L33-L37 sectional headers + L38+ concatenate. Decizie: add complete schema sectional per batch sau remove partial headers concatenate uniform. | 🟢 Low | Cleanup | 30-45 min | Trigger PR mic dedicat sau cleanup sweep pre-launch |
+| TD-35 | Workflow YAML changelog-sync.yml audit pre-execution identificat 10 sub-findings security/correctness (shell injection, duplicate entry, self-trigger loop, race condition, regex fragility, zero rollback, zero audit trail, hardcoded branch, date accuracy, type fallback silent). Full detail SF-1..SF-10 în PR-B FULL SPEC section. | 🔴 Critical | Sesiune dedicată PR-B execution (next session, audit security-grade obligatoriu pre-merge) | 3-5h (rewrite design + dry-run 3 scenarii + edge cases gestionate) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref PR-B FULL SPEC (Pachet I.2 forward declared) + L90 anti-pattern recurring 3+ structural fix. Blocker PR-B execution până design rewrite. |
+| TD-36 | Race condition concurrent PR merge în changelog-sync.yml — 2 PR-uri merge simultan (ferestră 5-10s) → 2 workflow instances concurrent → duplicate entries SAU push fail non-fast-forward. Pattern distinct cu implications scalabilitate (NU doar workflow-specific) | 🟡 Medium | Sesiune dedicată PR-B execution (must design idempotent inject pentru scalability per regulă proiect) | 30-60 min (design phase: optimistic concurrency retry loop + duplicate detection grep guard) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref TD-35 (umbrella audit). Rar în solo dev curent, dar must design proactive pentru scalability future. |
+| TD-37 | .github/workflows/ci.yml lipsește declarație explicită permissions block — folosește default repo-level GITHUB_TOKEN permissions (variable per repo Settings). Încălcare principle of least privilege + self-documenting scope + defense-in-depth. Risk: dacă repo default permissions schimbate, workflow poate escala accidental privilegii | 🟢 Low | PR mic dedicat post-PR-B merged (hygiene security, NU blocker funcțional) | 15-20 min (add permissions: contents: read top-level + CI verify + PR + merge) | Discovered Pachet I.1 pre-flight PR-B output H. Scope micro (~5 linii edit). Defer post-PR-B per regulă "premium fără bug-uri pe termen lung". |
+| TD-38 | C4 launch blocker reproduction live — `seat_assignments.guest_id does not exist` (code 42703) surfaced în E2E webserver logs durante Playwright run. API endpoint GET /api/dashboard/stats fail silent (error swallowed by dashboard). Pre-existing known bug per CLAUDE.md §10.12 schema-drift audit | 🔴 Critical | Launch blocker — fix obligatoriu pre-launch (PR dedicat schema migration sau code fix mapping guest_id → guest_event_id) | TBD (require investigation: schema migration vs code mapping fix) | Discovered Pachet I.1 baseline empirical capture (Playwright run, sesiune 2026-05-11). Cross-ref CLAUDE.md §10.12 (existing audit entry). Empirical reproduction confirmation NEW (anterior doar static audit). |
+| TD-39 | typescript package NU declarat în package.json dependencies/devDependencies — tsc binary resolves transitively (probabil via eslint-config-next sau supabase deps). Hidden dependency chain risk: build break dacă transitive chain breaks (e.g., upstream dep removes typescript dep) | 🟡 Medium | PR mic dedicat (add typescript la devDependencies explicit, versiune pin) | 15-30 min (add devDep + verify CI green + PR + merge) | Discovered Pachet I.1 baseline empirical capture (package.json grep, sesiune 2026-05-11). Pattern "premium fără bug-uri pe termen lung" — explicit dependencies > transitive resolution. |
 
-**Sumar severitate:** 2 Critical, 10 Medium, 10 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+**Sumar severitate:** 4 Critical, 12 Medium, 11 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---
