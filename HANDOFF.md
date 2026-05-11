@@ -76,10 +76,10 @@ functional check git apply --check). Pattern reusable pentru orice file write Wi
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-11 (Pachet F in-flight, post-Pachet E-1 + E-2 + E-3 closure merged)
+- **Data:** 2026-05-11 (Pachet I.2 in-flight, post-Pachet F + G + H + I.1 closure merged)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
-- **Motiv handoff:** 10 livrari Faza 13 (#182-#192 plus PR 1B.0 #187). Pachet E livrat end-to-end (E-1 #190 `0894659` ROADMAP + CHANGELOG sync + retroactive fix + FT-01 RESOLVED; E-2 #191 `1877ad4` HANDOFF closure FT-01 + R20+R21 LOCKED + 11 lessons L77-L87 + DELTA-BIS hash; E-3 #192 `1c2c898` retroactive fix #191 self-bullet L76 4th catch). Pachet F in-flight (acest commit): L88-L90 capture (briefing pre-Write validation + Section 1 stale recurring + workaround tactic vs structural signal) + Section 1 refresh + CHANGELOG #192 retroactive add (L76 5th catch). Discovery counter Pachet E sesiune: 20 cataloagate zero pierderi. Reguli LOCKED total 21 (R1-R21). Lessons total max L90 (62 + 3 = 65 cataloagate). TDs total 30 (TD-30..TD-34 plus historical). FTs: FT-01 RESOLVED, FT-02..04 still pending.
-- **Next contribuitor asteptat:** Pachet F follow-up scope structural fix L85 paradox = `.github/workflows/changelog-sync.yml` GitHub Action workflow post-merge automation (preventive long-term, NU recurring tactic). Alternative: Section 2 HANDOFF stale fix sau PR 1B Layer 2 Integration tests Supabase DEV (12-20h estimate, sesiune dedicata).
+- **Motiv handoff:** 4 livrari post-Pachet E (Pachet F #193 `6e32a41` cleanup pre-automation + L88-L90 capture; Pachet G #194 `780fce1` mini fix #193 hash + self-entry TBD preventive; Pachet H #195 `52c7457` mini fix #194 hash + L91 PowerShell catch; Pachet I.1 #196 `ebf2428` Section 2 refresh + 5 TDs catalog TD-35..TD-39 + Sumar severitate cascade). Pachet I.2 in-flight (acest commit): Section 12 PR-B FULL SPEC nouă (10 SF audit + 3 scenarii dry-run + filtre design mandatory + acceptance criteria + estimate timing) + L92 lesson capture (workflow YAML audit security-grade pre-execution) + TD-40 catalog (gh CLI absent dev machine) + Sumar severitate cascade (11→12 Low post-TD-40) + CHANGELOG backfill #195/#196 (L76 6th occurrence confirmed empirical, anti-pattern recurring structural fix justified per L90) + Section 1 FULL rewrite + self-bullet #197. Discovery counter Pachet I.1+I.2 cumulative: 12 cataloagate (8 PR-I.1 + 4 PR-I.2). Reguli LOCKED total 21 (R1-R21). Lessons total max L92 (67 cataloagate). TDs total 36 (TD-30..TD-40 cataloagate). FTs: FT-01 RESOLVED, FT-02..04 still pending.
+- **Next contribuitor asteptat:** PR-B execution sesiune dedicată = `.github/workflows/changelog-sync.yml` create per Section 12 FULL SPEC blueprint (3-5h estimate, security-grade audit re-validation pre-merge obligatoriu per TD-35 PENDING Critical blocker status). Alternative deferred: TD-31 GitHub Actions v5 bump (când v5 stable), TD-33/TD-34 (format catalog + lessons header consolidate), TD-37 ci.yml permissions block, TD-38 C4 launch blocker schema fix (PR dedicat investigation), TD-39 typescript devDep explicit, TD-40 gh CLI install hygiene, PR 1B Layer 2 Integration tests Supabase DEV (12-20h estimate, sesiune dedicata).
 
 ---
 
@@ -289,8 +289,9 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-37 | .github/workflows/ci.yml lipsește declarație explicită permissions block — folosește default repo-level GITHUB_TOKEN permissions (variable per repo Settings). Încălcare principle of least privilege + self-documenting scope + defense-in-depth. Risk: dacă repo default permissions schimbate, workflow poate escala accidental privilegii | 🟢 Low | PR mic dedicat post-PR-B merged (hygiene security, NU blocker funcțional) | 15-20 min (add permissions: contents: read top-level + CI verify + PR + merge) | Discovered Pachet I.1 pre-flight PR-B output H. Scope micro (~5 linii edit). Defer post-PR-B per regulă "premium fără bug-uri pe termen lung". |
 | TD-38 | C4 launch blocker reproduction live — `seat_assignments.guest_id does not exist` (code 42703) surfaced în E2E webserver logs durante Playwright run. API endpoint GET /api/dashboard/stats fail silent (error swallowed by dashboard). Pre-existing known bug per CLAUDE.md §10.12 schema-drift audit | 🔴 Critical | Launch blocker — fix obligatoriu pre-launch (PR dedicat schema migration sau code fix mapping guest_id → guest_event_id) | TBD (require investigation: schema migration vs code mapping fix) | Discovered Pachet I.1 baseline empirical capture (Playwright run, sesiune 2026-05-11). Cross-ref CLAUDE.md §10.12 (existing audit entry). Empirical reproduction confirmation NEW (anterior doar static audit). |
 | TD-39 | typescript package NU declarat în package.json dependencies/devDependencies — tsc binary resolves transitively (probabil via eslint-config-next sau supabase deps). Hidden dependency chain risk: build break dacă transitive chain breaks (e.g., upstream dep removes typescript dep) | 🟡 Medium | PR mic dedicat (add typescript la devDependencies explicit, versiune pin) | 15-30 min (add devDep + verify CI green + PR + merge) | Discovered Pachet I.1 baseline empirical capture (package.json grep, sesiune 2026-05-11). Pattern "premium fără bug-uri pe termen lung" — explicit dependencies > transitive resolution. |
+| TD-40 | gh CLI absent dev machine — PR creation flows depend manual URL fallback (friction + typo risk title/body). Bash + PowerShell both report "command not found" pe sistem Windows. Workflow improvement, NU blocker funcțional | 🟢 Low | PR mic hygiene install — `winget install GitHub.cli` SAU `choco install gh` | 5-15 min (install + gh auth login + verify gh pr list) | Discovered Pachet I.1 PR #196 creation step (sesiune 2026-05-11). Future PRs benefit automation. Cross-ref discovery counter PR-I.1 finding #8. |
 
-**Sumar severitate:** 4 Critical, 12 Medium, 11 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+**Sumar severitate:** 4 Critical, 12 Medium, 12 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---
@@ -458,6 +459,135 @@ Toate aceste documente sunt în rădăcina repo. **La sesiune start citește:**
 2. **CLAUDE.md** — reguli AI workflow
 3. **ROADMAP.md** — direcția strategică
 4. **CHANGELOG.md** — last PR(s) merge-uite
+
+---
+
+## 12. PR-B FULL SPEC — `.github/workflows/changelog-sync.yml` (forward declared, sesiune dedicată)
+
+### 12.1 Context & Justification
+
+**Problem:** L85 paradox empirical — strict same-PR self-application CHANGELOG entry impossible pre-PR# assignment (PR# generated by GitHub post-push, înainte de merge). Workaround tactic L85 Option A (TBD placeholder) requires retroactive fix per PR → L76 pattern recurring (6 occurrences confirmed empirical: #189, #190, #191, #192, #195, #196 backfill în PR-I.2 #197).
+
+**Decision (L90 mandate):** "Investește structural NU continua tactic." Workflow GitHub Action post-merge automation = soluția structurală. Workflow rulează după PR merge, parse PR metadata (number + commit subject + hash), inject entry în CHANGELOG.md top table, commit direct pe develop (Opțiunea A confirmed anterior).
+
+**Status:** PR-B execution = sesiune dedicată next (3-5h, security-grade audit obligatoriu pre-merge per TD-35 PENDING Critical blocker).
+
+### 12.2 Scope LOCKED
+
+1. Create `.github/workflows/changelog-sync.yml` (workflow nou greenfield)
+2. Workflow trigger: `pull_request: types: [closed]` filtered `if: github.event.pull_request.merged == true` + branches `[develop]`
+3. Workflow behavior: extract PR metadata (number + title + merge_commit_sha) → parse type from conventional commit prefix → build CHANGELOG entry row → inject post header separator → commit direct develop cu `[skip ci]` token → push origin
+4. Permissions: `contents: write` + `pull-requests: read` (least privilege, explicit declared)
+5. CHANGELOG self-bullet pentru PR-B propriu = acceptat (workflow self-application tactic ULTIM pre-automation activă)
+
+### 12.3 10 sub-findings audit pre-execution (TD-35 umbrella detail)
+
+#### SF-1 — Shell injection via `${{ pr.title }}` interpolation
+
+- **Issue:** PR title cu content malicious `feat: foo"; rm -rf /; echo "` injectat direct în `run:` block bash via `${{ github.event.pull_request.title }}` = arbitrary command execution pe runner cu `contents: write` permissions
+- **Severity:** Critical (CVE-grade vulnerability)
+- **Mitigation:** PR metadata passed prin environment variables, NU prin GitHub Actions context interpolation direct în shell
+
+#### SF-2 — Duplicate entry on re-run
+
+- **Issue:** Workflow re-rulat manual (admin retry button) sau accidental dublu-trigger → 2 entries identice CHANGELOG → duplicate detection failure
+- **Severity:** Medium (data corruption silent)
+- **Mitigation:** Guard explicit pre-inject `grep -q "^| #$PR_NUM |" CHANGELOG.md` skip if exists
+
+#### SF-3 — Self-trigger loop risk
+
+- **Issue:** Workflow committă pe develop → trigger event nou → workflow re-rulat infinit → quota exhaustion + N commits auto
+- **Severity:** High (cost quota + N data corruption iterations)
+- **Mitigation:** Triple defense: (1) Trigger restricted `pull_request: types: [closed]` NU `push`, (2) Actor filter `if: github.actor != 'github-actions[bot]'`, (3) Commit message `[skip ci]` token
+
+#### SF-4 — Race condition concurrent PR merge
+
+- **Issue:** 2 PR-uri merge simultan (5-10s overlap) → 2 workflow instances concurrent → ambele citesc CHANGELOG identical → ambele inject entry → al doilea push eșuează non-fast-forward
+- **Severity:** Medium (rar solo dev, scalability)
+- **Mitigation:** Optimistic concurrency retry loop (3 attempts max + exponential backoff 5s/15s/45s) + duplicate detection guard (SF-2 mitigation acoperă acest case). Cross-ref TD-36.
+
+#### SF-5 — Regex type extract fragility
+
+- **Issue:** Type extract via regex `^(feat|fix|docs|chore|refactor|test|perf)` NU acoperă conventional commit breaking change `feat!:` sau `feat(scope)!:` → fallback `chore` silent
+- **Severity:** Medium (accuracy)
+- **Mitigation:** Regex expansion `^(feat|fix|docs|chore|refactor|test|perf)(\([^)]+\))?(!)?:` + log warning dacă fallback triggered
+
+#### SF-6 — Zero rollback CHANGELOG modify before push fail
+
+- **Issue:** Workflow modifies CHANGELOG → git commit succeeds → push fails (auth/network/protection) → CHANGELOG modified local runner DAR not pushed → next run starts cu CHANGELOG dirty
+- **Severity:** Medium (state inconsistency)
+- **Mitigation:** Push-or-rollback pattern: `git push origin develop || { git reset --hard HEAD~1; exit 1 }`
+
+#### SF-7 — Zero audit trail granular
+
+- **Issue:** Workflow operates silent — failure modes invisible until manual CHANGELOG inspection
+- **Severity:** Low (observability)
+- **Mitigation:** Explicit `::notice::` / `::warning::` / `::error::` GitHub Actions annotations per step (extract metadata, check exists, inject, push)
+
+#### SF-8 — Hardcoded develop branch
+
+- **Issue:** Branch `develop` hardcoded în workflow → dacă proiect schimbă default branch (main rebrand future), workflow break
+- **Severity:** Low (scalability future-proofing)
+- **Mitigation:** Environment variable `DEFAULT_BRANCH: develop` la top + reference `$DEFAULT_BRANCH` throughout
+
+#### SF-9 — Date computation client-side vs PR merged_at accuracy
+
+- **Issue:** `date -u +%Y-%m-%d` pe runner = runner clock, NU PR actual merge time. Discrepancy posibilă dacă runner queue delay
+- **Severity:** Low (accuracy minor)
+- **Mitigation:** Use `${{ github.event.pull_request.merged_at }}` ISO format → parse YYYY-MM-DD din ISO (authoritative GitHub time)
+
+#### SF-10 — Type fallback chore silent
+
+- **Issue:** Dacă PR title NU matches regex (typo, format diferit), fallback `chore` aplicat silent → entry incorect cataloagat fără warning
+- **Severity:** Medium (data accuracy)
+- **Mitigation:** Fallback warning explicit `::warning::PR title NU matches conventional commit regex, fallback chore aplicat`
+
+### 12.4 3 scenarii dry-run mental (acceptance criteria pre-execution)
+
+#### Scenariu A — PR normal merged
+
+- **Input:** PR #198 title `docs(handoff): cleanup pachet J`, merge_commit_sha `abc1234567...`, merged_at `2026-05-12T14:30:00Z`
+- **Expected workflow output:** Entry injected CHANGELOG top: `| #198 | 2026-05-12 | docs | cleanup pachet j | abc1234 |`
+- **Verify:** entry format 5 coloane, hash short 7 chars, date din merged_at, type din regex match docs
+
+#### Scenariu B — PR malicious title
+
+- **Input:** PR title `feat: foo"; rm -rf /; echo bar`
+- **Expected workflow output:** Entry injected SAFE: `| #199 | 2026-05-12 | feat | foo"; rm -rf /; echo bar | def5678 |`
+- **Verify:** ZERO command execution (env var mitigation SF-1 active), entry corectly escaped în table
+
+#### Scenariu C — 2 PR-uri concurrent merge
+
+- **Input:** PR #200 + PR #201 merge la 14:30:00 vs 14:30:03 (3s overlap)
+- **Expected workflow output:** Workflow A (#200) inject + push succeeds; Workflow B (#201) inject + push fails non-fast-forward → retry exponential backoff → fetch + rebase + push succeeds
+- **Verify:** ambele entries prezente CHANGELOG, zero duplicate, zero loss
+
+### 12.5 Filtre design mandatory (pre-merge gates)
+
+1. **Security:** SF-1 mitigation env vars + SF-3 actor filter + permissions least privilege explicit
+2. **Idempotency:** SF-2 grep guard + SF-6 push-or-rollback
+3. **Observability:** SF-7 audit annotations + SF-5/SF-10 fallback warnings
+4. **Scalability:** SF-4 concurrent safe + SF-8 branch agnostic + SF-9 authoritative time
+
+### 12.6 Acceptance criteria pre-merge PR-B
+
+- [ ] Workflow file created `.github/workflows/changelog-sync.yml` cu permissions explicit declared
+- [ ] All 10 SF mitigations implemented (verify checklist)
+- [ ] Dry-run mental 3 scenarii pass (A normal + B malicious + C concurrent)
+- [ ] Local validation: workflow syntax valid (actionlint sau manual YAML check)
+- [ ] PR-B self-bullet CHANGELOG.md (tactic ultim pre-automation activă)
+- [ ] HANDOFF Section 1 refresh (PR-B in-flight)
+- [ ] CI green develop pre-merge
+- [ ] TD-35 status update PENDING → IN-PROGRESS pe PR-B merge → RESOLVED post first successful workflow trigger empirical
+
+### 12.7 Estimate timing
+
+- **Pre-flight discovery:** 20-30 min (verify ci.yml pattern, CHANGELOG format, permissions)
+- **Design audit re-validation:** 30-45 min (re-walk 10 SF cu fresh eyes, scenarii dry-run)
+- **Workflow file create + iterate:** 1-2h (YAML structure, mitigations, edge cases)
+- **CI validation + PR + merge:** 30-45 min
+- **Post-merge empirical verify:** 30 min (next PR merge triggers workflow correctly)
+- **Total: 3-5h sesiune dedicată** (NU bundled cu alt scope per L83 + premium)
 
 ---
 
@@ -1065,6 +1195,16 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical [Pachet G TD-32 cleanup user-local]:** `Test-Path $env:USERPROFILE\pr1b0-edits*.patch` = True. `Get-ChildItem $env:USERPROFILE\pr1b0-edits*.patch` = empty. `Get-ChildItem -Path $env:USERPROFILE -Filter pr1b0-edits*.patch -Force` = empty. `Get-ChildItem -Path $env:USERPROFILE -Force | Where-Object Name -like pr1b0-edits*.patch` = empty. Workaround empirical: `cmd /c dir <path>` returneaza 2 files (pr1b0-edits-utf8.patch 2289b + pr1b0-edits.patch 4722b). Bash `ls` returneaza same 2 files. Resolution: Remove-Item -LiteralPath cu explicit paths fiecare succeded.
 
 **Rule:** Pentru orice file operation cu wildcard pe Windows PowerShell, NU presupune Get-ChildItem reflecta accurate disk state. Verify dual: (a) `Test-Path` (boolean exists), (b) fallback `cmd /c dir <pattern>` sau `bash ls <pattern>` pentru enumerare reala. Pentru Remove-Item / Move-Item / Copy-Item, foloseste -LiteralPath cu explicit paths derivate din enumerarea fallback, NU wildcard glob expansion. Cross-ref R3 + R9 + L66 (PowerShell quirks) + L86 (PowerShell clipboard -Raw flag).
+
+---
+
+### L92 — Workflow YAML cu user-controlled input necesită audit security-grade pre-execution
+
+**Lesson:** Audit pre-execution Pachet I PR-B `.github/workflows/changelog-sync.yml` design identificat 10 failures vs reguli absolute pe primul pass (shell injection via `${{ pr.title }}` interpolation, duplicate entry on re-run, self-trigger loop, race condition concurrent merge, regex type extract fragility, zero rollback CHANGELOG modify before push fail, zero audit trail granular, hardcoded develop branch, date computation client-side accuracy, type fallback chore silent). Cross-ref Section 12 PR-B FULL SPEC pentru detail SF-1..SF-10 + 3 scenarii dry-run + mitigations.
+
+**Pattern empirical [Pachet I.1 pre-flight PR-B audit]:** Filtre design aplicate explicit (security, idempotency, observability, scalability) au prins 10 issues care primul pass NU le-a observat. Dual-pass empirical confirmed: pass 1 cu briefing-only catch = 2 sub-findings identificate (TD-35/TD-36 inițial), pass 2 cu explicit re-statement reguli fundamentale anti-amnezie ("orice bug descoperit MUST capture undeva persistent") catch = 8 sub-findings adiționale identificate. 5x improvement între passes (2 → 10 findings).
+
+**Rule:** Orice workflow YAML care procesează user-controlled input (PR title, branch name, commit message, body) cu write permissions = audit security-grade obligatoriu pre-merge, NU good-enough design sub presiune timp. Filtre minimum mandatory: (1) shell injection mitigation via env vars NU `${{ }}` interpolation, (2) idempotency via re-run guards (grep existing before insert), (3) observability via audit trail granular (notice/warning steps), (4) scalability via concurrent execution safe (optimistic concurrency retry SAU lock). Sesiune dedicată recomandată pentru security-grade audit (3-5h, NU bundled cu alt scope).
 
 ---
 

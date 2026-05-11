@@ -14,6 +14,9 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
+| #197 | 2026-05-11 | docs | Pachet I.2 PR-B FULL SPEC Section 12 + L92 lesson + TD-40 catalog + #195/#196 backfill (L76 6th occurrence retroactive fix) + Section 1 full rewrite + self-bullet TBD pattern L85 Option A | TBD |
+| #196 | 2026-05-11 | docs | Pachet I.1 section 2 refresh + 5 TDs catalog (TD-35..TD-39) | ebf2428 |
+| #195 | 2026-05-11 | docs | Pachet H mini fix #194 hash + L91 PowerShell catch | 52c7457 |
 | #194 | 2026-05-11 | docs | Pachet G mini fix — #193 hash TBD update la 6e32a41 (L85 Option A model first complete end-to-end empirical cycle validated). Plus self-entry #194 TBD placeholder (last L85 Option A application pre-PR-B structural fix). Plus TD-32 cleanup local user-local recovery patches. | 780fce1 |
 | #193 | 2026-05-11 | docs | Pachet F cleanup pre-automation — 3 lessons noi L88-L90 (briefing pre-Write static validation + Section 1 stale recurring drift + workaround tactic vs structural signal) + Section 1 refresh (L89 same-PR bootstrap) + CHANGELOG #192 retroactive add (L76 5th catch DELTA-F + EPSILON-F). Self-application L85 Option A TBD placeholder model — hash update post-merge in PR follow-up sau workflow PR-B automation. | 6e32a41 |
 | #192 | 2026-05-11 | docs | Pachet E-3 retroactive fix #191 self-bullet (L76 4th catch) — CHANGELOG DELTA-191 + EPSILON-191 retroactive add. L85 paradox empirical catch: strict same-PR self-application impossible pre-PR# assignment, 3 strategy options documented (A TBD placeholder model recommended). | 1c2c898 |
