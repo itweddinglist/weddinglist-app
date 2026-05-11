@@ -1053,6 +1053,14 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 
 **Rule:** La 3 ocurrente consecutive sub aplicare workaround tactic, STOP investigatie tactic + investeste structural. Solutii structurale exemple: GitHub Action workflow post-merge automation, Husky hook enforcement, schema constraint database, type system encoding invariant. Cost setup mai mare acceptat sub principiul "problemele se rezolva NU se ocolesc". Cross-ref forward PR-B `.github/workflows/changelog-sync.yml` (Pachet F follow-up scope structural fix L85 paradox).
 
+### L91 — PowerShell wildcard Get-ChildItem inconsistency cu Test-Path
+
+**Lesson:** PowerShell `Test-Path` cu wildcard pattern returneaza True cand match exista, dar `Get-ChildItem` cu acelasi wildcard pattern poate returna empty silent (NU error). Inconsistency cross-cmdlet pe acelasi pattern. Cauza: PSDrive provider quirks Windows long path / Unicode normalization edge cases.
+
+**Pattern empirical [Pachet G TD-32 cleanup user-local]:** `Test-Path $env:USERPROFILE\pr1b0-edits*.patch` = True. `Get-ChildItem $env:USERPROFILE\pr1b0-edits*.patch` = empty. `Get-ChildItem -Path $env:USERPROFILE -Filter pr1b0-edits*.patch -Force` = empty. `Get-ChildItem -Path $env:USERPROFILE -Force | Where-Object Name -like pr1b0-edits*.patch` = empty. Workaround empirical: `cmd /c dir <path>` returneaza 2 files (pr1b0-edits-utf8.patch 2289b + pr1b0-edits.patch 4722b). Bash `ls` returneaza same 2 files. Resolution: Remove-Item -LiteralPath cu explicit paths fiecare succeded.
+
+**Rule:** Pentru orice file operation cu wildcard pe Windows PowerShell, NU presupune Get-ChildItem reflecta accurate disk state. Verify dual: (a) `Test-Path` (boolean exists), (b) fallback `cmd /c dir <pattern>` sau `bash ls <pattern>` pentru enumerare reala. Pentru Remove-Item / Move-Item / Copy-Item, foloseste -LiteralPath cu explicit paths derivate din enumerarea fallback, NU wildcard glob expansion. Cross-ref R3 + R9 + L66 (PowerShell quirks) + L86 (PowerShell clipboard -Raw flag).
+
 ---
 
 ## Decizii LOCKED noi (post-addendum 01)
