@@ -76,10 +76,10 @@ functional check git apply --check). Pattern reusable pentru orice file write Wi
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-11 (Pachet D in-flight, post-Pachet C closure merged)
+- **Data:** 2026-05-11 (Pachet F in-flight, post-Pachet E-1 + E-2 + E-3 closure merged)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, user: itweddinglist@gmail.com)
-- **Motiv handoff:** 7 livrări Faza 13 pe develop. PR 1A Database Types Contract Layer 1 (#182, `8fe3861`) + Pachet A capture residual (#183, `b309f1e`) + HANDOFF Section 1 update (#184, `2539459`) + Pachet B R18 LOCKED + L58-L61 (#185, `0e40b6b`) + PR 1B.0.0 chore Prettier global cleanup 173 files prerequisite (#186, `946b0eb`) + PR 1B.0 feat ci+husky Layer 1 enforcement complete + CI parity local (#187, `988a5f5`) + Pachet C capture residual L62-L71 + R19 LOCKED + CHANGELOG sync (#188, `881b0f4`) merged anterior. Pachet D in-flight (acest commit): 5 lessons noi L72-L76 (Display Claude Code wrap visual artifact + PowerShell Remove-Item cross-tool confusion + "5 min" estimate trap R11 violation + Claude planner new-file anti-pattern + CHANGELOG cumulative drift detection) + Section 1 self-update post-Pachet C merge (closure proper) + TD-31 entry nou (GitHub Actions Node.js 20 deprecation warning) + TD-32 entry nou (recovery patches cleanup user-local) + 4 CHANGELOG entries retroactive fix (#178 hash recovery + #TBD→#179 + #180 add missing complete gap + #TBD2→#181) + Pachet C bullet missing cumulative deltas catch-up + Pachet D self-bullet preventive. Layer 1 defense-in-depth complete preserved (typecheck + tests + format:check enforced atât Husky local hooks pre-commit + pre-push cât și CI workflow remote).
-- **Next contribuitor așteptat:** Faza 13 next sub-PR — candidate PR 1B (Integration tests Layer 2 cu Supabase DEV — DB-real test profile, natural follow-up Layer 1 enforcement), PR 1C (Schema fingerprint + db:types:check CI Layer 3), PR 1D (Runtime schema-guard Layer 4), PR 1E (Enum Type Narrowing — consolidare Cat3 markers), PR 1F (RPC + Json Hardening — Cat4 + Cat5 markers), sau PR 3 (RSVP Minimal cu C12 SECURITY HIGH escalation). Plus task-uri TD pending discoverit empirical: TD-31 GitHub Actions v5 bump trigger (când `actions/checkout@v5` + `actions/setup-node@v5` release stable disponibil, sau forced upgrade Node.js 24 anunțat), TD-32 recovery patches manual cleanup user-local `$env:USERPROFILE\pr1b0-edits*.patch` (oricând, 2-5 min). Plus Section 2 HANDOFF stale fix dedicat (PR #177 vs realitate #187/#188, branch-uri deschise outdated, baseline teste reflectă state vechi) — separate PR future cu pre-flight verify size empirical. Vezi `ROADMAP.md` §"Faza 13 — Granularitate execuție" pentru detalii granular. Pachet D closes capture residual phase post-Pachet C merge — next phase = code execution Layer 2 (PR 1B integration tests Supabase DEV) sau alt sub-PR Faza 13.
+- **Motiv handoff:** 10 livrari Faza 13 (#182-#192 plus PR 1B.0 #187). Pachet E livrat end-to-end (E-1 #190 `0894659` ROADMAP + CHANGELOG sync + retroactive fix + FT-01 RESOLVED; E-2 #191 `1877ad4` HANDOFF closure FT-01 + R20+R21 LOCKED + 11 lessons L77-L87 + DELTA-BIS hash; E-3 #192 `1c2c898` retroactive fix #191 self-bullet L76 4th catch). Pachet F in-flight (acest commit): L88-L90 capture (briefing pre-Write validation + Section 1 stale recurring + workaround tactic vs structural signal) + Section 1 refresh + CHANGELOG #192 retroactive add (L76 5th catch). Discovery counter Pachet E sesiune: 20 cataloagate zero pierderi. Reguli LOCKED total 21 (R1-R21). Lessons total max L90 (62 + 3 = 65 cataloagate). TDs total 30 (TD-30..TD-34 plus historical). FTs: FT-01 RESOLVED, FT-02..04 still pending.
+- **Next contribuitor asteptat:** Pachet F follow-up scope structural fix L85 paradox = `.github/workflows/changelog-sync.yml` GitHub Action workflow post-merge automation (preventive long-term, NU recurring tactic). Alternative: Section 2 HANDOFF stale fix sau PR 1B Layer 2 Integration tests Supabase DEV (12-20h estimate, sesiune dedicata).
 
 ---
 
@@ -1028,6 +1028,30 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical [Pachet E-2 DELTA-BIS edit]:** Edit failed first attempt cu "File modified since last Read" cauza: git pull intre Pachet E-1 close si Pachet E-2 open updated CHANGELOG.md. Re-Read necesar pre-Edit retry.
 
 **Rule:** Post-git pull (FastForward sau Merge) sau branch-switch — Read tool state pe fisierele schimbate invalidat. Re-Read affected files INAINTE de Edit attempt. Daca Edit fail cu "File modified", re-Read primul, apoi retry.
+
+### L88 — Briefing content commit message pre-Write static validation obligatoriu
+
+**Lesson:** Briefing sources (planner Claude.ai / user / auto-generated content) pot injecta UTF-8 chars sau uppercase identifier tokens in commit message body sau subject. Husky commitlint prinde post-Write — dar prevenire pre-Write = preferred, evita retry cycles.
+
+**Pattern empirical [Pachet E sesiune 3 violations recurring]:** E-2 commit-msg UTF-8 RESOLVED marker IOTA description, E-3 commit-msg UTF-8 arrow in body L76 pattern enumeration, E-3 commit-msg uppercase L76 token in subject. Plus L61 prior empirical (planner R16 auto-violation Pachet B). 4 violations same family cumulative.
+
+**Rule:** Pre-Write commit message file = 2-pass static check obligatoriu inainte de Write tool invocation: (a) ASCII scan `[^\x00-\x7F]` → STOP daca non-ASCII detected, propose fix. (b) Subject case scan post `:` separator, `[A-Z]` token → STOP daca uppercase tokens (filename refs gen ROADMAP/CHANGELOG sau identifier prefix L<n>/R<n>). Both passes mandatory BEFORE Write. Cross-ref R7 + R18 + L61 + L83.
+
+### L89 — Section 1 stale recurring drift detection
+
+**Lesson:** HANDOFF Section 1 (Ultima actualizare + Motiv handoff + Next contribuitor) e zona cu drift recurring pattern. Frecvent update Section 1 ratat cand pachete docs livrate. State stale = pickup point briefing future invalidat = anti-pattern R3 single source.
+
+**Pattern empirical [Pachet E sesiune curenta + Pachet F pre-flight]:** Section 1 disk current reflecta "Pachet D in-flight" stale post Pachet E-1+E-2+E-3 livrate (3 PR-uri merged consecutive fara Section 1 refresh). Discovery #20 in pre-flight Pachet F. Pattern observat cu Pachet B+C+D anterior similar (Section 1 update doar in Pachet specific edit BETA, NU automat per PR docs).
+
+**Rule:** Orice docs PR care livreaza pachet major (sau >=2 PR-uri docs consecutive in Faza) = Section 1 refresh obligatoriu in same PR sau immediate next PR. Pre-flight verify Section 1 Data vs disk reality state = step standard pentru orice PR docs. Add la R20 Discovery Log protocol pre-close verify checklist: Section 1 sync check obligatoriu. Cross-ref R3 + R4 + R20.
+
+### L90 — Anti-pattern recurring 3+ ocurrente sub workaround tactic = signal structural fix needed
+
+**Lesson:** Anti-pattern recurring cu 3 sau mai multe ocurrente consecutive sub aplicare workaround tactic = signal investitie in solutie structurala. NU continua aplicare workaround infinit. Cost cumulativ workaround tactic > cost setup structural one-time.
+
+**Pattern empirical [L76 5x recurring + L85 paradox]:** L76 pattern CHANGELOG self-bullet missing detectat 5 ocurrente consecutive (Pachet B fix C, C promis D failed, D promis E-1 failed, E-1 self preventive but E-2 broke, E-2 fixed E-3 retroactive, E-3 self preventive but again missed in Pachet F pre-flight). L85 paradox formal (strict same-PR self-bullet impossible pre-PR# assignment GitHub) NU solvabil tactic — 3 strategy options din L85 toate sunt workaround-uri cu trade-off-uri. Total docs overhead Pachet B-E pentru pattern recurring ~6h+ cumulativ.
+
+**Rule:** La 3 ocurrente consecutive sub aplicare workaround tactic, STOP investigatie tactic + investeste structural. Solutii structurale exemple: GitHub Action workflow post-merge automation, Husky hook enforcement, schema constraint database, type system encoding invariant. Cost setup mai mare acceptat sub principiul "problemele se rezolva NU se ocolesc". Cross-ref forward PR-B `.github/workflows/changelog-sync.yml` (Pachet F follow-up scope structural fix L85 paradox).
 
 ---
 
