@@ -941,7 +941,7 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 
 | ID | Task | Estimare | Trigger explicit | Trace |
 |----|------|----------|------------------|-------|
-| FT-01 | ROADMAP cleanup PR 1 entry restructure (placeholder L622-626 → 6 entries reale PR 1A-D + PR 1E + PR 1F + update tabel sumar L897-916) | 1-2h focused | Oricare alt PR atinge ROADMAP.md → bundle impreuna (saving 1 PR overhead) | CHANGELOG entry Pachet A |
+| FT-01 ✅ RESOLVED | ROADMAP cleanup PR 1 entry restructure DONE Pachet E-1 #190 `0894659` (ALPHA Status block 7 sub-PR + BETA tabel sumar Status column + GAMMA #TBD3 stale fix) | DONE | Trigger satisfied empirical Pachet E-1 atinge ROADMAP.md → bundle FT-01 applied | CHANGELOG #183 Pachet A (creation) + #190 Pachet E-1 (resolution) |
 | FT-02 | Cat 5 mojibake grep audit codebase complet | 30-60 min | PR 11 deschis (Polish) — parte naturala scope. Discovered: `lib/authorization.ts` + `app/api/guests/import/route.ts`. Defer registry §F. | CHANGELOG entry Pachet A |
 | FT-03 | Branch hygiene — 58 orphaned local branches cleanup | 5-15 min | User observa `git branch` zgomotos sau pre-launch cleanup sweep | CHANGELOG entry Pachet A |
 | FT-04 | DEAD CODE removal — `createAuthenticatedClient` `lib/supabase-server.ts:20` (cross-ref TD-30 HANDOFF) | 15-30 min | PR 11 deschis SAU PR mic dedicat daca review headroom curent. Empirical confirmed: 1 export, 0 imports. | CHANGELOG entry Pachet A |

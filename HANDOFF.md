@@ -22,7 +22,7 @@
 
 ---
 
-## Reguli LOCKED (19) — filtru permanent sesiuni AI
+## Reguli LOCKED (21) — filtru permanent sesiuni AI
 
 > Reguli operationale aplicate per sesiune Claude.ai + Claude Code.
 > Filtru obligatoriu pentru orice decizie. Reconstruite din chat sesiune
@@ -47,6 +47,8 @@
 17. **Future/viitor formulari = trigger explicit obligatoriu** — orice item "amanat" fara conditie de re-activare = drift garantat. Minim 4 ancore: canonic + vizibil + trigger + trace. Cross-ref: lesson L55.
 18. **Commit message pattern reusable** — pentru orice commit non-trivial: heredoc stdin (NU `-m` direct), ASCII pur strict (R16 reused), paragraph headers cu DOT suffix (NU colon, evita footer trailer trap), TOATE liniile <100 chars (body-max + footer-max ambele enforced). Pattern validat empirical PR #183 + #184. Cross-ref: lessons L60, L61.
 19. **Encoding-aware file writes Windows PowerShell** — pentru orice tool-consumable file (patches, scripts, configs, commit messages): NICIODATA `>` redirect (UTF-16 LE default + CRLF normalization PS5.1) sau pipe stdin la `git commit -F -` (BOM injection). Foloseste `[System.IO.File]::WriteAllText` cu `[System.Text.UTF8Encoding]::new($false)` constructor + content replace CRLF la LF pentru normalization. Recovery point validation MUST include functional check post-creation (`git apply --check`, `npm run X`, etc.) — NU doar hash + size. Pattern validat empirical PR #186 + #187 recovery cycle. Cross-ref: lessons L66, L67, L68, L69.
+20. **Discovery Log obligatoriu sesiuni multi-edit** — pentru orice sesiune PR cu >3 edits SAU durata estimata >1h, protocol activ: numerotare contiguous reserved (L-next, TD-next, FT-next, R-next), counter explicit mentinut in fereastra planning, categorii discovery (bug functional + inconsistenta docs + anti-pattern + TD/L/FT/R candidates), decision matrix resolution (fix acum vs fix in-PR vs defer cu tracking), pre-close verify counter vs items cataloagate match exact. Cross-ref L81 + L82 (in-flight Pachet E-2 ETA).
+21. **CHANGELOG sync verify obligatoriu pre-commit** — pentru ORICE PR (indiferent de touch CHANGELOG.md): `git log --oneline -20` vs CHANGELOG top table grep + cumulative deltas grep. Gap detection mandatory. Detect gap >=1 PR merged absent → STOP, fix retroactive in current PR INAINTE de scope content nou. Synthesis L76 + L85. Pachet E-1 = prima aplicare empirical strict same-PR.
 
 ### Reconstruction notes
 
@@ -235,7 +237,7 @@ Post PR #170, dashboard (app/rsvp/page.tsx) are încă statusLabels + badgeColor
 > Items captured ca residual debt din PR-uri precedente (Pachet A capture).
 > Single source of truth: `ROADMAP.md` §"Future tasks". Acest entry = ANCORA 2 R17 (vizibilitate per sesiune).
 
-- **FT-01** — ROADMAP cleanup PR 1 entry restructure (1-2h focused; trigger: oricare alt PR atinge `ROADMAP.md` → bundle împreună)
+- **FT-01** ✅ RESOLVED — ROADMAP cleanup PR 1 entry restructure DONE Pachet E-1 #190 `0894659` (ALPHA Status block 7 sub-PR + BETA tabel sumar Status column + GAMMA #TBD3 stale fix). Trigger condition satisfied empirical (PR Pachet E-1 atinge ROADMAP.md → bundle FT-01 applied).
 - **FT-02** — Cat 5 mojibake grep audit codebase (30-60 min; trigger: PR 11 Polish — natural scope; cross-ref registry §F)
 - **FT-03** — Branch hygiene 58 orphaned local branches cleanup (5-15 min; trigger: user observă zgomot `git branch` SAU pre-launch sweep)
 - **FT-04** — DEAD CODE removal `createAuthenticatedClient` `lib/supabase-server.ts:20` (15-30 min; trigger: PR 11 SAU PR mic dedicat; cross-ref TD-30 + registry §G.2)
@@ -280,8 +282,10 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-30 | DEAD CODE — `createAuthenticatedClient` exported but never imported (`lib/supabase-server.ts:20`) | 🟢 Low | PR mic dedicat sau PR 11 (Polish) | 15-30 min | Empirical confirmed PR 1A: `git grep "import.*createAuthenticatedClient"` = zero matches. Function exportata cu zero consumers. Cross-ref: `docs/audit/schema-drift-known-failures.md` §G.2 (L1171-1187). Trigger: PR 11 deschis SAU PR mic dedicat. → ROADMAP §"Future tasks" FT-04. |
 | TD-31 | GitHub Actions Node.js 20 deprecation warning — `actions/checkout@v4` + `actions/setup-node@v4` running on Node.js 20 (deprecated). GitHub forced upgrade Node.js 24 default in future. | 🟢 Low | Când `actions/checkout@v5` + `actions/setup-node@v5` release stable disponibil, sau forced upgrade GitHub timeline anunțat | 25-40 min (verify v5 release + bump 2 linii ci.yml + PR + Husky + CI verify) | Discovered PR #188 build-and-check job May 10 2026 (Pachet C). Annotation "Node.js 20 actions are deprecated" visible Complete job step. Warning, NU error; build green; zero impact actual. Cross-ref: Pachet D capture. |
 | TD-32 | Recovery patches user-local pending cleanup — `$env:USERPROFILE\pr1b0-edits-utf8.patch` (UTF-8 valid recovery) + `pr1b0-edits.patch` (UTF-16 LE corrupt original) | 🟢 Low | Manual cleanup user-local oricând | 2-5 min (`Remove-Item` 2 files) | Created PR 1B.0 #187 recovery cycle May 10 2026. Hygiene only, user-local files NU in repo. Cross-ref: lessons L67 + L68 + L69 (UTF-16 LE redirect + recovery point validation + git apply LF strict). |
+| TD-33 | Format patterns reference catalog absent — lessons format `### L<n>`, reguli format `N. **<title>**`, TDs `| TD-N |`, FTs `| FT-N |`. Documenta in CLAUDE.md sau HANDOFF reference section pentru future planner pre-flight. | 🟢 Low | Convention | 20-30 min | Trigger PR mic dedicat sau Pachet F |
+| TD-34 | Consolidate section headers lessons HANDOFF.md inconsistency — L27-L32 + L33-L37 sectional headers + L38+ concatenate. Decizie: add complete schema sectional per batch sau remove partial headers concatenate uniform. | 🟢 Low | Cleanup | 30-45 min | Trigger PR mic dedicat sau cleanup sweep pre-launch |
 
-**Sumar severitate:** 2 Critical, 10 Medium, 8 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+**Sumar severitate:** 2 Critical, 10 Medium, 10 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
 
 
 ---
@@ -936,6 +940,94 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical [Pachet D pre-flight verify]:** Discovery PR #180 missing complet din CHANGELOG (gap între #178 și #182, pre-Pachet C). Plus Pachet C cumulative deltas section ratat self-bullet pentru #188 (am adăugat #185 + #186 + #187 dar uitat self). Root cause both = R11 onestate verify scope incomplet, NU systematic `git log` cross-check.
 
 **Rule:** Post-merge orice PR, verify `git log --all --oneline -20` versus CHANGELOG tabel entries. Detect gaps numerice (#178 → #182 = gap, missing #179/#180/#181). Detect own PR self-bullet missing cumulative deltas. Catch retroactive în next PR scope. Cross-ref: R3 single source of truth + R11 onestate disciplinată.
+
+### L77 — Claude Code Q&A loop interpretation
+
+**Lesson:** Cand Claude Code afiseaza butoane de raspuns active (Q&A widget), paste prompt nou poate fi interpretat ca raspuns la intrebari vechi, NU ca o comanda separata. Output devine confuz, planner ramane stuck.
+
+**Pattern empirical [Pachet E aborted sesiune anterioara]:** Planner Claude.ai a trimis prompt cu instructiuni de executie pas urmator in timp ce Claude Code avea butoane Q&A active din intrebare precedenta. Claude Code a interpretat paste-ul ca selectie buton, NU comanda noua.
+
+**Rule:** Esc primul pentru anula butoane Q&A active. Apoi paste prompt nou. Sau optiunea "Type something" custom daca disponibila in lista butoane.
+
+### L78 — Auto-compactare next-day signal detection
+
+**Lesson:** Quality post-compactare conversatie detectabila empiric prin: planner propune scope creep fara verify trigger conditions cataloagate, sumarizare lessons in loc de details concrete, lipsa verify FT-01..04 INAINTE de scope lock, override decizii utilizator fara filtrare reguli.
+
+**Pattern empirical [Pachet E aborted + Pachet E-2 sesiune curenta]:** Pachet E aborted = scope locked Optiunea 3 fara verify ca FT-01 deja cataloagat formal R17 4-ancore. User R11 catch necesar. Sesiunea curenta Pachet E-1 a confirmat empirical L76 pattern recurring 3x ratat in compactare anterioare.
+
+**Rule:** Pre-flight verify HANDOFF Future Tasks (FT-01..04) INAINTE de scope final daca PR atinge ROADMAP/HANDOFF. Daca observi degradare (semnale enumerate sus) → STOP sesiune fresh. NU continua compactare degradata.
+
+### L79 — Pickup post-pauza anti-pattern
+
+**Lesson:** Planner sare direct cu Pas 2 plan deferred fara confirma user state explicit. "Am revenit" + intrebare ≠ "continua plan exact". User intrebari = solicitare clarification, NU autopilot pe plan vechi.
+
+**Pattern empirical [Pachet E aborted]:** User a zis "am revenit" + a intrebat de Pachet E status. Planner pornit direct executie fara confirm explicit daca user vrea continue plan deferred sau alt scope.
+
+**Rule:** Pickup post-pauza = CONFIRMA user state primul. Intreaba explicit ce vrea, NU auto-pilot pe plan deferred. Anti-pattern R11 onestate violation.
+
+### L80 — Reguli LOCKED application bug (NU regula, ci aplicare concreta)
+
+**Lesson:** O regula LOCKED poate fi formulation correct (general), dar aplicarea concreta in alt loc poate contine motivatie anti-pattern incastrata. Distincte: regula generala vs aplicarea specifica. Bug-ul real e in aplicarea concreta, NU in regula meta.
+
+**Pattern empirical [Pachet E-1 + IOTA edit]:** R17 textul disk = corect (cere 4 ancore + minim trigger explicit). DAR FT-01 trigger column ROADMAP application contine motivatie "saving 1 PR overhead" = anti-pattern "timpul NU important" incastrat in trigger column. Bug-ul era in IOTA target, NU in R17 reformulation.
+
+**Rule:** Audit periodic NU doar reguli LOCKED meta, ci si aplicarile concrete (FT-01..04 trigger columns, TD-XX trigger columns, etc.) pentru motivatie internal vs meta-principii produs. Conflict aplicare vs meta-principiu = aplicarea needs reformulation, NU regula meta. Reasoning: regulile meta sunt general-purpose, aplicarile sunt specific-purpose si pot diverja.
+
+### L81 — Discovery Log protocol obligatoriu sesiuni multi-edit
+
+**Lesson:** Sesiunile lungi (>1h sau >3 edits) au risc HIGH de pierdere discovery ad-hoc daca NU exista protocol explicit de cataloagare in fereastra planning. Memory unreliable, R75 anti-pattern "rezolvam mai tarziu" revine fara tracking.
+
+**Pattern empirical [Pachet E sesiune curenta]:** User a explicitat necesitate "problemele se rezolva NU se ascund NU se ocolesc" → planner a definit Discovery Log protocol cu numerotare contiguous reserved + categories explicit + tracking destinations. Counter update per discovery in fereastra planning. 14 discoveries cataloagate in Pachet E-1 + Pachet E-2, zero pierderi.
+
+**Rule:** La start orice PR multi-edit (>3 edits) sau durata estimata >1h, define protocol Discovery Log cu numerotare contiguous reserved + categories explicit + tracking destinations. Counter update per discovery. Verify counter vs final edits INAINTE de commit. Cross-ref R20 (Discovery Log obligatoriu sesiuni multi-edit).
+
+### L82 — User escalari = signal protocol→regula promotion
+
+**Lesson:** Cand user formuleaza request implicit sau explicit pentru capture sistematic ("noteaza", "nu uita", "sa fie aplicat consistent"), e signal direct ca protocol ad-hoc trebuie promovat la regula LOCKED. NU astepta sesiune viitoare.
+
+**Pattern empirical [Pachet E sesiune curenta]:** User a zis "asta va deveni regula" dupa Discovery Log protocol definit ca raspuns la "nu se uita, nu se ascund". 2 escalari user-driven consecutive (Discovery Log + R20 LOCKED) = pattern. Cataloagat R20 in aceeasi sesiune cu protocol definition.
+
+**Rule:** La user request capture sistematic, propune explicit promovare protocol→regula cu draft formulation LOCKED IN aceeasi sesiune. Aplicare immediate, NU defer.
+
+### L83 — Grep pattern verify pre-flight cu sample-first discovery obligatoriu
+
+**Lesson:** Pre-flight count/structure cu grep pattern guessing (assumption format disk) = anti-pattern R3 violation. Output 0 sau wrong count = pattern wrong, NU disk empty/wrong. Briefing planner cu pattern-uri inferred din memory = risc recurring (off-by-one line numbers, format real diferit de assumption).
+
+**Pattern empirical [Pachet E sesiune curenta]:** Pre-flight pattern `^L[0-9]` returnat 0 — format real disk era `^### L<n>` (H3 header). Pre-flight pattern `^- \*\*R[0-9]` returnat 0 — format real era `^N. \*\*<title>\*\*` (numbered list). Briefing line refs off-by-one recurring (#622/621, #239/238, #928/944). Hash convention briefing greseala (commit hash vs merge hash empirical pattern istoric).
+
+**Rule:** Pre-flight verify count/structure = 2 steps obligatorii. (a) Sample-first discovery: `grep -n "L72\|L76\|R19"` pentru gasire format real. (b) Count derivat din format real disk verified. NU pattern guessing direct. Plus line refs anchor pe text content (Edit tool semantic match), NU pe line numbers absolute. Cross-ref R3 + R9.
+
+### L84 — Briefing handoff count vs max index distinction
+
+**Lesson:** Briefing handoff document poate confunda "count total cataloagat" cu "max index numerotare". Numerotarea poate NU fi contiguous (gaps in history), deci max index > count actual.
+
+**Pattern empirical [Pachet E sesiune curenta]:** Briefing claim "Lessons total 76 cataloagate disk (L1-L76)". Reality: 51 lessons cataloagate cu max index L76. Briefing formulation "76 total" inexact, ar trebui "max L76 / 51 cataloagate".
+
+**Rule:** Briefing handoff template cu count items cataloagate = TREBUIE distinct "count total" vs "max index". Verify empirical primul cu grep count + max index check. NU presupune contiguous.
+
+### L85 — L76 self-application gap commit message claim vs disk reality
+
+**Lesson:** Capturing un lesson in commit message NU echivaleaza aplicare lesson efectiva pe disk. Capture claim ≠ apply claim. Verify-on-disk post-stage pre-commit necesar pentru claim-uri self-application.
+
+**Pattern empirical [Pachet B → C → D → E-1]:** 3 PR-uri consecutive (B → C → D) cu L76 pattern recurring promis vs ratat. Fiecare PR a promis fix retroactiv anterior + preventiv self in commit message, NICIUNUL livrat self preventive complet. Pachet E-1 = primul PR care a livrat empirical disk verified ce promis in commit message (DELTA + EPSILON applied strict same-PR, NU "fix in next PR").
+
+**Rule:** Commit message claims pentru self-application lessons = TREBUIE verified empirical post-stage pre-commit cu grep direct pe claim. Trace explicit: claim "self-bullet #X added cumulative" → `grep -c "#X" CHANGELOG.md` post-stage pre-commit = match count expected. Cross-ref R21 (CHANGELOG sync verify obligatoriu pre-commit).
+
+### L86 — PowerShell clipboard + grep -P cross-platform issues
+
+**Lesson:** Windows Git Bash + PowerShell au limitari cross-platform: (a) `Get-Content` fara `-Raw` flag returneaza array of strings → `Set-Clipboard` pipe input ambiguous (clipboard may receive only last line sau wrong content). (b) `grep -P` (PCRE) fail cu locale C "supports only unibyte and UTF-8 locales" — Windows Git Bash default locale C.
+
+**Pattern empirical [Pachet E-1 commit-msg verify + PR body clipboard]:** Clipboard prima incercare `Get-Content file | Set-Clipboard` a luat content terminal prior, NU file. `Get-Content -Raw file | Set-Clipboard` a functionat. `grep -P "[^\x00-\x7F]"` fail locale, workaround `perl -ne '/[^\x00-\x7F]/'` + POSIX charclasses.
+
+**Rule:** Clipboard helpers Windows PowerShell: ALWAYS `Get-Content -Raw <file> | Set-Clipboard` pentru multi-line content. Non-ASCII verify Windows Git Bash: NU `grep -P`, foloseste `perl -ne` sau `LC_ALL=C grep "[^[:print:][:space:]]"` ca alternative cross-platform.
+
+### L87 — Read tool state stale post-git-pull (re-Read mandatory)
+
+**Lesson:** Post-git pull (fast-forward sau merge), Read tool tracking state pe fisierele schimbate este stale. Edit attempt va fail cu "File modified since read". Pattern aplicabil si la branch-switch state invalidation.
+
+**Pattern empirical [Pachet E-2 DELTA-BIS edit]:** Edit failed first attempt cu "File modified since last Read" cauza: git pull intre Pachet E-1 close si Pachet E-2 open updated CHANGELOG.md. Re-Read necesar pre-Edit retry.
+
+**Rule:** Post-git pull (FastForward sau Merge) sau branch-switch — Read tool state pe fisierele schimbate invalidat. Re-Read affected files INAINTE de Edit attempt. Daca Edit fail cu "File modified", re-Read primul, apoi retry.
 
 ---
 
