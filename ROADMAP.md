@@ -619,11 +619,20 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 
 #### PR 1 — Schema Drift Safety Net (Faza 13.0 partial)
 
-> **Note 2026-05-09 — SPLIT decision LOCKED:** PR 1 monolithic original e split în 4 sub-PRs cross-model validation (vezi HANDOFF.md lesson L38): **PR 1A** Database Types Contract (Layer 1 compile-time, merge pending — vezi CHANGELOG.md `#TBD3`), **PR 1B** integration tests cu DB reală (Layer 2), **PR 1C** CI `db:types:check` + schema fingerprint (Layer 3), **PR 1D** runtime schema-guard la app startup (Layer 4).
+> **Note 2026-05-09 — SPLIT decision LOCKED:** PR 1 monolithic original e split în 4 sub-PRs cross-model validation (vezi HANDOFF.md lesson L38): **PR 1A** Database Types Contract (Layer 1 compile-time, merged `#182` hash `8fe3861`), **PR 1B** integration tests cu DB reală (Layer 2), **PR 1C** CI `db:types:check` + schema fingerprint (Layer 3), **PR 1D** runtime schema-guard la app startup (Layer 4).
 >
 > Plus 2 sub-PRs adiționale identificate empirical Task 1A.4 markers placement: **PR 1E** Enum Type Narrowing Layer (consolidare Cat3 markers cross-feature) + **PR 1F** RPC + Json Hardening (consolidare Cat4 + Cat5 markers).
 >
-> **Status:** sub-tasks 1.1-1.10 mai jos rămân valide ca scope intent, dar grupare exactă pe sub-PR (1A-1F) NU e reflectată în acest entry. ROADMAP restructure deferat la PR ROADMAP cleanup dedicat (separate concern, scope contained Task 1A.5 = PR 1A docs consolidation).
+> **Status sub-PRs (2026-05-11):**
+> - **PR 1A** ✅ merged `#182` `8fe3861` (Database Types Contract Layer 1 compile-time)
+> - **PR 1B.0** ✅ merged `#187` `988a5f5` (Layer 1 enforcement complete + CI parity local)
+> - **PR 1B** ⏳ pending (Integration tests cu DB reală Layer 2, 12-20h estimate)
+> - **PR 1C** ⏳ pending (CI `db:types:check` + schema fingerprint Layer 3)
+> - **PR 1D** ⏳ pending (Runtime schema-guard la app startup Layer 4)
+> - **PR 1E** ⏳ pending (Enum Type Narrowing Layer)
+> - **PR 1F** ⏳ pending (RPC + Json Hardening)
+>
+> Sub-tasks 1.1-1.10 mai jos rămân valide ca scope intent, dar grupare exactă pe sub-PR (1A-1F) e reflectată în Status block de mai sus.
 
 **Scop:** infrastructura care previne următoarele 50 de bugs din clasa schema drift.
 
@@ -894,26 +903,33 @@ request → checkOrigin() → rateLimit() → getServerAppContext()
 
 ### Tabel sumar PR-uri
 
-| PR | Titlu | Estimare | Faza originală |
-|----|-------|----------|----------------|
-| PR 1 | Schema Drift Safety Net | 18-30h | 13.0 |
-| PR 2 | Security/GDPR Emergency Stop | 20-32h | 13.2 + 13.3 + Risk D + E |
-| PR 3 | RSVP Minimal Functional | 28-40h | 13.1 + 13.5.C |
-| PR 4 | Account Deletion Atomic | 16-24h | 13.5.B |
-| PR 5 | RSVP Pivot Multi-event | 12-18h | 13.1.A complete |
-| PR 6 | RSVP History + Warning | 8-14h | 13.1.C |
-| PR 7 | Email Confirmation | 6-10h | 13.1.D |
-| PR 8 | Export JSON v2.0 + Roundtrip | 12-18h | 13.4.A + 13.4.C |
-| PR 9 | Import JSON v2.0 | 14-20h | 13.4.B |
-| PR 10 | PDF Export Complete | 6-10h | 13.4.A continuat |
-| PR 11 | Idempotency Universal | 12-18h | 13.5.A |
-| PR 12 | RLS Role Hierarchy | 6-10h | 13.3.C |
-| PR 13 | Audit Log Infrastructure | 6-10h | 13.0.B |
-| PR 14 | WP/Voxel Bridge Tests | 8-14h | Risk B |
-| PR 15 | Multi-user Concurrency | 8-14h | Risk C |
-| PR 16 | C9 + Polish | 2-4h | 13.6.A |
-| PR 17 | DPO Review Final | 4-8h | 13.2 final |
-| **TOTAL** | | **186-296h** | |
+| PR | Titlu | Estimare | Faza originală | Status |
+|----|-------|----------|----------------|--------|
+| PR 1A | Database Types Contract Layer 1 | — | 13.0 | ✅ `#182` `8fe3861` |
+| PR 1B.0 | Layer 1 enforcement CI parity | — | 13.0 | ✅ `#187` `988a5f5` |
+| PR 1B | Integration tests DB reală Layer 2 | — | 13.0 | ⏳ pending |
+| PR 1C | CI `db:types:check` + schema fingerprint | — | 13.0 | ⏳ pending |
+| PR 1D | Runtime schema-guard | — | 13.0 | ⏳ pending |
+| PR 1E | Enum Type Narrowing Layer | — | 13.0 | ⏳ pending |
+| PR 1F | RPC + Json Hardening | — | 13.0 | ⏳ pending |
+| PR 1 (total) | Schema Drift Safety Net (split 1A-1F) | 18-30h | 13.0 | 🟡 partial (2/7 sub-PR done) |
+| PR 2 | Security/GDPR Emergency Stop | 20-32h | 13.2 + 13.3 + Risk D + E | ⏳ pending |
+| PR 3 | RSVP Minimal Functional | 28-40h | 13.1 + 13.5.C | ⏳ pending |
+| PR 4 | Account Deletion Atomic | 16-24h | 13.5.B | ⏳ pending |
+| PR 5 | RSVP Pivot Multi-event | 12-18h | 13.1.A complete | ⏳ pending |
+| PR 6 | RSVP History + Warning | 8-14h | 13.1.C | ⏳ pending |
+| PR 7 | Email Confirmation | 6-10h | 13.1.D | ⏳ pending |
+| PR 8 | Export JSON v2.0 + Roundtrip | 12-18h | 13.4.A + 13.4.C | ⏳ pending |
+| PR 9 | Import JSON v2.0 | 14-20h | 13.4.B | ⏳ pending |
+| PR 10 | PDF Export Complete | 6-10h | 13.4.A continuat | ⏳ pending |
+| PR 11 | Idempotency Universal | 12-18h | 13.5.A | ⏳ pending |
+| PR 12 | RLS Role Hierarchy | 6-10h | 13.3.C | ⏳ pending |
+| PR 13 | Audit Log Infrastructure | 6-10h | 13.0.B | ⏳ pending |
+| PR 14 | WP/Voxel Bridge Tests | 8-14h | Risk B | ⏳ pending |
+| PR 15 | Multi-user Concurrency | 8-14h | Risk C | ⏳ pending |
+| PR 16 | C9 + Polish | 2-4h | 13.6.A | ⏳ pending |
+| PR 17 | DPO Review Final | 4-8h | 13.2 final | ⏳ pending |
+| **TOTAL** | | **186-296h** | | **2/23 sub-PR done** |
 
 ---
 
