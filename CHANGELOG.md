@@ -14,7 +14,8 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
-| #197 | 2026-05-11 | docs | Pachet I.2 PR-B FULL SPEC Section 12 + L92 lesson + TD-40 catalog + #195/#196 backfill (L76 6th occurrence retroactive fix) + Section 1 full rewrite + self-bullet TBD pattern L85 Option A | TBD |
+| #TBD | 2026-05-12 | docs | pr-b-spec revision section 12 audit-driven (sf-11/sf-12 + 9 expansions + scenariu d + td-41/td-42) | TBD |
+| #197 | 2026-05-11 | docs | Pachet I.2 PR-B FULL SPEC Section 12 + L92 lesson + TD-40 catalog + #195/#196 backfill (L76 6th occurrence retroactive fix) + Section 1 full rewrite + self-bullet TBD pattern L85 Option A | 567930c |
 | #196 | 2026-05-11 | docs | Pachet I.1 section 2 refresh + 5 TDs catalog (TD-35..TD-39) | ebf2428 |
 | #195 | 2026-05-11 | docs | Pachet H mini fix #194 hash + L91 PowerShell catch | 52c7457 |
 | #194 | 2026-05-11 | docs | Pachet G mini fix — #193 hash TBD update la 6e32a41 (L85 Option A model first complete end-to-end empirical cycle validated). Plus self-entry #194 TBD placeholder (last L85 Option A application pre-PR-B structural fix). Plus TD-32 cleanup local user-local recovery patches. | 780fce1 |
