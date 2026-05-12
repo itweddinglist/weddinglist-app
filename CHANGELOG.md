@@ -15,6 +15,7 @@ Format full detail: PR # | Date | Type | Summary | Hash merge.
 | PR # | Date | Type | Summary | Hash |
 |------|------|------|---------|------|
 | #TBD | 2026-05-12 | docs | Pachet K closure documentation post PR-B cycle (HANDOFF + CHANGELOG + lessons L94 + TDs 43-44 + Section 12 IMPLEMENTED + findings F1-F16 + DF1-DF4 catalog) | TBD |
+| #200 | 2026-05-12 | docs | pachet k closure post pr-b cycle + td-43/44 + l94 + findings catalog | aafed11 |
 | #199 | 2026-05-12 | feat | pr-b-impl changelog-sync workflow per Section 12 SPEC + 12 SF mitigations + 4 scenarii + 16 findings (3 → TD-43 expanded) | 7c641fa |
 | #198 | 2026-05-12 | docs | pr-b-spec revision section 12 audit-driven (sf-11/sf-12 + 9 expansions + scenariu d + td-41/td-42) | e0e0918 |
 | #197 | 2026-05-11 | docs | Pachet I.2 PR-B FULL SPEC Section 12 + L92 lesson + TD-40 catalog + #195/#196 backfill (L76 6th occurrence retroactive fix) + Section 1 full rewrite + self-bullet TBD pattern L85 Option A | 567930c |
