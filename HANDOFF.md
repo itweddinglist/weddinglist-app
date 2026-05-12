@@ -76,10 +76,10 @@ functional check git apply --check). Pattern reusable pentru orice file write Wi
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-12 (Pachet K closure documentation in-flight post-Pachet J.2 PR-B-impl #199 `7c641fa` merged develop)
+- **Data:** 2026-05-12 (Pachet K.1 closure post Pachet K #200 `aafed11` workflow validated empirical `e88f1d0`)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, executant tehnic) + Claude.ai supervisor (Vector, decizii prin filtre + briefing-uri anchored grep) + user: itweddinglist@gmail.com / Ionuț
-- **Motiv handoff:** Pachet K closure documentation post PR-B cycle COMPLETE (spec J.1 #198 + impl J.2 #199 + docs K #200 pending). 9 edits applied (2 CHANGELOG backfills/insert + 7 HANDOFF updates: TDs 38→40 +TD-43/TD-44 + TD-35 IN-PROGRESS + L94 NEW lesson + Section 12 IMPLEMENTED + Findings catalog 22 F+DF + Sumar cascade). 8 discovery findings empirical Pachet K (DF1-DF8) — 2 RESOLVED in-session (DF7 Edit #7.1 + DF8 Edit #10 cascade fix) — 1 RESOLVED in-edit (DF7 math fix), 5 cataloagate (DF2/DF3/DF5 → L94/Section 12/L94), 1 process-only (DF1/DF4/DF6). 16 PR-B-impl findings (F1-F16) consolidate audit trail Section 5 sub-section L298. L93 dual-pass mandate validated empirical 5 self-test runs (Phase 1 + Phase 2 + Phase 3 Edits #3-#8). L88 dual-pass mandate empirical proof DF7 catch (same-session fix Edit #7.1). Workflow `.github/workflows/changelog-sync.yml` LIVE develop @ 7c641fa, TD-35 IN-PROGRESS awaiting first empirical trigger post Pachet K #200 merge.
-- **Next contribuitor asteptat:** Pachet L post Pachet K merge + workflow first empirical trigger verify (~5 min observation post-merge). Priority queue forward: (1) workflow green verify → TD-35 RESOLVED; (2) PR-C TD-41 Section 2 sync workflow (~3-5h, template PR-B-impl pattern); (3) TD-38 C4 launch blocker Critical investigation (~3-5h, schema fix); (4) TD-43 spec amendment PR-D (~1-2h Section 12 SF-12 + version refs); (5) TD-44 Husky format:check hook (~15-30 min, hygiene quick win). Alternative interleaved: feature work modules (Magic Fill / RSVP / Budget) per priorities runway.
+- **Motiv handoff:** Pachet K.1 mini-PR closure post-merge findings — workflow `.github/workflows/changelog-sync.yml` PROVEN empirical Pachet K.1 e88f1d0 (PR #200 aafed11 → auto-PR #201 chore(changelog): sync entry → manual merge SF-11 → develop e88f1d0, 18s first green run validated). 11 edits applied (1 CHANGELOG self-bullet rollforward Option D + 10 HANDOFF: Section 1 + TD-35 Notă RESOLVED + Findings catalog 24→29 + TDs 40→43 +TD-45/46/47 + L95-L97 NEW lessons + Section 12 PROVEN empirical + Sumar cascade 14→17 Low). 5 NEW findings cataloagate Pachet K.1: F17 🔴 Critical RESOLVED (repo setting "Allow GitHub Actions create/approve PRs" disabled, 1-click fix Settings/Actions/Workflow permissions checkbox, re-run SUCCESS 18s), F18 🟢 Low RESOLVED (orphan branch auto/changelog-199 cleanup manual), DF9 🟢 Low RESOLVED (--merged ancestral inclusion accidental main delete, zero data loss 5/5 verify spot-check), DF10 🟢 Low (position shift observation Edit #10 cascade, L94 5th occurrence empirical reinforcement), DF11 🟡 Medium RESOLVED (workflow auto-insert duplicate L17+L18, Option D rollforward LOCKED). 3 NEW TDs: TD-45 (Husky pre-push delete-op bypass) + TD-46 (safe-bulk-delete docs pattern) + TD-47 (stale remote branches audit). 3 NEW lessons: L95 (Husky delete-op bypass) + L96 (--merged ancestral excludes mandate) + L97 (self-bullet obsolet post-workflow LIVE transition). Section 12 Status PROVEN empirical + TD-35 RESOLVED Pachet K.1 e88f1d0. Counters cumulative post-K.1: 29 findings (2 Critical + 10 Medium + 17 Low), 72 lessons (max L97), 43 TDs (TD-30..TD-47).
+- **Next contribuitor asteptat:** Pachet L queue forward: (1) PR-C TD-41 `section-2-sync.yml` (~3-5h, template PR-B-impl pattern); (2) TD-38 C4 launch blocker Critical investigation (~3-5h, schema fix); (3) TD-43 PR-D Section 12 spec amendments (~1-2h, SF-12 TBD-row + peter-evans version refs); (4) hygiene cluster TD-44/TD-45/TD-46/TD-47 (~1-2h cumulative, format:check Husky + delete-op bypass + safe-bulk-delete docs + remote branches cleanup). Alternative interleaved: feature work modules (Magic Fill / RSVP / Budget) per priorities runway.
 
 ---
 
@@ -284,7 +284,7 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-32 | Recovery patches user-local pending cleanup — `$env:USERPROFILE\pr1b0-edits-utf8.patch` (UTF-8 valid recovery) + `pr1b0-edits.patch` (UTF-16 LE corrupt original) | 🟢 Low | Manual cleanup user-local oricând | 2-5 min (`Remove-Item` 2 files) | Created PR 1B.0 #187 recovery cycle May 10 2026. Hygiene only, user-local files NU in repo. Cross-ref: lessons L67 + L68 + L69 (UTF-16 LE redirect + recovery point validation + git apply LF strict). |
 | TD-33 | Format patterns reference catalog absent — lessons format `### L<n>`, reguli format `N. **<title>**`, TDs `| TD-N |`, FTs `| FT-N |`. Documenta in CLAUDE.md sau HANDOFF reference section pentru future planner pre-flight. | 🟢 Low | Convention | 20-30 min | Trigger PR mic dedicat sau Pachet F |
 | TD-34 | Consolidate section headers lessons HANDOFF.md inconsistency — L27-L32 + L33-L37 sectional headers + L38+ concatenate. Decizie: add complete schema sectional per batch sau remove partial headers concatenate uniform. | 🟢 Low | Cleanup | 30-45 min | Trigger PR mic dedicat sau cleanup sweep pre-launch |
-| TD-35 | Workflow YAML changelog-sync.yml audit pre-execution identificat 10 sub-findings security/correctness (shell injection, duplicate entry, self-trigger loop, race condition, regex fragility, zero rollback, zero audit trail, hardcoded branch, date accuracy, type fallback silent). Full detail SF-1..SF-10 în PR-B FULL SPEC section. | 🔴 Critical | Sesiune dedicată PR-B execution (next session, audit security-grade obligatoriu pre-merge) | 3-5h (rewrite design + dry-run 3 scenarii + edge cases gestionate) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref PR-B FULL SPEC (Pachet I.2 forward declared) + L90 anti-pattern recurring 3+ structural fix. Blocker PR-B execution până design rewrite. **[STATUS UPDATE Pachet K post PR-B-impl #199 7c641fa merged]:** IN-PROGRESS — workflow LIVE develop @ 7c641fa. Awaiting first empirical trigger post Pachet K #200 merge. RESOLVED defer post first green workflow run observed. |
+| TD-35 | Workflow YAML changelog-sync.yml audit pre-execution identificat 10 sub-findings security/correctness (shell injection, duplicate entry, self-trigger loop, race condition, regex fragility, zero rollback, zero audit trail, hardcoded branch, date accuracy, type fallback silent). Full detail SF-1..SF-10 în PR-B FULL SPEC section. | 🔴 Critical | Sesiune dedicată PR-B execution (next session, audit security-grade obligatoriu pre-merge) | 3-5h (rewrite design + dry-run 3 scenarii + edge cases gestionate) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref PR-B FULL SPEC (Pachet I.2 forward declared) + L90 anti-pattern recurring 3+ structural fix. Blocker PR-B execution până design rewrite. **[STATUS UPDATE Pachet K post PR-B-impl #199 7c641fa merged]:** IN-PROGRESS — workflow LIVE develop @ 7c641fa. Awaiting first empirical trigger post Pachet K #200 merge. RESOLVED Pachet K.1 — first green empirical e88f1d0 (PR #201 auto-insert verified, 18s run, F2 Option (a) TBD-skip working, 12 SF mitigations validated). |
 | TD-36 | Race condition concurrent PR merge în changelog-sync.yml — 2 PR-uri merge simultan (ferestră 5-10s) → 2 workflow instances concurrent → duplicate entries SAU push fail non-fast-forward. Pattern distinct cu implications scalabilitate (NU doar workflow-specific) | 🟡 Medium | Sesiune dedicată PR-B execution (must design idempotent inject pentru scalability per regulă proiect) | 30-60 min (design phase: optimistic concurrency retry loop + duplicate detection grep guard) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref TD-35 (umbrella audit). Rar în solo dev curent, dar must design proactive pentru scalability future. |
 | TD-37 | .github/workflows/ci.yml lipsește declarație explicită permissions block — folosește default repo-level GITHUB_TOKEN permissions (variable per repo Settings). Încălcare principle of least privilege + self-documenting scope + defense-in-depth. Risk: dacă repo default permissions schimbate, workflow poate escala accidental privilegii | 🟢 Low | PR mic dedicat post-PR-B merged (hygiene security, NU blocker funcțional) | 15-20 min (add permissions: contents: read top-level + CI verify + PR + merge) | Discovered Pachet I.1 pre-flight PR-B output H. Scope micro (~5 linii edit). Defer post-PR-B per regulă "premium fără bug-uri pe termen lung". |
 | TD-38 | C4 launch blocker reproduction live — `seat_assignments.guest_id does not exist` (code 42703) surfaced în E2E webserver logs durante Playwright run. API endpoint GET /api/dashboard/stats fail silent (error swallowed by dashboard). Pre-existing known bug per CLAUDE.md §10.12 schema-drift audit | 🔴 Critical | Launch blocker — fix obligatoriu pre-launch (PR dedicat schema migration sau code fix mapping guest_id → guest_event_id) | TBD (require investigation: schema migration vs code mapping fix) | Discovered Pachet I.1 baseline empirical capture (Playwright run, sesiune 2026-05-11). Cross-ref CLAUDE.md §10.12 (existing audit entry). Empirical reproduction confirmation NEW (anterior doar static audit). |
@@ -294,10 +294,13 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-42 | actionlint absent dev machine — local YAML workflow validation impossible via standard tooling (`actionlint --version` returns "command not found"). CI-only feedback loop = slower iteration pentru workflow YAML edits future. Workflow improvement, NU blocker funcțional | 🟢 Low | PR mic hygiene install — `winget install rhysd.actionlint` SAU `choco install actionlint` SAU `go install github.com/rhysd/actionlint/cmd/actionlint@latest` | 5-15 min (install + verify `actionlint --version` + test pe ci.yml empirical) | Discovered Pachet J PR-B-spec Phase 2 pre-flight discovery (sesiune 2026-05-12). Future workflow YAML PRs (PR-B impl, PR-C section-2-sync) benefit local validation. Cross-ref TD-40 pattern (gh CLI absent similar hygiene). |
 | TD-43 | Section 12 spec amendments pending — sub-A: SF-12 TBD-row edge case (L557 algorithm spec NU cover non-numeric `#TBD` rows at top, empirical impact: workflow IMPLEMENTS Option (a) skip + insert under + `::warning::` per Phase 3 authoring decision PR-B-impl; spec amendment recommended pentru consistency). Sub-B: peter-evans v6 spec (Section 12.2 item 3 + SF-11 + Section 12.6 acceptance L602) → v8.1.0 impl drift confirmed (2 ani vechime între spec date 2024-01-31 și impl actual 2026-05-12). | 🟡 Medium | PR-D dedicated post Pachet K (spec amendment Section 12 SF-12 L557 + version reference L481/L551/L602) | 1-2h (spec amendment edit byte-exact + cross-section consistency dual-pass L93) | Discovered Pachet K Phase 2.5 (F2 SF-12 edge case) + PR-B-impl Phase 3.1 (F3 peter-evans version drift). Cross-ref SF-12 L557 + SF-11 L551 + Section 12.6 L602. |
 | TD-44 | format:check Husky pre-commit hook missing — Husky pre-commit currently runs lint + typecheck DAR NU format:check. CI rulează format:check (ci.yml L33-34) deci catch happens DAR la push, NU pre-commit local. F16 process gap surfaced PR-B-impl session: doc edits committed local NU rejected pre-push, surprize CI fail post-push. DX hygiene improvement. | 🟢 Low | PR mic dedicat (add format:check to Husky pre-commit hook + verify works empirical) | 15-30 min (Husky config edit + test commit dirty format file empirical) | Discovered Pachet K Phase 2 / PR-B-impl session (F16 finding). Cross-ref TD-40/TD-42 pattern (hygiene improvements). |
+| TD-45 | Husky pre-push optimize delete-only operations — current Husky pre-push hook runs eslint+typecheck+vitest pe ORICE push including `--delete` operations (`git push origin --delete <branch>` triggers 13s test suite unnecessary). Optimization: detect delete-only refs (`refs/heads/--`) și bypass tests. | 🟢 Low | PR mic dedicat (Husky `.husky/pre-push` script edit + test empirical delete-op + commit-op separation) | 15-30 min (Husky config + verify empirical) | Discovered Pachet K.1 Phase 1 (post-merge cleanup empirical observation `git push origin --delete auto/changelog-199` triggered full pre-push). Cross-ref TD-44 pattern Husky hygiene cluster. Cross-ref L95 NEW lesson companion. |
+| TD-46 | Documented safe-bulk-delete branches pattern absent — `git branch --merged develop` returns ancestral branches (main, master) causing accidental local delete (DF9 Pachet K.1). Documented pattern in CLAUDE.md cu explicit excludes: `git branch --merged develop \| Where-Object { $_.Trim() -notin @('develop', 'main', 'master') }`. | 🟢 Low | PR mic documentation (add CLAUDE.md sau HANDOFF.md ops section safe-bulk-delete pattern + PowerShell snippet ready-to-use) | 10-15 min (doc edit + 1 example) | Discovered Pachet K.1 DF9 empirical (accidental main delete local, zero data loss confirmed 5/5 spot-check, recovery 1-comand). Cross-ref L96 NEW lesson companion. |
+| TD-47 | Stale remote branches cleanup audit — 6 branches remote post-Pachet-K-cleanup detected încă active GitHub server (feat/auth-dev-session, feature/p2-highlight-fix, feature/seating-2a-refactor, feature/seating-spawn-pan, feature/sidebar-search, fix/seating-9.5-stale-retries) — toate `--merged develop` empirical DAR `delete-branch: true` în PR-uri originale NU activated (maintainer forgot). Audit + decision delete remote sau preserve archival. | 🟢 Low | Sesiune dedicată (audit fiecare branch verify NU unique unmerged work, then `git push origin --delete <branch>` bulk) | 30-60 min (6 branches × 5 min audit fiecare) | Discovered Pachet K.1 Phase 1 cleanup empirical `git branch -a` listing. Cross-ref F18 pattern (orphan branches hygiene cluster). |
 
-### Findings catalog cumulative: PR-B-impl + Pachet K (24 findings total)
+### Findings catalog cumulative: PR-B-impl + Pachet K (29 findings total)
 
-Audit trail layer pre-TD/lesson catalog. Findings cataloagate empirical pe parcurs sesiunilor PR-B-impl + Pachet K, severity tagged 🔴/🟡/🟢/✅. Coverage: 16 findings PR-B-impl (F1-F16) + 8 discovery findings Pachet K (DF1-DF8).
+Audit trail layer pre-TD/lesson catalog. Findings cataloagate empirical pe parcurs sesiunilor PR-B-impl + Pachet K + Pachet K.1, severity tagged 🔴/🟡/🟢/✅. Coverage: 18 findings PR-B-impl/post-merge (F1-F18) + 11 discovery findings Pachet K + K.1 (DF1-DF11).
 
 **PR-B-impl session findings (F1-F16, 13 resolved + 3 cataloagate TDs):**
 - F1: Briefing omission CHANGELOG format Step 2.5 (🟢 Low, process correction)
@@ -316,8 +319,10 @@ Audit trail layer pre-TD/lesson catalog. Findings cataloagate empirical pe parcu
 - F14: Line count discrepancy 266/265/235 (🟢 Low, reconciled — git=265 authoritative)
 - F15: PowerShell Get-Content default codepage Windows-1252 (🟢 Low, display-only, file UTF-8 valid)
 - F16: Pre-commit `format:check` ratat (🟡 Medium → TD-44 process gap, CI caught)
+- F17: Repo setting "Allow GitHub Actions to create and approve pull requests" disabled — workflow Step 5 peter-evans FAIL empirical first trigger Pachet K post-merge (🔴 Critical → RESOLVED 1-click fix Settings/Actions/Workflow permissions checkbox enabled, re-run workflow SUCCESS 18s)
+- F18: Orphan branch from failed workflow run — auto/changelog-199 created by failed first trigger run NU cleaned automatic (🟢 Low → RESOLVED manual `git push origin --delete auto/changelog-199` Pachet K.1 pre-flight)
 
-**Pachet K Phase 1-3 discovery findings (DF1-DF6):**
+**Pachet K + K.1 discovery findings (DF1-DF11):**
 - DF1: User briefing Section 1 location estimate stale (🟢 Low, process correction only)
 - DF2: User briefing `^### TD-` grep wrong format (🟡 Medium → L94 catalog)
 - DF3: Section 12 "forward declared" stale post-impl (🟡 Medium → Edit #6 RESOLVED scope addition)
@@ -326,11 +331,14 @@ Audit trail layer pre-TD/lesson catalog. Findings cataloagate empirical pe parcu
 - DF6: Branch creation pending pre-commit (🟢 Low, Phase 4 commit pipeline addresses)
 - DF7: Math error severity rollup Edit #7 — Medium 6 vs 7 empirical, Low 15 vs 14 empirical (🟡 Medium → RESOLVED Edit #7.1 same-session math fix, L88 dual-pass mandate empirical proof)
 - DF8: Findings catalog sub-section L298-331 STALE post Edit #7.1 — DF7 added at Edit #7.1 but sub-section header/intro/bullets/rollup NOT propagated, caught L93 self-test #6 post Edit #9 (🟡 Medium → RESOLVED Edit #10 cascade fix, L94 lesson 4th occurrence empirical reinforcement)
+- DF9: Bulk branch delete via `git branch --merged develop` includes ancestral branches (main) → accidental main local delete (🟢 Low post-verify 100% empirical zero data loss confirmed 5/5 spot-check `git merge-base --is-ancestor` exit code 0 + main remote intact + recovery `git checkout main` instant — RESOLVED, L96 catalog)
+- DF10: Briefing position assumptions stale post Pachet K Edit #10 cascade (Section 12 L520 vs L517, L94 L1301 vs L1250, Sumar L349 vs L345) — anchored greps captured empirical reality correct, briefing positions outdated (🟢 Low process observation, L94 lesson reinforced 5th occurrence)
+- DF11: Workflow auto-insert created duplicate entry — L17 #TBD self-bullet AND L18 #200 auto-insert both present same eveniment (🟡 Medium → RESOLVED Option D rollforward: L17 self-bullet updates Pachet K → Pachet K.1, L18 #200 preserved canonical workflow output, pattern future = self-bullet roll-forward per Pachet, L97 catalog)
 
-**Severity rollup F+DF (24 findings):**
-- 🔴 Critical: 1 (F12 awk escape — RESOLVED)
-- 🟡 Medium: 9 (F2/F3/F6/F16 + DF2/DF3/DF5/DF7/DF8 — 4 F + 5 DF)
-- 🟢 Low: 14 (F1/F4/F5/F7/F8/F9/F10/F11/F13/F14/F15 + DF1/DF4/DF6 — 11 F + 3 DF)
+**Severity rollup F+DF (29 findings):**
+- 🔴 Critical: 2 (F12 awk escape + F17 repo setting — both RESOLVED)
+- 🟡 Medium: 10 (F2/F3/F6/F16 + DF2/DF3/DF5/DF7/DF8/DF11 — 4 F + 6 DF)
+- 🟢 Low: 17 (F1/F4/F5/F7/F8/F9/F10/F11/F13/F14/F15/F18 + DF1/DF4/DF6/DF9/DF10 — 12 F + 5 DF)
 
 **Findings → TD pipeline:**
 - F2 + F3 → TD-43 expanded (sub-A + sub-B)
@@ -340,13 +348,18 @@ Audit trail layer pre-TD/lesson catalog. Findings cataloagate empirical pe parcu
 - DF6 → Phase 4 commit pipeline addresses (NOT TD)
 - DF7 → RESOLVED Edit #7.1 same-session math fix (NOT TD escalation)
 - DF8 → RESOLVED Edit #10 same-session cascade fix (NOT TD escalation)
+- F17 → repo setting fix + cataloagat (NU TD escalation, structural fix outside repo code)
+- F18 → cleanup manual + cataloagat (NU TD escalation, hygiene one-shot)
+- DF9 → L96 catalog (lessons: --merged ancestral inclusion pattern) + TD-46 companion (docs)
+- DF10 → L94 lesson reinforced 5th occurrence (NU TD)
+- DF11 → L97 catalog (lessons: self-bullet obsolet post workflow LIVE)
 - Remaining findings (F1, F4-F11, F13-F15, DF1, DF4) = resolved în implementation OR process correction only, NO TD escalation needed.
 
 Cross-ref: L94 (briefing format verify) + TD-43 (Section 12 spec amendments) + TD-44 (Husky hook). L93 dual-pass mandate applied throughout — empirical 4 self-test runs Pachet K (Phase 1 + Phase 2 + Phase 3 Edits #3-#6).
 
 ---
 
-**Sumar severitate:** 4 Critical, 14 Medium, 14 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking (40 TDs cataloagate post-Pachet-K: TD-30..TD-44; +TD-43 sub-A/sub-B + TD-44 din PR-B-impl + Pachet K session).
+**Sumar severitate:** 4 Critical, 14 Medium, 17 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking (43 TDs cataloagate post-Pachet-K.1: TD-30..TD-47; +TD-45/46/47 din Pachet K.1 post-merge findings + cleanup observations).
 
 
 ---
@@ -525,7 +538,7 @@ Toate aceste documente sunt în rădăcina repo. **La sesiune start citește:**
 
 **Decision (L90 mandate):** "Investește structural NU continua tactic." Workflow GitHub Action post-merge automation = soluția structurală implementată Pachet J.2 PR #199. Workflow rulează după PR merge, parse PR metadata (number + commit subject + hash), inject entry în CHANGELOG.md cu sorted descending + skip #TBD rows (F2 Option (a) per workflow authoring decision), create ephemeral PR via peter-evans/create-pull-request@c0f553fe...2ece0 (v8.1.0 SHA pinned), manual merge plasă siguranță SF-11.
 
-**Status:** IMPLEMENTED Pachet J.2 #199 7c641fa merged develop 2026-05-12. Workflow LIVE awaiting first empirical trigger post Pachet K #200 merge → TD-35 IN-PROGRESS → RESOLVED post first green workflow run observed. Spec amendments pending TD-43 (sub-A SF-12 TBD-row edge case + sub-B peter-evans version drift v6 spec → v8.1.0 impl). Defer PR-D dedicated.
+**Status:** IMPLEMENTED Pachet J.2 #199 7c641fa merged develop 2026-05-12. Workflow LIVE + PROVEN empirical Pachet K.1 e88f1d0 — first green run 18s (PR #200 merge aafed11 → auto-trigger → ephemeral PR #201 chore(changelog): sync entry for #200 → manual review SF-11 → merged develop e88f1d0). F2 Option (a) TBD-skip empirical working. 12 SF mitigations validated runtime. TD-35 RESOLVED. F17 repo setting fix prerequisite cataloagat (initial run failed pre-fix). Spec amendments pending TD-43 (sub-A SF-12 TBD-row edge case + sub-B peter-evans version drift v6 spec → v8.1.0 impl). Defer PR-D dedicated.
 
 ### 12.2 Scope LOCKED
 
@@ -1308,6 +1321,39 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 - Pachet K Phase 3 DF5 — TD-43/TD-44 new_string 4-col proposed vs reality 6-col canonical
 
 **Rule:** futuremost briefing-uri grep pe HANDOFF/CHANGELOG/spec docs precedate de min. 1 anchored verify pe format actual (header structure + column count + separator pattern). Mandate aplicat pre-orice str_replace anchor design. Cross-ref L93 cross-section consistency (different concern — L93 = post-edit, L94 = pre-briefing).
+
+---
+
+### L95 — Husky pre-push hooks should bypass test execution for delete-only push operations
+
+**Lesson:** Husky pre-push hook configured cu standard quality gates (eslint + tsc + vitest) runs UNCONDITIONAL pe orice push operation including `git push origin --delete <branch>`. For delete-only operations, full test suite (13s+) is unnecessary overhead — no code changes pushed.
+
+**Pattern empirical (1 occurrence Pachet K.1):**
+- Pachet K.1 Phase 1 cleanup `git push origin --delete auto/changelog-199` triggered full 879+4 vitest run unnecessarily (13.02s wasted)
+
+**Rule:** Husky `.husky/pre-push` script should detect `refs/heads/--` patterns (delete refs) și bypass test execution. Future: implement empirical TD-45.
+
+---
+
+### L96 — `git branch --merged <branch>` returns ancestral branches → bulk delete must exclude explicit
+
+**Lesson:** `git branch --merged develop` filter returns ALL branches whose tip-commit is ancestor of develop's tip — including `main`, `master`, alte branch-uri ancestral în gitflow setup. Bulk delete naive `| ForEach git branch -d` includes accidentally `main` → local ref pierdere (recoverable doar dacă remote intact).
+
+**Pattern empirical (1 occurrence Pachet K.1 DF9):**
+- Pachet K.1 Phase 1 cleanup script bulk deleted 109 branches including `main` accidental (recovered from origin/main instant, zero data loss confirmed 5/5 spot-check `git merge-base --is-ancestor` exit 0 + reflog 90-zile backup)
+
+**Rule:** Bulk delete pattern MUST include explicit excludes: `Where-Object { $_.Trim() -notin @('develop', 'main', 'master') }`. Mandate aplicat orice future bulk branch operation. Cross-ref L94 (briefing format verify) — same root cause (assumption vs empirical reality). Documented TD-46.
+
+---
+
+### L97 — Self-bullet CHANGELOG pattern obsolet post workflow `changelog-sync.yml` LIVE empirical
+
+**Lesson:** L85 self-bullet pattern (preventive `| #TBD | TBD |` row pre-PR-merge) was created în era pre-workflow ca structural workaround pentru same-PR-self-application paradox. Post Pachet J.2 #199 workflow LIVE + Pachet K.1 first green empirical validation, workflow auto-inserts entry on merge → self-bullet creates DUPLICATE entry (DF11 Pachet K.1).
+
+**Pattern empirical (1 occurrence Pachet K.1 DF11):**
+- Pachet K #200 cu self-bullet L17 #TBD + workflow auto-insert L18 #200/aafed11 = duplicate same eveniment captured manual + auto
+
+**Rule:** Post-workflow-LIVE transition strategy: self-bullet stays Option D rollforward pattern — pre-PR self-bullet (current PR placeholder) → workflow auto-inserts hash post-merge → self-bullet rolls forward la NEXT Pachet pre-PR. Future consideration: deprecation complete dacă workflow gain backfill capability. Cross-ref L76 cascade pattern (8 occurrences pre-workflow) + L85 Option A (backfill manual pre-workflow).
 
 ---
 
