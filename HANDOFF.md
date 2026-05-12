@@ -76,10 +76,10 @@ functional check git apply --check). Pattern reusable pentru orice file write Wi
 
 ## 1. Ultima actualizare
 
-- **Data:** 2026-05-12 (Pachet J.1 PR-B-spec in-flight, post-Pachet I.2 #197 `567930c` closure merged)
+- **Data:** 2026-05-12 (Pachet K closure documentation in-flight post-Pachet J.2 PR-B-impl #199 `7c641fa` merged develop)
 - **Contribuitor:** Claude Opus 4.7 (session Claude Code, executant tehnic) + Claude.ai supervisor (Vector, decizii prin filtre + briefing-uri anchored grep) + user: itweddinglist@gmail.com / Ionuț
-- **Motiv handoff:** Pachet I integral closed (PR-I.1 #196 `ebf2428` + PR-I.2 #197 `567930c`). Pachet J.1 PR-B-spec in-flight (acest commit): Section 12 PR-B FULL SPEC audit-driven revision per L92 mandate security-grade re-walk fresh eyes (25 HANDOFF edits + 2 CHANGELOG edits). Conținut revision: SF-11 NEW (branch protection conflict + `peter-evans/create-pull-request@v6` pinned SHA architectural mitigation) + SF-12 NEW (sorted insert by PR# descending F12 silent corruption fix) + 8 SF expansions (SF-1 quoting discipline + markdown sanitize + SF-3 actor filter CRITIC post-peter-evans + SF-4 `concurrency: group` PRIMARY mitigation + SF-5 regex 11 types conventional commits + SF-6 severity downgrade Low ephemeral runner + SF-8 TARGET_BRANCH rename + SF-9 env var consistency cu SF-1 + SF-10 policy LOCKED WARN+fallback) + SF-7 F13 enhancement `$GITHUB_STEP_SUMMARY` + Scenariu D NEW (out-of-order completion SF-12 validation) + Scenariu A/B/C expansions architectural alignment + Section 12.5 filtre re-mapping (12/12 SF coverage) + Section 12.6 acceptance criteria 8→11 (peter-evans SHA + TARGET_BRANCH + concurrency group verifies) + TD-41 catalog (Section 2 drift 3rd recurrence, deferred PR-C) + TD-42 catalog (actionlint absent local DX) + Sumar severitate cascade (12→13 Medium + 12→13 Low = 38 TDs total) + L93 catalog NEW (cross-section consistency dual-pass mandatory post architecture revision, 4 occurrences empirical confirmed) + CHANGELOG #197 hash backfill L76 7th occurrence (F17 explicit). Discovery counter Pachet J.1 cumulative: 17 (3 Phase 2 pre-flight + 11 Phase 3 audit re-walk + 3 Phase 4c.4.1/4c.6.d/4d.a.1 cross-section consistency derivative fixes). Reguli LOCKED total 21 (R1-R21). Lessons total max L93 (68 cataloagate). TDs total 38 (TD-30..TD-42 cataloagate). FTs: FT-01 RESOLVED, FT-02..04 still pending. Section 2 drift (TD-41 territory) NU fixed acest commit — deferred PR-C structural separat.
-- **Next contribuitor asteptat:** PR-B-impl execution sesiune dedicată = `.github/workflows/changelog-sync.yml` create per Section 12 SPEC REVISED Pachet J.1 (2-4h estimate post-revision — spec audit-driven complete, implementation directă cu 11 acceptance criteria verifiable + 4 scenarii dry-run + 12 SF mitigations + `peter-evans/create-pull-request@v6` pinned SHA + `TARGET_BRANCH` env + `concurrency: group: changelog-sync` workflow-level). Alternative deferred: PR-C TD-41 `section-2-sync.yml` (1-2h, post PR-B-impl merge), TD-31 GitHub Actions v5 bump (când v5 stable), TD-33/TD-34 (format catalog + lessons header), TD-37 ci.yml permissions explicit, TD-38 C4 launch blocker schema fix (PR dedicat investigation), TD-39 typescript devDep explicit, TD-40 gh CLI install hygiene, TD-42 actionlint install hygiene, PR 1B Layer 2 Integration tests Supabase DEV (12-20h estimate, sesiune dedicata).
+- **Motiv handoff:** Pachet K closure documentation post PR-B cycle COMPLETE (spec J.1 #198 + impl J.2 #199 + docs K #200 pending). 9 edits applied (2 CHANGELOG backfills/insert + 7 HANDOFF updates: TDs 38→40 +TD-43/TD-44 + TD-35 IN-PROGRESS + L94 NEW lesson + Section 12 IMPLEMENTED + Findings catalog 22 F+DF + Sumar cascade). 8 discovery findings empirical Pachet K (DF1-DF8) — 2 RESOLVED in-session (DF7 Edit #7.1 + DF8 Edit #10 cascade fix) — 1 RESOLVED in-edit (DF7 math fix), 5 cataloagate (DF2/DF3/DF5 → L94/Section 12/L94), 1 process-only (DF1/DF4/DF6). 16 PR-B-impl findings (F1-F16) consolidate audit trail Section 5 sub-section L298. L93 dual-pass mandate validated empirical 5 self-test runs (Phase 1 + Phase 2 + Phase 3 Edits #3-#8). L88 dual-pass mandate empirical proof DF7 catch (same-session fix Edit #7.1). Workflow `.github/workflows/changelog-sync.yml` LIVE develop @ 7c641fa, TD-35 IN-PROGRESS awaiting first empirical trigger post Pachet K #200 merge.
+- **Next contribuitor asteptat:** Pachet L post Pachet K merge + workflow first empirical trigger verify (~5 min observation post-merge). Priority queue forward: (1) workflow green verify → TD-35 RESOLVED; (2) PR-C TD-41 Section 2 sync workflow (~3-5h, template PR-B-impl pattern); (3) TD-38 C4 launch blocker Critical investigation (~3-5h, schema fix); (4) TD-43 spec amendment PR-D (~1-2h Section 12 SF-12 + version refs); (5) TD-44 Husky format:check hook (~15-30 min, hygiene quick win). Alternative interleaved: feature work modules (Magic Fill / RSVP / Budget) per priorities runway.
 
 ---
 
@@ -284,7 +284,7 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-32 | Recovery patches user-local pending cleanup — `$env:USERPROFILE\pr1b0-edits-utf8.patch` (UTF-8 valid recovery) + `pr1b0-edits.patch` (UTF-16 LE corrupt original) | 🟢 Low | Manual cleanup user-local oricând | 2-5 min (`Remove-Item` 2 files) | Created PR 1B.0 #187 recovery cycle May 10 2026. Hygiene only, user-local files NU in repo. Cross-ref: lessons L67 + L68 + L69 (UTF-16 LE redirect + recovery point validation + git apply LF strict). |
 | TD-33 | Format patterns reference catalog absent — lessons format `### L<n>`, reguli format `N. **<title>**`, TDs `| TD-N |`, FTs `| FT-N |`. Documenta in CLAUDE.md sau HANDOFF reference section pentru future planner pre-flight. | 🟢 Low | Convention | 20-30 min | Trigger PR mic dedicat sau Pachet F |
 | TD-34 | Consolidate section headers lessons HANDOFF.md inconsistency — L27-L32 + L33-L37 sectional headers + L38+ concatenate. Decizie: add complete schema sectional per batch sau remove partial headers concatenate uniform. | 🟢 Low | Cleanup | 30-45 min | Trigger PR mic dedicat sau cleanup sweep pre-launch |
-| TD-35 | Workflow YAML changelog-sync.yml audit pre-execution identificat 10 sub-findings security/correctness (shell injection, duplicate entry, self-trigger loop, race condition, regex fragility, zero rollback, zero audit trail, hardcoded branch, date accuracy, type fallback silent). Full detail SF-1..SF-10 în PR-B FULL SPEC section. | 🔴 Critical | Sesiune dedicată PR-B execution (next session, audit security-grade obligatoriu pre-merge) | 3-5h (rewrite design + dry-run 3 scenarii + edge cases gestionate) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref PR-B FULL SPEC (Pachet I.2 forward declared) + L90 anti-pattern recurring 3+ structural fix. Blocker PR-B execution până design rewrite. |
+| TD-35 | Workflow YAML changelog-sync.yml audit pre-execution identificat 10 sub-findings security/correctness (shell injection, duplicate entry, self-trigger loop, race condition, regex fragility, zero rollback, zero audit trail, hardcoded branch, date accuracy, type fallback silent). Full detail SF-1..SF-10 în PR-B FULL SPEC section. | 🔴 Critical | Sesiune dedicată PR-B execution (next session, audit security-grade obligatoriu pre-merge) | 3-5h (rewrite design + dry-run 3 scenarii + edge cases gestionate) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref PR-B FULL SPEC (Pachet I.2 forward declared) + L90 anti-pattern recurring 3+ structural fix. Blocker PR-B execution până design rewrite. **[STATUS UPDATE Pachet K post PR-B-impl #199 7c641fa merged]:** IN-PROGRESS — workflow LIVE develop @ 7c641fa. Awaiting first empirical trigger post Pachet K #200 merge. RESOLVED defer post first green workflow run observed. |
 | TD-36 | Race condition concurrent PR merge în changelog-sync.yml — 2 PR-uri merge simultan (ferestră 5-10s) → 2 workflow instances concurrent → duplicate entries SAU push fail non-fast-forward. Pattern distinct cu implications scalabilitate (NU doar workflow-specific) | 🟡 Medium | Sesiune dedicată PR-B execution (must design idempotent inject pentru scalability per regulă proiect) | 30-60 min (design phase: optimistic concurrency retry loop + duplicate detection grep guard) | Discovered Pachet I.1 pre-flight PR-B audit. Cross-ref TD-35 (umbrella audit). Rar în solo dev curent, dar must design proactive pentru scalability future. |
 | TD-37 | .github/workflows/ci.yml lipsește declarație explicită permissions block — folosește default repo-level GITHUB_TOKEN permissions (variable per repo Settings). Încălcare principle of least privilege + self-documenting scope + defense-in-depth. Risk: dacă repo default permissions schimbate, workflow poate escala accidental privilegii | 🟢 Low | PR mic dedicat post-PR-B merged (hygiene security, NU blocker funcțional) | 15-20 min (add permissions: contents: read top-level + CI verify + PR + merge) | Discovered Pachet I.1 pre-flight PR-B output H. Scope micro (~5 linii edit). Defer post-PR-B per regulă "premium fără bug-uri pe termen lung". |
 | TD-38 | C4 launch blocker reproduction live — `seat_assignments.guest_id does not exist` (code 42703) surfaced în E2E webserver logs durante Playwright run. API endpoint GET /api/dashboard/stats fail silent (error swallowed by dashboard). Pre-existing known bug per CLAUDE.md §10.12 schema-drift audit | 🔴 Critical | Launch blocker — fix obligatoriu pre-launch (PR dedicat schema migration sau code fix mapping guest_id → guest_event_id) | TBD (require investigation: schema migration vs code mapping fix) | Discovered Pachet I.1 baseline empirical capture (Playwright run, sesiune 2026-05-11). Cross-ref CLAUDE.md §10.12 (existing audit entry). Empirical reproduction confirmation NEW (anterior doar static audit). |
@@ -292,8 +292,61 @@ Cross-ref complet: vezi `ROADMAP.md` §"Future tasks" pentru detalii (4 ancore R
 | TD-40 | gh CLI absent dev machine — PR creation flows depend manual URL fallback (friction + typo risk title/body). Bash + PowerShell both report "command not found" pe sistem Windows. Workflow improvement, NU blocker funcțional | 🟢 Low | PR mic hygiene install — `winget install GitHub.cli` SAU `choco install gh` | 5-15 min (install + gh auth login + verify gh pr list) | Discovered Pachet I.1 PR #196 creation step (sesiune 2026-05-11). Future PRs benefit automation. Cross-ref discovery counter PR-I.1 finding #8. |
 | TD-41 | Section 2 (HANDOFF.md regula 21 + lessons L92 + handoff sections counter) drift 3rd recurrence empirical post-merge — pattern structural distinct de CHANGELOG miss (L76). Workflow separat section-2-sync.yml necesar pentru auto-refresh la fiecare merge HANDOFF edit. | 🟡 Medium | Sesiune dedicată PR-C post PR-B impl merge (structural separat per L83 granularitate + R3 scalability) | 1-2h (workflow similar pattern PR-B impl, lessons learned re-applied) | Discovered Pachet I audit retroactive (3rd recurrence post #195/#196/#197). Cross-ref L90 mandate structural NU tactic. Defer locked PR-B-spec sesiune curentă, execution sesiune separată. |
 | TD-42 | actionlint absent dev machine — local YAML workflow validation impossible via standard tooling (`actionlint --version` returns "command not found"). CI-only feedback loop = slower iteration pentru workflow YAML edits future. Workflow improvement, NU blocker funcțional | 🟢 Low | PR mic hygiene install — `winget install rhysd.actionlint` SAU `choco install actionlint` SAU `go install github.com/rhysd/actionlint/cmd/actionlint@latest` | 5-15 min (install + verify `actionlint --version` + test pe ci.yml empirical) | Discovered Pachet J PR-B-spec Phase 2 pre-flight discovery (sesiune 2026-05-12). Future workflow YAML PRs (PR-B impl, PR-C section-2-sync) benefit local validation. Cross-ref TD-40 pattern (gh CLI absent similar hygiene). |
+| TD-43 | Section 12 spec amendments pending — sub-A: SF-12 TBD-row edge case (L557 algorithm spec NU cover non-numeric `#TBD` rows at top, empirical impact: workflow IMPLEMENTS Option (a) skip + insert under + `::warning::` per Phase 3 authoring decision PR-B-impl; spec amendment recommended pentru consistency). Sub-B: peter-evans v6 spec (Section 12.2 item 3 + SF-11 + Section 12.6 acceptance L602) → v8.1.0 impl drift confirmed (2 ani vechime între spec date 2024-01-31 și impl actual 2026-05-12). | 🟡 Medium | PR-D dedicated post Pachet K (spec amendment Section 12 SF-12 L557 + version reference L481/L551/L602) | 1-2h (spec amendment edit byte-exact + cross-section consistency dual-pass L93) | Discovered Pachet K Phase 2.5 (F2 SF-12 edge case) + PR-B-impl Phase 3.1 (F3 peter-evans version drift). Cross-ref SF-12 L557 + SF-11 L551 + Section 12.6 L602. |
+| TD-44 | format:check Husky pre-commit hook missing — Husky pre-commit currently runs lint + typecheck DAR NU format:check. CI rulează format:check (ci.yml L33-34) deci catch happens DAR la push, NU pre-commit local. F16 process gap surfaced PR-B-impl session: doc edits committed local NU rejected pre-push, surprize CI fail post-push. DX hygiene improvement. | 🟢 Low | PR mic dedicat (add format:check to Husky pre-commit hook + verify works empirical) | 15-30 min (Husky config edit + test commit dirty format file empirical) | Discovered Pachet K Phase 2 / PR-B-impl session (F16 finding). Cross-ref TD-40/TD-42 pattern (hygiene improvements). |
 
-**Sumar severitate:** 4 Critical, 13 Medium, 13 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking.
+### Findings catalog cumulative: PR-B-impl + Pachet K (24 findings total)
+
+Audit trail layer pre-TD/lesson catalog. Findings cataloagate empirical pe parcurs sesiunilor PR-B-impl + Pachet K, severity tagged 🔴/🟡/🟢/✅. Coverage: 16 findings PR-B-impl (F1-F16) + 8 discovery findings Pachet K (DF1-DF8).
+
+**PR-B-impl session findings (F1-F16, 13 resolved + 3 cataloagate TDs):**
+- F1: Briefing omission CHANGELOG format Step 2.5 (🟢 Low, process correction)
+- F2: SF-12 spec TBD-row edge case (🟡 Medium → TD-43 sub-A)
+- F3: peter-evans v6 → v8.1.0 stale spec (🟡 Medium → TD-43 sub-B)
+- F4: SF-1 false positive peter-evans `with:` inputs (🟢 Low, NU violation — action runtime safe)
+- F5: seq edge case empty (🟢 Low, fallback handles)
+- F6: sed insert fragility (🟡 Medium → RESOLVED awk refactor)
+- F7: sed-in-loop O(n²) perf (🟢 Low → RESOLVED single awk pass)
+- F8: SF-6 push-or-rollback (🟢 Low, covered peter-evans clean exit + ephemeral runner)
+- F9: SF-4 SECONDARY retry loop (🟢 Low, covered peter-evans v8.1.0 octokit-retry intrinsic)
+- F10: Literal `\n` în SUMMARY (🟢 Low, acceptable)
+- F11: gawk match() syntax extension (🟢 Low, ubuntu-latest stable)
+- F12: awk -v interprets escape sequences (🔴 Critical → RESOLVED ENVIRON pattern, Scenariu B safety)
+- F13: ENVIRON propagation (🟢 Low, applied consistent)
+- F14: Line count discrepancy 266/265/235 (🟢 Low, reconciled — git=265 authoritative)
+- F15: PowerShell Get-Content default codepage Windows-1252 (🟢 Low, display-only, file UTF-8 valid)
+- F16: Pre-commit `format:check` ratat (🟡 Medium → TD-44 process gap, CI caught)
+
+**Pachet K Phase 1-3 discovery findings (DF1-DF6):**
+- DF1: User briefing Section 1 location estimate stale (🟢 Low, process correction only)
+- DF2: User briefing `^### TD-` grep wrong format (🟡 Medium → L94 catalog)
+- DF3: Section 12 "forward declared" stale post-impl (🟡 Medium → Edit #6 RESOLVED scope addition)
+- DF4: Pachet J.1 self-bullet summary preserve vs rewrite (🟢 Low → DECISION (A) preserve verbatim, Edit #1 applied)
+- DF5: Briefing TD-43/TD-44 column count mismatch 4-col vs 6-col canonical (🟡 Medium → L94 reinforced 3rd occurrence pattern + Option A 6-col extrapolation applied)
+- DF6: Branch creation pending pre-commit (🟢 Low, Phase 4 commit pipeline addresses)
+- DF7: Math error severity rollup Edit #7 — Medium 6 vs 7 empirical, Low 15 vs 14 empirical (🟡 Medium → RESOLVED Edit #7.1 same-session math fix, L88 dual-pass mandate empirical proof)
+- DF8: Findings catalog sub-section L298-331 STALE post Edit #7.1 — DF7 added at Edit #7.1 but sub-section header/intro/bullets/rollup NOT propagated, caught L93 self-test #6 post Edit #9 (🟡 Medium → RESOLVED Edit #10 cascade fix, L94 lesson 4th occurrence empirical reinforcement)
+
+**Severity rollup F+DF (24 findings):**
+- 🔴 Critical: 1 (F12 awk escape — RESOLVED)
+- 🟡 Medium: 9 (F2/F3/F6/F16 + DF2/DF3/DF5/DF7/DF8 — 4 F + 5 DF)
+- 🟢 Low: 14 (F1/F4/F5/F7/F8/F9/F10/F11/F13/F14/F15 + DF1/DF4/DF6 — 11 F + 3 DF)
+
+**Findings → TD pipeline:**
+- F2 + F3 → TD-43 expanded (sub-A + sub-B)
+- F16 → TD-44 (Husky format:check hygiene)
+- DF2 + DF5 → L94 catalog (lessons philosophy layer, NOT TD)
+- DF3 → Edit #6 RESOLVED scope addition (NOT TD)
+- DF6 → Phase 4 commit pipeline addresses (NOT TD)
+- DF7 → RESOLVED Edit #7.1 same-session math fix (NOT TD escalation)
+- DF8 → RESOLVED Edit #10 same-session cascade fix (NOT TD escalation)
+- Remaining findings (F1, F4-F11, F13-F15, DF1, DF4) = resolved în implementation OR process correction only, NO TD escalation needed.
+
+Cross-ref: L94 (briefing format verify) + TD-43 (Section 12 spec amendments) + TD-44 (Husky hook). L93 dual-pass mandate applied throughout — empirical 4 self-test runs Pachet K (Phase 1 + Phase 2 + Phase 3 Edits #3-#6).
+
+---
+
+**Sumar severitate:** 4 Critical, 14 Medium, 14 Low, 4 Out-of-scope/Convention, 4 Resolved-tracking (40 TDs cataloagate post-Pachet-K: TD-30..TD-44; +TD-43 sub-A/sub-B + TD-44 din PR-B-impl + Pachet K session).
 
 
 ---
@@ -464,15 +517,15 @@ Toate aceste documente sunt în rădăcina repo. **La sesiune start citește:**
 
 ---
 
-## 12. PR-B FULL SPEC — `.github/workflows/changelog-sync.yml` (forward declared, sesiune dedicată)
+## 12. PR-B FULL SPEC — `.github/workflows/changelog-sync.yml` (IMPLEMENTED Pachet J.2 #199 7c641fa LIVE develop, awaiting first empirical trigger post Pachet K #200 merge)
 
 ### 12.1 Context & Justification
 
-**Problem:** L85 paradox empirical — strict same-PR self-application CHANGELOG entry impossible pre-PR# assignment (PR# generated by GitHub post-push, înainte de merge). Workaround tactic L85 Option A (TBD placeholder) requires retroactive fix per PR → L76 pattern recurring (6 occurrences confirmed empirical: #189, #190, #191, #192, #195, #196 backfill în PR-I.2 #197).
+**Problem:** L85 paradox empirical — strict same-PR self-application CHANGELOG entry impossible pre-PR# assignment (PR# generated by GitHub post-push, înainte de merge). Workaround tactic L85 Option A (TBD placeholder) requires retroactive fix per PR → L76 pattern recurring (8 occurrences cumulative pre-implementation: #189..#192 + #195/#196 backfill în PR-I.2 #197 + #198 backfill în Pachet K).
 
-**Decision (L90 mandate):** "Investește structural NU continua tactic." Workflow GitHub Action post-merge automation = soluția structurală. Workflow rulează după PR merge, parse PR metadata (number + commit subject + hash), inject entry în CHANGELOG.md top table, commit direct pe develop (Opțiunea A confirmed anterior).
+**Decision (L90 mandate):** "Investește structural NU continua tactic." Workflow GitHub Action post-merge automation = soluția structurală implementată Pachet J.2 PR #199. Workflow rulează după PR merge, parse PR metadata (number + commit subject + hash), inject entry în CHANGELOG.md cu sorted descending + skip #TBD rows (F2 Option (a) per workflow authoring decision), create ephemeral PR via peter-evans/create-pull-request@c0f553fe...2ece0 (v8.1.0 SHA pinned), manual merge plasă siguranță SF-11.
 
-**Status:** PR-B execution = sesiune dedicată next (3-5h, security-grade audit obligatoriu pre-merge per TD-35 PENDING Critical blocker).
+**Status:** IMPLEMENTED Pachet J.2 #199 7c641fa merged develop 2026-05-12. Workflow LIVE awaiting first empirical trigger post Pachet K #200 merge → TD-35 IN-PROGRESS → RESOLVED post first green workflow run observed. Spec amendments pending TD-43 (sub-A SF-12 TBD-row edge case + sub-B peter-evans version drift v6 spec → v8.1.0 impl). Defer PR-D dedicated.
 
 ### 12.2 Scope LOCKED
 
@@ -1242,6 +1295,19 @@ NU default executant — Claude Code rămâne primary pe orice task complex (mig
 **Pattern empirical [Pachet J.1 PR-B-spec audit-driven revision]:** Anchored grep dual-pass post fiecare structural edit prinde inconsistencies care primul pass NU le observă. Self-test live application 4d.a → 4d.a.1 (CHANGELOG self-bullet insert → cross-section consistency grep `| TBD |$` surfaced #197 hash gap → immediate fix same-session). NU defer "polish pass at end" — findings ratate până la implementation sub fatigue. Cost dual-pass empirical: 5-10 min per architectural decision, NU optional. Prevention factor: 100% findings caught in-session vs 0% findings caught post-merge (occurence #5/F17 only caught because deliberate dual-pass applied; would have been silent corruption în CHANGELOG production altfel).
 
 **Rule:** Orice edit care modifică design decision cross-section (architectural revision, canonic rename, severity reclassify, policy lock, hash/counter backfill) DUAL-PASS MANDATORY post-edit. Protocol: (1) Anchored grep pattern per concept (NU per linie), ex: după SF-X rewrite grep `SF-X` cross-doc verify ALL referencing locations consistent cu noul text; (2) Verify cross-ref network sections: filter mappings, scenarii narrative, acceptance criteria, sumar counters, Section 1 motiv + next contribuitor; (3) Surfaced inconsistencies fix same-session (precedent F15 4c.4.1 + F16 4c.6.d + F17 4d.a.1), NU defer "later". Cross-ref L88 (dual-pass pre-Write validation 60% improvement) — L93 extinde L88 cu cross-section post-Write dimension.
+
+---
+
+### L94 — Briefing must verify file format BEFORE specify grep patterns
+
+**Lesson:** Înainte de orice briefing care include grep patterns sau structure assumptions, verifică EMPIRICAL format-ul actual al conținutului target. NU assume heading/section structure când reality poate fi table/list/inline embedded. Pattern recurring 3+ occurrences = signal forte că documentation evolves dar mental model assumptions stale.
+
+**Pattern empirical (3 occurrences cataloagate):**
+- Pachet J.1 Phase 4d.b2.a — Section 2 lessons format assumption (heading vs table mismatch)
+- Pachet K Phase 1 DF2 — TDs grep `^### TD-` vs reality `^| TD-` (38 matches)
+- Pachet K Phase 3 DF5 — TD-43/TD-44 new_string 4-col proposed vs reality 6-col canonical
+
+**Rule:** futuremost briefing-uri grep pe HANDOFF/CHANGELOG/spec docs precedate de min. 1 anchored verify pe format actual (header structure + column count + separator pattern). Mandate aplicat pre-orice str_replace anchor design. Cross-ref L93 cross-section consistency (different concern — L93 = post-edit, L94 = pre-briefing).
 
 ---
 
