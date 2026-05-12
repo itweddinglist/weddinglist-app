@@ -1,0 +1,265 @@
+# =============================================================================
+# changelog-sync.yml — Auto-sync CHANGELOG.md on merged PR
+# =============================================================================
+# Spec reference: HANDOFF.md Section 12 (PR-B FULL SPEC, revised Pachet J.1)
+# Implementation deltas vs spec (cataloagat TD-43 expanded, defer PR-D):
+#   - peter-evans/create-pull-request version: spec says "v6", impl uses v8.1.0
+#     (L92 security audit + L93 dual-pass empirical reveal v6 stale).
+#     SHA c0f553fe549906ede9cf27b5156039d195d2ece0 (verified GitHub releases).
+#   - SF-12 sorted insert: skip non-numeric PR# rows (#TBD pattern L85 Option A
+#     pre-merge cycle). Empirical evidence CHANGELOG L17. Spec L557 doesn't
+#     explicitly cover this edge — Option (a) handling LOCKED Phase 3 authoring.
+# =============================================================================
+
+name: changelog-sync
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+
+# SF-11 + Section 12.2 item 4: least privilege explicit declared
+permissions:
+  contents: write
+  pull-requests: write
+
+# SF-4 PRIMARY: workflow-level concurrency serializes execution
+# cancel-in-progress: false — sync workflow MUST complete, NU cancel mid-run
+concurrency:
+  group: changelog-sync
+  cancel-in-progress: false
+
+# SF-8: branch agnostic via env var (target branch sync ≠ project default)
+env:
+  TARGET_BRANCH: develop
+
+jobs:
+  sync-changelog:
+    # SF-3 triple defense:
+    #   (1) trigger filter pull_request.types=[closed] + branches=[develop] (above)
+    #   (2) actor filter (CRITICAL: prevents infinite loop when peter-evans PR merged)
+    #   (3) merged==true filter (skip closed-without-merge)
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # -----------------------------------------------------------------------
+      # Step 1: Checkout develop
+      # -----------------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # Step 2: Extract + parse PR metadata
+      # SF-1: ALL data passed via env vars, ZERO ${{ }} direct in run: block
+      # SF-9: date from authoritative merged_at (NU runner clock)
+      # SF-5: regex 11 conventional commit types (incl style|build|ci|revert)
+      # SF-10: WARN+fallback chore (NU FAIL) per F14 policy
+      # -----------------------------------------------------------------------
+      - name: Parse PR metadata
+        id: meta
+        env:
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          MERGED_AT: ${{ github.event.pull_request.merged_at }}
+        run: |
+          set -euo pipefail
+
+          # SF-9: extract date from ISO merged_at (parameter expansion, safe)
+          DATE="${MERGED_AT:0:10}"
+
+          # SF-1: hash short 7 chars
+          HASH_SHORT="${MERGE_SHA:0:7}"
+
+          # SF-5: regex 11 types, capture type group
+          REGEX='^(feat|fix|docs|chore|refactor|test|perf|style|build|ci|revert)(\([^)]+\))?(!)?:[[:space:]]*(.*)$'
+          if [[ "$PR_TITLE" =~ $REGEX ]]; then
+            TYPE="${BASH_REMATCH[1]}"
+            SUMMARY="${BASH_REMATCH[4]}"
+            echo "::notice::Type parsed: $TYPE"
+          else
+            # SF-10 policy LOCKED F14: WARN + fallback chore (NU FAIL)
+            TYPE="chore"
+            SUMMARY="$PR_TITLE"
+            echo "::warning::PR title NU matches conventional commit regex (11 types), fallback chore aplicat. Investigation needed dacă apare în production."
+          fi
+
+          # SF-1 + Scenariu B sanitization: escape | + remove newlines
+          SUMMARY_SAFE=$(printf '%s' "$SUMMARY" | tr -d '\n' | sed 's/|/\\|/g')
+
+          # Edge case empty summary (Scenariu A L566)
+          if [[ -z "$SUMMARY_SAFE" ]]; then
+            SUMMARY_SAFE="(empty)"
+            echo "::warning::PR title missing summary content post-prefix"
+          fi
+
+          # Export for next steps
+          {
+            echo "pr_num=$PR_NUM"
+            echo "date=$DATE"
+            echo "type=$TYPE"
+            echo "summary=$SUMMARY_SAFE"
+            echo "hash=$HASH_SHORT"
+          } >> "$GITHUB_OUTPUT"
+
+          # Audit trail $GITHUB_STEP_SUMMARY (SF-7 F13 enhancement)
+          {
+            echo "## changelog-sync run summary"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| PR# | $PR_NUM |"
+            echo "| Date | $DATE |"
+            echo "| Type | $TYPE |"
+            echo "| Summary | $SUMMARY_SAFE |"
+            echo "| Hash | $HASH_SHORT |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # -----------------------------------------------------------------------
+      # Step 3: Duplicate detection (SF-2 grep guard)
+      # Skip if entry already exists (re-run protection)
+      # -----------------------------------------------------------------------
+      - name: Check duplicate
+        id: dup
+        env:
+          PR_NUM: ${{ steps.meta.outputs.pr_num }}
+        run: |
+          set -euo pipefail
+          if grep -q "^| #${PR_NUM} |" CHANGELOG.md; then
+            echo "::notice::Entry #${PR_NUM} already exists, skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            {
+              echo ""
+              echo "**Result:** Skipped (duplicate entry detected)"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # -----------------------------------------------------------------------
+      # Step 4: SF-12 sorted insert + F2 TBD-row handling
+      # Algorithm:
+      #   1. Find separator line (^|---) under active section header
+      #   2. Scan rows below separator
+      #   3. Skip non-numeric PR# rows (#TBD, etc.) — F2 Option (a) LOCKED
+      #   4. Find first numeric PR# row
+      #   5. Compare new vs found PR#
+      #   6. If new > found: insert before found (or after TBD-block-top)
+      #   7. Else walk down until correct sorted position
+      # -----------------------------------------------------------------------
+      - name: Sorted insert entry
+        if: steps.dup.outputs.skip != 'true'
+        env:
+          PR_NUM: ${{ steps.meta.outputs.pr_num }}
+          DATE: ${{ steps.meta.outputs.date }}
+          TYPE: ${{ steps.meta.outputs.type }}
+          SUMMARY: ${{ steps.meta.outputs.summary }}
+          HASH: ${{ steps.meta.outputs.hash }}
+        run: |
+          set -euo pipefail
+
+          ENTRY="| #${PR_NUM} | ${DATE} | ${TYPE} | ${SUMMARY} | ${HASH} |"
+
+          # awk single-pass: locate active section + separator + find sorted insert
+          # Output: INSERT_LINE TBD_COUNT (space-separated) sau "ERROR <msg>"
+          RESULT=$(awk -v pr="$PR_NUM" -v max_scan=50 '
+            BEGIN { active=0; separator=0; insert=0; tbd=0; scanned=0 }
+            /^## SECȚIUNEA ACTIVĂ/ && !active { active=NR; next }
+            active && !separator && /^\|---/ { separator=NR; next }
+            separator && /^\|/ {
+              scanned++
+              if (scanned > max_scan) { exit }
+              # F2 Option (a): skip #TBD non-numeric rows
+              if ($0 ~ /^\|[[:space:]]*#TBD/) { tbd++; next }
+              # Extract numeric PR#
+              if (match($0, /^\|[[:space:]]*#([0-9]+)[[:space:]]*\|/, m)) {
+                found = m[1] + 0
+                if (pr > found) { insert=NR; exit }
+              }
+              next
+            }
+            separator && !/^\|/ { exit }
+            END {
+              if (!active) { print "ERROR active_section_not_found"; exit 1 }
+              if (!separator) { print "ERROR separator_not_found"; exit 1 }
+              if (!insert) { insert = separator + 1 + tbd }
+              print insert, tbd, scanned
+            }
+          ' CHANGELOG.md)
+
+          # Parse awk result
+          if [[ "$RESULT" =~ ^ERROR ]]; then
+            echo "::error::Sorted insert failed: $RESULT"
+            exit 1
+          fi
+
+          INSERT_LINE=$(echo "$RESULT" | awk '{print $1}')
+          TBD_COUNT=$(echo "$RESULT" | awk '{print $2}')
+          SCANNED=$(echo "$RESULT" | awk '{print $3}')
+
+          if [[ "$SCANNED" -ge 50 ]]; then
+            echo "::warning::Scan depth reached safety limit (50 rows). Insert position may be approximate."
+          fi
+
+          if [[ "$TBD_COUNT" -gt 0 ]]; then
+            echo "::warning::TBD entries present at top (count=$TBD_COUNT), inject position adjusted to L${INSERT_LINE}"
+          fi
+
+          echo "::notice::Sorted insert position L${INSERT_LINE} (after $TBD_COUNT TBD rows + sorted comparison)"
+
+          # Insert ENTRY before INSERT_LINE via awk
+          # Use ENVIRON instead of -v: awk -v INTERPRETS escape sequences (\n, \t)
+          # → malicious PR title cu literal "\n" would break table.
+          # ENVIRON reads env var literal, NU escape interpretation. F12 critic fix.
+          export AWK_ENTRY="$ENTRY"
+          awk -v line="$INSERT_LINE" '
+            BEGIN { entry = ENVIRON["AWK_ENTRY"] }
+            NR == line { print entry }
+            { print }
+          ' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+          unset AWK_ENTRY
+
+          # Audit trail
+          {
+            echo ""
+            echo "**Insert position:** Line ${INSERT_LINE}"
+            echo "**TBD rows skipped:** ${TBD_COUNT}"
+            echo "**Rows scanned:** ${SCANNED}"
+            echo "**Entry:** \`${ENTRY}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # -----------------------------------------------------------------------
+      # Step 5: Create PR via peter-evans (SF-11 architectural mitigation)
+      # Pinned by SHA v8.1.0 (NU tag mutable, NU v6 stale spec — see TD-43)
+      # PR remains open for manual merge (review uman, plasă siguranță)
+      # -----------------------------------------------------------------------
+      - name: Create PR
+        if: steps.dup.outputs.skip != 'true'
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto/changelog-${{ steps.meta.outputs.pr_num }}
+          base: ${{ env.TARGET_BRANCH }}
+          delete-branch: true
+          commit-message: |
+            chore(changelog): sync entry for #${{ steps.meta.outputs.pr_num }} [skip ci]
+          title: "chore(changelog): sync entry for #${{ steps.meta.outputs.pr_num }}"
+          body: |
+            Auto-generated CHANGELOG entry for PR #${{ steps.meta.outputs.pr_num }}.
+
+            **Entry:** `| #${{ steps.meta.outputs.pr_num }} | ${{ steps.meta.outputs.date }} | ${{ steps.meta.outputs.type }} | ${{ steps.meta.outputs.summary }} | ${{ steps.meta.outputs.hash }} |`
+
+            Workflow: `.github/workflows/changelog-sync.yml`
+            Spec: HANDOFF.md Section 12 (PR-B FULL SPEC).
+
+            Review and merge manually (plasă siguranță per SF-11).
+          labels: |
+            changelog
+            automated
